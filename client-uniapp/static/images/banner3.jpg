@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="300" viewBox="0 0 800 300" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景 -->
+  <rect width="800" height="300" fill="#9C27B0"/>
+  <!-- 装饰元素 -->
+  <polygon points="400,50 600,250 200,250" fill="rgba(255,255,255,0.2)"/>
+  <!-- 文字 -->
+  <text x="400" y="150" font-family="Arial, sans-serif" font-size="36" font-weight="bold" text-anchor="middle" fill="white">优惠活动</text>
+  <text x="400" y="190" font-family="Arial, sans-serif" font-size="20" text-anchor="middle" fill="white">新用户首单享8折优惠</text>
+</svg>

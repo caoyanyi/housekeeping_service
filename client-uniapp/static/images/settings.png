@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <!-- 设置图标 -->
+  <circle cx="12" cy="12" r="3" fill="#666"/>
+  <circle cx="12" cy="12" r="7" fill="none" stroke="#666" stroke-width="2"/>
+  <path d="M12 2 L12 4" stroke="#666" stroke-width="2" stroke-linecap="round"/>
+  <path d="M12 20 L12 22" stroke="#666" stroke-width="2" stroke-linecap="roundround"/>
+  <path d="M2 12 L4 12" stroke="#666" stroke-width="2" stroke-linecap="round"/>
+  <path d="M20 12 L22 12" stroke="#666" stroke-width="2" stroke-linecap="round"/>
+  <path d="M4.93 4.93 L6.34 6.34" stroke="#666" stroke-width="2" stroke-linecap="round"/>
+  <path d="M17.66 17.66 L19.07 19.07" stroke="#666" stroke-width="2" stroke-linecap="round"/>
+  <path d="M4.93 19.07 L6.34 17.66" stroke="#666" stroke-width="2" stroke-linecap="round"/>
+  <path d="M17.66 6.34 L19.07 4.93" stroke="#666" stroke-width="2" stroke-linecap="round"/>
+</svg>

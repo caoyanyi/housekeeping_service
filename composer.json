@@ -1,0 +1,19 @@
+{
+    "name": "jiazheng/service-platform",
+    "description": "家政服务平台系统",
+    "type": "project",
+    "require": {
+        "phpmailer/phpmailer": "^6.9"
+    },
+    "autoload": {
+        "psr-4": {
+            "Jiazheng\\": "api/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

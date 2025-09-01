@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景 -->
+  <rect width="200" height="200" rx="20" ry="20" fill="#4CAF50"/>
+  <!-- 图标部分 -->
+  <path d="M100 40 L140 80 L120 80 L120 140 L80 140 L80 80 L60 80 Z" fill="white"/>
+  <!-- 家政服务文字 -->
+  <text x="100" y="170" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="white">家政服务</text>
+</svg>

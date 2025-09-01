@@ -1,0 +1,62 @@
+/* 本地版本的Font Awesome CSS */
+/* 这是一个简化版本，仅包含项目中使用的图标样式 */
+
+/* 基础样式 */
+.fa {
+  display: inline-block;
+  font: normal normal normal 14px/1 FontAwesome;
+  font-size: inherit;
+  text-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 项目中使用的图标 */
+.fa-tachometer:before {
+  content: "📊";
+}
+
+.fa-users:before {
+  content: "👥";
+}
+
+.fa-th-list:before {
+  content: "📋";
+}
+
+.fa-cogs:before {
+  content: "⚙️";
+}
+
+.fa-calendar:before {
+  content: "📅";
+}
+
+.fa-user-circle:before {
+  content: "👤";
+}
+
+.fa-user:before {
+  content: "👨";
+}
+
+.fa-sign-out:before {
+  content: "🚪";
+}
+
+.fa-search:before {
+  content: "🔍";
+}
+
+/* Element UI图标模拟 */
+.el-icon-user:before {
+  content: "👤";
+}
+
+.el-icon-lock:before {
+  content: "🔒";
+}
+
+.el-icon-arrow-right:before {
+  content: "→";
+}

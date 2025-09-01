@@ -1,0 +1,49 @@
+# Composer
+/vendor/
+composer.phar
+composer.lock
+package-lock.json
+
+# 临时文件和日志
+*.log
+*.cache
+*.tmp
+*.temp
+
+# 环境变量文件
+.env
+.env.local
+.env.*.local
+
+# IDE配置文件
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# 操作系统生成的文件
+.DS_Store
+Thumbs.db
+
+# PHP错误日志
+php_errors.log
+
+# 测试和覆盖率报告
+/coverage/
+/phpunit.xml
+
+# API缓存和会话
+/api/cache/
+/api/sessions/
+/api/logs/
+
+# 数据库备份文件
+*.sql.gz
+*.sql.bz2
+*.sql.zip
+
+# 编译后的代码
+/client-uniapp/build/
+/client-uniapp/dist/
+/client-uniapp/node_modules/
