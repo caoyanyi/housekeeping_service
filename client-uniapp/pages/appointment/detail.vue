@@ -126,7 +126,7 @@ export default {
     getAppointmentDetail() {
       this.loading = true
       
-      uni.$http.get(`${API_CONFIG.endpoints.appointment.getAppointment}?id=${this.appointmentId}`, {}, {
+      uni.$http.get(`${API_CONFIG.endpoints.appointment.getAppointment}/${this.appointmentId}`, {}, {
         headers: {
           'Authorization': `Bearer ${this.token}`
         }
@@ -182,8 +182,7 @@ export default {
           if (res.confirm) {
             this.loading = true
             
-            uni.$http.post(API_CONFIG.endpoints.appointment.updateAppointmentStatus, {
-              id: this.appointmentId,
+            uni.$http.put(`${API_CONFIG.endpoints.appointment.updateAppointmentStatus}/${this.appointmentId}/status`, {
               status: 'cancelled'
             }, {
               headers: {

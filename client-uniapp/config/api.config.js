@@ -7,25 +7,30 @@ export default {
   endpoints: {
     // 分类相关接口
     category: {
-      getCategories: '/Category/getCategories'
+      getCategories: '/category/categories'
     },
 
     // 服务相关接口
     service: {
-      getServices: '/Service/getServices',
-      getService: '/Service/getService'
+      getServices: '/service/services',
+      getService: '/service/services'
     },
 
     // 预约相关接口
     appointment: {
-      getUserAppointments: '/Appointment/getUserAppointments',
-      getAppointment: '/Appointment/getAppointment',
-      updateAppointmentStatus: '/Appointment/updateAppointmentStatus'
+      getUserAppointments: '/appointment/appointments',
+      getAppointment: '/appointment/appointments',
+      updateAppointmentStatus: '/appointment/appointments',
+      createAppointment: '/appointment/appointments'
     },
 
     // 用户相关接口
     user: {
-      updateUserInfo: '/User/updateUserInfo'
+      login: '/user/login',
+      register: '/user/register',
+      getUserInfo: '/user/profile',
+      updateUserInfo: '/user/profile',
+      changePassword: '/user/change-password'
     }
   }
 };

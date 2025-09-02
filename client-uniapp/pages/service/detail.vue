@@ -47,42 +47,6 @@
       <button class="book-button" @click="showBookDialog">立即预约</button>
     </view>
     
-    <!-- 预约弹窗 -->
-    <view class="book-dialog" v-if="showBook">
-      <view class="dialog-content">
-        <view class="dialog-header">
-          <text class="dialog-title">预约服务</text>
-          <image src="/static/images/close.png" mode="aspectFit" class="close-icon" @click="closeBookDialog"></image>
-        </view>
-        <view class="dialog-body">
-          <view class="form-item">
-            <text class="form-label">服务日期</text>
-            <picker mode="date" :value="bookForm.date" @change="onDateChange" class="form-picker">
-              <view class="picker-content">{{ bookForm.date }}</view>
-            </picker>
-          </view>
-          <view class="form-item">
-            <text class="form-label">服务时间</text>
-            <picker mode="time" :value="bookForm.time" @change="onTimeChange" class="form-picker">
-              <view class="picker-content">{{ bookForm.time }}</view>
-            </picker>
-          </view>
-          <view class="form-item">
-            <text class="form-label">服务地址</text>
-            <input type="text" v-model="bookForm.address" placeholder="请输入服务地址" class="form-input" />
-          </view>
-          <view class="form-item">
-            <text class="form-label">备注信息</text>
-            <textarea v-model="bookForm.note" placeholder="请输入备注信息" class="form-textarea" />
-          </view>
-        </view>
-        <view class="dialog-footer">
-          <button class="cancel-button" @click="closeBookDialog">取消</button>
-          <button class="confirm-button" @click="submitBook">确认预约</button>
-        </view>
-      </view>
-    </view>
-    
     <!-- 加载状态 -->
     <view class="loading" v-if="loading">
       <text>加载中...</text>
@@ -111,14 +75,7 @@ export default {
         image_urls: []
       },
       currentImageIndex: 0,
-      showBook: false,
-      loading: false,
-      bookForm: {
-        date: '',
-        time: '',
-        address: '',
-        note: ''
-      }
+      loading: false
     }
   },
   onLoad(options) {
@@ -126,24 +83,12 @@ export default {
       this.serviceId = options.id
       this.getServiceDetail()
     }
-    
-    // 设置默认日期和时间
-    const today = new Date()
-    const year = today.getFullYear()
-    const month = (today.getMonth() + 1).toString().padStart(2, '0')
-    const day = today.getDate().toString().padStart(2, '0')
-    const hours = today.getHours().toString().padStart(2, '0')
-    const minutes = Math.ceil(today.getMinutes() / 15) * 15
-    const formattedMinutes = minutes.toString().padStart(2, '0')
-    
-    this.bookForm.date = `${year}-${month}-${day}`
-    this.bookForm.time = `${hours}:${formattedMinutes}`
   },
   methods: {
     getServiceDetail() {
       this.loading = true
       
-      uni.$http.get(API_CONFIG.endpoints.service.getService, { id: this.serviceId }).then(res => {
+      uni.$http.get(`${API_CONFIG.endpoints.service.getService}/${this.serviceId}`).then(res => {
         this.loading = false
         
         if (res.code === 200) {
@@ -195,87 +140,8 @@ export default {
         return
       }
       
-      this.showBook = true
-    },
-    
-    closeBookDialog() {
-      this.showBook = false
-    },
-    
-    onDateChange(e) {
-      this.bookForm.date = e.detail.value
-    },
-    
-    onTimeChange(e) {
-      this.bookForm.time = e.detail.value
-    },
-    
-    submitBook() {
-      // 表单验证
-      if (!this.bookForm.date) {
-        uni.showToast({
-          title: '请选择服务日期',
-          icon: 'none'
-        })
-        return
-      }
-      
-      if (!this.bookForm.time) {
-        uni.showToast({
-          title: '请选择服务时间',
-          icon: 'none'
-        })
-        return
-      }
-      
-      if (!this.bookForm.address) {
-        uni.showToast({
-          title: '请输入服务地址',
-          icon: 'none'
-        })
-        return
-      }
-      
-      // 提交预约
-      const token = uni.getStorageSync('token')
-      
-      uni.$http.post(API_CONFIG.endpoints.appointment.createAppointment, {
-        service_id: this.serviceId,
-        appointment_date: this.bookForm.date,
-        appointment_time: this.bookForm.time,
-        address: this.bookForm.address,
-        note: this.bookForm.note
-      }, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      }).then(res => {
-        if (res.code === 200) {
-          uni.showToast({
-            title: '预约成功',
-            icon: 'success'
-          })
-          
-          // 关闭弹窗并跳转
-            setTimeout(() => {
-              this.closeBookDialog()
-              // 跳转到预约列表页面
-              ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.appointmentList)
-            }, 1500)
-        } else {
-          uni.showToast({
-            title: res.msg || '预约失败',
-            icon: 'none'
-          })
-        }
-      }).catch(err => {
-        console.error('提交预约失败', err)
-        
-        uni.showToast({
-          title: '网络错误，请重试',
-          icon: 'none'
-        })
-      })
+      // 跳转到独立的预约页面
+      ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.appointment.create, { id: this.serviceId })
     }
   }
 }

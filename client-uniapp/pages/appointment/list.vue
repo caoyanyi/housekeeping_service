@@ -212,8 +212,7 @@ export default {
           if (res.confirm) {
             this.loading = true
             
-            uni.$http.post(API_CONFIG.endpoints.appointment.updateAppointmentStatus, {
-              id: appointmentId,
+            uni.$http.put(`${API_CONFIG.endpoints.appointment.updateAppointmentStatus}/${appointmentId}/status`, {
               status: 'cancelled'
             }, {
               headers: {
