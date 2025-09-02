@@ -1,7 +1,7 @@
 <template>
   <view class="container">
     <view class="nav-bar">
-      <image src="/static/images/back.png" mode="aspectFit" class="back-icon" @click="goBack"></image>
+      <image src="/static/images/back.svg" mode="aspectFit" class="back-icon" @click="goBack"></image>
       <text class="nav-title">预约详情</text>
       <view class="nav-right"></view>
     </view>
@@ -38,7 +38,7 @@
       <view class="info-item">
         <text class="info-label">联系电话</text>
         <text class="info-value">{{ appointmentInfo?.phone }}</text>
-        <image src="/static/images/phone.png" mode="aspectFit" class="phone-icon" @click="makePhoneCall"></image>
+        <image src="/static/images/phone.svg" mode="aspectFit" class="phone-icon" @click="makePhoneCall"></image>
       </view>
     </view>
 
@@ -132,7 +132,7 @@ export default {
         getAppointmentDetail() {
             this.loading = true;
 
-            this.$request.get(`${API_CONFIG.endpoints.appointment.detail}/${this.appointmentId}`, {}, {
+            this.$request.get(`${API_CONFIG.endpoints.appointment.getAppointment}/${this.appointmentId}`, {}, {
                 headers: {
                     Authorization: `Bearer ${this.token}`
                 }
@@ -186,35 +186,37 @@ export default {
         },
 
         confirmCancel() {
-            this.loading = true;
+      this.loading = true;
+      this.showCancelDialog = false;
 
-            this.$request.post(`${API_CONFIG.endpoints.appointment.cancel}/${this.appointmentId}`, {}, {
-                headers: {
-                    Authorization: `Bearer ${this.token}`
-                }
-            }).then((res) => {
-                this.loading = false;
-                this.showCancelDialog = false;
+      this.$request.put(`${API_CONFIG.endpoints.appointment.updateAppointmentStatus}/${this.appointmentId}`, {
+        status: 'canceled'
+      }, {
+        headers: {
+          Authorization: `Bearer ${this.token}`
+        }
+      }).then((res) => {
+        this.loading = false;
 
-                if(res.code === 200) {
-                    uni.showToast({
-                        title: '预约已取消',
-                        icon: 'success'
-                    });
+        if(res.code === 200) {
+          uni.showToast({
+            title: '预约已取消',
+            icon: 'success'
+          });
 
-                    // 更新预约状态
-                    this.appointmentInfo.status = 'canceled';
+          // 更新预约状态
+          this.appointmentInfo.status = 'canceled';
 
-                    // 延迟返回上一页
-                    setTimeout(() => {
-                        ROUTER_CONFIG.navigate.back();
-                    }, 1500);
-                } else {
-                    uni.showToast({
-                        title: res.msg || '取消预约失败',
-                        icon: 'none'
-                    });
-                }
+          // 延迟返回上一页
+          setTimeout(() => {
+            ROUTER_CONFIG.navigate.back();
+          }, 1500);
+        } else {
+          uni.showToast({
+            title: res.msg || '取消预约失败',
+            icon: 'none'
+          });
+        }
             }).catch((err) => {
                 this.loading = false;
                 this.showCancelDialog = false;

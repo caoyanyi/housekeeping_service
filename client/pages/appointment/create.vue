@@ -1,7 +1,7 @@
 <template>
   <view class="container">
     <view class="nav-bar">
-      <image src="/static/images/back.png" mode="aspectFit" class="back-icon" @click="goBack"></image>
+      <image src="/static/images/back.svg" mode="aspectFit" class="back-icon" @click="goBack"></image>
       <text class="nav-title">预约服务</text>
       <view class="nav-right"></view>
     </view>
@@ -38,7 +38,7 @@
         <picker @change="onTechnicianChange" :range="technicians" :range-key="'name'" mode="selector">
           <view class="picker-view">
             <text class="picker-text">{{ selectedTechnician ? selectedTechnician.name : '请选择技师' }}</text>
-            <image src="/static/images/arrow_right.png" mode="aspectFit" class="picker-icon"></image>
+            <image src="/static/images/arrow_right.svg" mode="aspectFit" class="picker-icon"></image>
           </view>
         </picker>
       </view>
@@ -107,7 +107,7 @@ export default {
         getServiceInfo() {
             this.loading = true;
 
-            this.$request.get(`${API_CONFIG.endpoints.service.detail}/${this.serviceId}`, {}, {
+            this.$request.get(`${API_CONFIG.endpoints.service.getServices}/${this.serviceId}`, {}, {
                 headers: {
                     Authorization: `Bearer ${this.token}`
                 }
@@ -116,6 +116,10 @@ export default {
 
                 if(res.code === 200) {
                     this.serviceInfo = res.data;
+                    // 从服务信息中获取技师列表（模拟，因为API中没有技师列表接口）
+                    if(this.serviceInfo.technicians) {
+                        this.technicians = this.serviceInfo.technicians;
+                    }
                 } else {
                     uni.showToast({
                         title: res.msg || '获取服务信息失败',
@@ -130,25 +134,6 @@ export default {
                     title: '网络错误，请重试',
                     icon: 'none'
                 });
-            });
-        },
-
-        getTechnicians() {
-            this.$request.get(API_CONFIG.endpoints.technician.list, {}, {
-                headers: {
-                    Authorization: `Bearer ${this.token}`
-                }
-            }).then((res) => {
-                if(res.code === 200) {
-                    this.technicians = res.data || [];
-                } else {
-                    uni.showToast({
-                        title: res.msg || '获取技师列表失败',
-                        icon: 'none'
-                    });
-                }
-            }).catch((err) => {
-                console.error('获取技师列表失败', err);
             });
         },
 

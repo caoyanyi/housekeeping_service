@@ -1,7 +1,7 @@
 <template>
   <view class="container">
     <view class="nav-bar">
-      <image src="/static/images/back.png" mode="aspectFit" class="back-icon" @click="goBack"></image>
+      <image src="/static/images/back.svg" mode="aspectFit" class="back-icon" @click="goBack"></image>
       <text class="nav-title">设置</text>
       <view class="nav-right"></view>
     </view>
@@ -12,12 +12,12 @@
       <view class="setting-item" @click="editUsername">
         <text class="setting-label">用户名</text>
         <text class="setting-value">{{ userInfo.username || '未设置' }}</text>
-        <image src="/static/images/arrow_right.png" mode="aspectFit" class="arrow-icon"></image>
+        <image src="/static/images/arrow_right.svg" mode="aspectFit" class="arrow-icon"></image>
       </view>
       <view class="setting-item" @click="uploadAvatar">
         <text class="setting-label">头像</text>
-        <image :src="userInfo.avatar || '/static/images/avatar.png'" mode="aspectFit" class="avatar-thumbnail"></image>
-        <image src="/static/images/arrow_right.png" mode="aspectFit" class="arrow-icon"></image>
+        <image :src="userInfo.avatar || '/static/images/avatar.svg'" mode="aspectFit" class="avatar-thumbnail"></image>
+        <image src="/static/images/arrow_right.svg" mode="aspectFit" class="arrow-icon"></image>
       </view>
     </view>
 
@@ -26,7 +26,7 @@
       <text class="section-title">账号与安全</text>
       <view class="setting-item" @click="changePassword">
         <text class="setting-label">修改密码</text>
-        <image src="/static/images/arrow_right.png" mode="aspectFit" class="arrow-icon"></image>
+        <image src="/static/images/arrow_right.svg" mode="aspectFit" class="arrow-icon"></image>
       </view>
     </view>
 

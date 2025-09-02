@@ -1,7 +1,7 @@
 <template>
   <view class="container">
     <view class="nav-bar">
-      <image src="/static/images/back.png" mode="aspectFit" class="back-icon" @click="goBack"></image>
+      <image src="/static/images/back.svg" mode="aspectFit" class="back-icon" @click="goBack"></image>
       <text class="nav-title">我的预约</text>
       <view class="nav-right"></view>
     </view>
@@ -36,13 +36,13 @@
         
         <view class="list-item-footer">
           <text class="technician-name">{{ appointment.technician ? `技师：${appointment.technician.name}` : '-' }}</text>
-          <image src="/static/images/arrow_right.png" mode="aspectFit" class="arrow-icon"></image>
+          <image src="/static/images/arrow_right.svg" mode="aspectFit" class="arrow-icon"></image>
         </view>
       </view>
 
       <!-- 空状态 -->
       <view class="empty-state" v-if="appointmentList.length === 0 && !loading">
-        <image src="/static/images/empty.png" mode="aspectFit" class="empty-image"></image>
+        <image src="/static/images/empty.svg" mode="aspectFit" class="empty-image"></image>
         <text class="empty-text">暂无预约记录</text>
         <button class="empty-button" @click="goToServiceList">立即预约</button>
       </view>

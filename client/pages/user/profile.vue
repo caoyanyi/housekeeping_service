@@ -3,32 +3,32 @@
     <!-- 头部信息 -->
     <template v-if="userInfo">
       <view class="header">
-        <image :src="userInfo.avatar || '/static/images/avatar.png'" mode="aspectFit" class="avatar"></image>
+        <image :src="userInfo.avatar || '/static/images/avatar.svg'" mode="aspectFit" class="avatar"></image>
         <view class="user-info">
           <text class="username">{{ userInfo.username || '未设置昵称' }}</text>
           <text class="phone">{{ userInfo.phone }}</text>
         </view>
-        <image src="/static/images/arrow_right.png" mode="aspectFit" class="arrow-icon"></image>
+        <image src="/static/images/arrow_right.svg" mode="aspectFit" class="arrow-icon"></image>
       </view>
 
       <!-- 功能菜单 -->
       <view class="menu">
         <view class="menu-item" @click="goAppointmentList">
-          <image src="/static/images/appointment.png" mode="aspectFit" class="menu-icon"></image>
+          <image src="/static/images/appointment.svg" mode="aspectFit" class="menu-icon"></image>
           <text class="menu-text">我的预约</text>
-          <image src="/static/images/arrow_right.png" mode="aspectFit" class="arrow-icon"></image>
+          <image src="/static/images/arrow_right.svg" mode="aspectFit" class="arrow-icon"></image>
         </view>
 
         <view class="menu-item" @click="goSettings">
-          <image src="/static/images/settings.png" mode="aspectFit" class="menu-icon"></image>
+          <image src="/static/images/settings.svg" mode="aspectFit" class="menu-icon"></image>
           <text class="menu-text">设置</text>
-          <image src="/static/images/arrow_right.png" mode="aspectFit" class="arrow-icon"></image>
+          <image src="/static/images/arrow_right.svg" mode="aspectFit" class="arrow-icon"></image>
         </view>
 
         <view class="menu-item" @click="goAbout">
-          <image src="/static/images/about.png" mode="aspectFit" class="menu-icon"></image>
+          <image src="/static/images/about.svg" mode="aspectFit" class="menu-icon"></image>
           <text class="menu-text">关于我们</text>
-          <image src="/static/images/arrow_right.png" mode="aspectFit" class="arrow-icon"></image>
+          <image src="/static/images/arrow_right.svg" mode="aspectFit" class="arrow-icon"></image>
         </view>
       </view>
 
@@ -37,7 +37,7 @@
     </template>
     <!-- 未登录状态 -->
     <view class="not-login" v-else>
-      <image src="/static/images/avatar.png" mode="aspectFit" class="not-login-avatar"></image>
+      <image src="/static/images/avatar.svg" mode="aspectFit" class="not-login-avatar"></image>
       <text class="not-login-text">请先登录</text>
       <button class="login-button" @click="goLogin">去登录</button>
     </view>

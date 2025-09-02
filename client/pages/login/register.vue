@@ -1,7 +1,7 @@
 <template>
   <view class="container">
     <view class="logo">
-      <image src="/static/images/logo.png" mode="aspectFit"></image>
+      <image src="/static/images/logo.svg" mode="aspectFit"></image>
       <text class="title">注册账号</text>
     </view>
 

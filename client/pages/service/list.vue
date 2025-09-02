@@ -3,7 +3,7 @@
     <!-- 搜索栏 -->
     <view class="search-bar">
       <view class="search-input">
-        <image src="/static/images/search.png" mode="aspectFit" class="search-icon"></image>
+        <image src="/static/images/search.svg" mode="aspectFit" class="search-icon"></image>
         <input type="text" placeholder="搜索服务" v-model="searchText" @input="onSearchInput" class="input" />
       </view>
     </view>
@@ -42,7 +42,7 @@
 
     <!-- 空状态 -->
     <view class="empty" v-else-if="!loading">
-      <image src="/static/images/empty.png" mode="aspectFit" class="empty-icon"></image>
+      <image src="/static/images/empty.svg" mode="aspectFit" class="empty-icon"></image>
       <text class="empty-text">暂无服务</text>
     </view>
 
@@ -171,7 +171,7 @@ export default {
         },
 
         goServiceDetail(serviceId) {
-            ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.serviceDetail, {id: serviceId});
+            ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.service.detail, {serviceId});
         }
     }
 };

@@ -33,7 +33,7 @@
 
     <!-- 公告 -->
     <view class="notice">
-      <image src="/static/images/notice.png" mode="aspectFit" class="notice-icon"></image>
+      <image src="/static/images/notice.svg" mode="aspectFit" class="notice-icon"></image>
       <text class="notice-text">{{ noticeText }}</text>
     </view>
   </view>
@@ -49,9 +49,9 @@ export default {
     data() {
         return {
             banners: [
-                {image: '/static/images/banner1.jpg'},
-                {image: '/static/images/banner2.jpg'},
-                {image: '/static/images/banner3.jpg'}
+                {image: '/static/images/banner1.svg'},
+                {image: '/static/images/banner2.svg'},
+                {image: '/static/images/banner3.svg'}
             ],
             categories: [],
             hotServices: [],

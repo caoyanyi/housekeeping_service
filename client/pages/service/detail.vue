@@ -1,7 +1,7 @@
 <template>
   <view class="container">
     <view class="nav-bar">
-      <image src="/static/images/back.png" mode="aspectFit" class="back-icon" @click="goBack"></image>
+      <image src="/static/images/back.svg" mode="aspectFit" class="back-icon" @click="goBack"></image>
       <text class="nav-title">服务详情</text>
       <view class="nav-right"></view>
     </view>
@@ -18,7 +18,7 @@
     <!-- 服务基本信息 -->
     <view class="info-section" v-if="serviceInfo">
       <text class="service-name">{{ serviceInfo.name }}</text>
-      <text class="service-price">¥{{ serviceInfo.price.toFixed(2) }}</text>
+      <text class="service-price">¥{{ serviceInfo.price }}</text>
       <text class="service-sales">销量 {{ serviceInfo.sales || 0 }} | 评价 {{ serviceInfo.ratings || 0 }}</text>
       
       <!-- 服务标签 -->
@@ -90,7 +90,7 @@
           <picker @change="onTechnicianChange" :range="technicians" :range-key="'name'" mode="selector">
             <view class="picker-view">
               <text class="picker-text">{{ selectedTechnician ? selectedTechnician.name : '请选择技师' }}</text>
-              <image src="/static/images/arrow_right.png" mode="aspectFit" class="picker-icon"></image>
+              <image src="/static/images/arrow_right.svg" mode="aspectFit" class="picker-icon"></image>
             </view>
           </picker>
         </view>
@@ -134,7 +134,6 @@ export default {
             this.serviceId = options.serviceId;
             this.token = uni.getStorageSync('token');
             this.getServiceDetail();
-            this.getTechnicians();
             this.getReviews();
         }
     },
@@ -144,7 +143,7 @@ export default {
             if(this.serviceInfo && this.serviceInfo.images) {
                 return this.serviceInfo.images.split(',');
             }
-            return ['/static/images/default_service.png'];
+            return ['/static/images/default_service.svg'];
         },
         serviceTags() {
             // 如果服务信息有标签，返回标签数组，否则返回空数组
@@ -157,8 +156,7 @@ export default {
     methods: {
         getServiceDetail() {
             this.loading = true;
-
-            this.$request.get(`${API_CONFIG.endpoints.service.detail}/${this.serviceId}`, {}, {
+            this.$request.get(`${API_CONFIG.endpoints.service.getServices}/${this.serviceId}`, {}, {
                 headers: {
                     Authorization: `Bearer ${this.token}`
                 }
@@ -167,6 +165,8 @@ export default {
 
                 if(res.code === 200) {
                     this.serviceInfo = res.data;
+                    // 模拟评价数据，因为API中没有reviews接口
+                    this.reviews = res.data.reviews || [];
                 } else {
                     uni.showToast({
                         title: res.msg || '获取服务详情失败',
@@ -181,41 +181,6 @@ export default {
                     title: '网络错误，请重试',
                     icon: 'none'
                 });
-            });
-        },
-
-        getTechnicians() {
-            this.$request.get(API_CONFIG.endpoints.technician.list, {}, {
-                headers: {
-                    Authorization: `Bearer ${this.token}`
-                }
-            }).then((res) => {
-                if(res.code === 200) {
-                    this.technicians = res.data || [];
-                } else {
-                    uni.showToast({
-                        title: res.msg || '获取技师列表失败',
-                        icon: 'none'
-                    });
-                }
-            }).catch((err) => {
-                console.error('获取技师列表失败', err);
-            });
-        },
-
-        getReviews() {
-            this.$request.get(`${API_CONFIG.endpoints.service.reviews}/${this.serviceId}`, {}, {
-                headers: {
-                    Authorization: `Bearer ${this.token}`
-                }
-            }).then((res) => {
-                if(res.code === 200) {
-                    this.reviews = res.data || [];
-                } else {
-                    console.error('获取评价失败', res.msg);
-                }
-            }).catch((err) => {
-                console.error('获取评价失败', err);
             });
         },
 

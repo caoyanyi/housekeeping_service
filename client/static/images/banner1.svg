@@ -1,0 +1,11 @@
+<svg width="800" height="300" viewBox="0 0 800 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="300" fill="#805015"/>
+  <path d="M140 75C163.36 75 182 93.64 182 120C182 146.36 163.36 165 140 165C116.64 165 98 146.36 98 120C98 93.64 116.64 75 140 75Z" stroke="#fff" stroke-width="2"/>
+  <path d="M230 125H300V180H230V208V125z" stroke="#fff" stroke-width="2"/>
+  <path d="M380 125H585V180H380V208V125z" stroke="#fff" stroke-width="2"/>
+  <path d="M440 135H530v35H440V35zM110 135V170H225V180H110V208V135z" stroke="#fff" stroke-width="2"/>
+  <path d="M0 218H160v32H0V218zM160 218H380v32H160V218zM380 218H640v32H380V218zM640 218H800v32H640V218zM110 218H740v32H110V218z" stroke="#fff" stroke-width="2"/>
+  <path d="M450 70L540 130L360 130" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+  <text x="400" y="95" font-family="Arial, sans-serif" font-size="40" font-weight="bold" text-anchor="middle" fill="#fff">专业家政服务</text>
+  <text x="400" y="140" font-family="Arial, sans-serif" font-size="28" text-anchor="middle" fill="#fff">让您的生活更美好</text>
+</svg>
