@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-  <!-- 头像占位图 -->
-  <circle cx="40" cy="40" r="36" fill="#E0E0E0"/>
-  <circle cx="40" cy="30" r="15" fill="#BDBDBD"/>
-  <path d="M20 60 C20 50 60 50 60 60 C60 70 40 75 40 75 C40 75 20 70 20 60 Z" fill="#BDBDBD"/>
-</svg>
