@@ -44,6 +44,5 @@ php_errors.log
 *.sql.zip
 
 # 编译后的代码
-/client-uniapp/build/
-/client-uniapp/dist/
-/client-uniapp/node_modules/
+/client/build/
+/client/dist/

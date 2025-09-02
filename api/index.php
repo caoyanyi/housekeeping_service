@@ -3,9 +3,9 @@
 // 高级跨域请求配置
 // 设置可信的源列表
 $trustedOrigins = [
-    'http://admin.oop.cc',
     'http://localhost:8000',
-    'http://127.0.0.1:8000'
+    'http://127.0.0.1:8000',
+    'http://localhost:5173'
 ];
 
 // 获取请求源
@@ -39,7 +39,7 @@ if (defined('DEBUG_MODE') && DEBUG_MODE && class_exists('Debug')) {
         'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? '',
         'timestamp' => time()
     ];
-    
+
     // 如果是POST请求，记录请求体
     if ($_SERVER['REQUEST_METHOD'] == 'POST' || $_SERVER['REQUEST_METHOD'] == 'PUT') {
         $input = file_get_contents('php://input');
@@ -47,7 +47,7 @@ if (defined('DEBUG_MODE') && DEBUG_MODE && class_exists('Debug')) {
             $requestInfo['body'] = json_decode($input, true);
         }
     }
-    
+
     Debug::info($requestInfo, 'API Request');
 }
 

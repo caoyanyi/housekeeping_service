@@ -1,0 +1,107 @@
+{
+	"pages": [ 
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "首页"
+			}
+		},
+		{
+			"path": "pages/service/list",
+			"style": {
+				"navigationBarTitleText": "服务列表"
+			}
+		},
+		{
+			"path": "pages/service/detail",
+			"style": {
+				"navigationBarTitleText": "服务详情"
+			}
+		},
+		{
+			"path": "pages/login/login",
+			"style": {
+				"navigationBarTitleText": "登录",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/login/register",
+			"style": {
+				"navigationBarTitleText": "注册",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/appointment/list",
+			"style": {
+				"navigationBarTitleText": "我的预约"
+			}
+		},
+		{
+			"path": "pages/appointment/detail",
+			"style": {
+				"navigationBarTitleText": "预约详情"
+			}
+		},
+		{
+			"path": "pages/appointment/create",
+			"style": {
+				"navigationBarTitleText": "预约服务"
+			}
+		},
+		{
+			"path": "pages/user/profile",
+			"style": {
+				"navigationBarTitleText": "个人中心"
+			}
+		},
+		{
+			"path": "pages/user/settings",
+			"style": {
+				"navigationBarTitleText": "设置"
+			}
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "家政服务",
+		"navigationBarBackgroundColor": "#FFFFFF",
+		"backgroundColor": "#F8F8F8",
+		"usingComponents": {
+			"uni-icons": "@dcloudio/uni-ui/lib/uni-icons/uni-icons"
+		}
+	},
+	"tabBar": {
+		"color": "#999999",
+		"selectedColor": "#1890ff",
+		"backgroundColor": "#ffffff",
+		"list": [
+			{
+				"pagePath": "pages/index/index",
+				"text": "首页",
+				"iconPath": "static/images/index.png",
+				"selectedIconPath": "static/images/index_selected.png"
+			},
+			{
+				"pagePath": "pages/service/list",
+				"text": "服务",
+				"iconPath": "static/images/service.png",
+				"selectedIconPath": "static/images/service_selected.png"
+			},
+			{
+				"pagePath": "pages/appointment/list",
+				"text": "预约",
+				"iconPath": "static/images/appointment.png",
+				"selectedIconPath": "static/images/appointment_selected.png"
+			},
+			{
+				"pagePath": "pages/user/profile",
+				"text": "我的",
+				"iconPath": "static/images/user.png",
+				"selectedIconPath": "static/images/user_selected.png"
+			}
+		]
+	},
+	"uniIdRouter": {}
+}
