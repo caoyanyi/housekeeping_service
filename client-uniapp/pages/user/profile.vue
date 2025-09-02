@@ -10,7 +10,7 @@
         </view>
         <image src="/static/images/arrow_right.png" mode="aspectFit" class="arrow-icon"></image>
       </view>
-      
+
       <!-- 功能菜单 -->
       <view class="menu">
         <view class="menu-item" @click="goAppointmentList">
@@ -18,20 +18,20 @@
           <text class="menu-text">我的预约</text>
           <image src="/static/images/arrow_right.png" mode="aspectFit" class="arrow-icon"></image>
         </view>
-        
+
         <view class="menu-item" @click="goSettings">
           <image src="/static/images/settings.png" mode="aspectFit" class="menu-icon"></image>
           <text class="menu-text">设置</text>
           <image src="/static/images/arrow_right.png" mode="aspectFit" class="arrow-icon"></image>
         </view>
-        
+
         <view class="menu-item" @click="goAbout">
           <image src="/static/images/about.png" mode="aspectFit" class="menu-icon"></image>
           <text class="menu-text">关于我们</text>
           <image src="/static/images/arrow_right.png" mode="aspectFit" class="arrow-icon"></image>
         </view>
       </view>
-      
+
       <!-- 退出登录按钮 -->
       <button class="logout-button" @click="logout">退出登录</button>
     </template>
@@ -46,107 +46,107 @@
 
 <script>
 // 引入API配置
-import API_CONFIG from '../../config/api.config.js';
+import API_CONFIG from '../../config/api.config';
 // 引入路由配置
-import ROUTER_CONFIG from '../../config/router.config.js';
+import ROUTER_CONFIG from '../../config/router.config';
 
 export default {
-  data() {
-    return {
-      userInfo: null,
-      token: ''
-    }
-  },
-  onShow() {
-    // 每次显示页面时获取用户信息
-    this.token = uni.getStorageSync('token')
-    if (this.token) {
-      this.getUserInfo()
-    } else {
-      this.userInfo = null
-    }
-  },
-  methods: {
-    getUserInfo() {
-      uni.$http.get(API_CONFIG.endpoints.user.getUserInfo, {
-        headers: {
-          'Authorization': `Bearer ${this.token}`
-        }
-      }).then(res => {
-        if (res.code === 200) {
-          this.userInfo = res.data
+    data() {
+        return {
+            userInfo: null,
+            token: ''
+        };
+    },
+    onShow() {
+        // 每次显示页面时获取用户信息
+        this.token = uni.getStorageSync('token');
+        if(this.token) {
+            this.getUserInfo();
         } else {
-          // token可能已过期，清除token
-          uni.removeStorageSync('token')
-          this.userInfo = null
+            this.userInfo = null;
         }
-      }).catch(err => {
-        console.error('获取用户信息失败', err)
-        // 网络错误时也清除token
-        uni.removeStorageSync('token')
-        this.userInfo = null
-      })
     },
-    
-    goAppointmentList() {
-      if (!this.token) {
-        this.showLoginTip()
-        return
-      }
-      
-      ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.appointmentList)
-    },
-    
-    goSettings() {
-      if (!this.token) {
-        this.showLoginTip()
-        return
-      }
-      
-      ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.settings)
-    },
-    
-    goAbout() {
-      ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.about)
-    },
-    
-    goLogin() {
-      ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.login)
-    },
-    
-    logout() {
-      uni.showModal({
-        title: '提示',
-        content: '确定要退出登录吗？',
-        success: (res) => {
-          if (res.confirm) {
-            // 清除token和用户信息
-            uni.removeStorageSync('token')
-            this.userInfo = null
-            this.token = ''
-            
-            uni.showToast({
-              title: '退出成功',
-              icon: 'success'
-            })
-          }
+    methods: {
+        getUserInfo() {
+            this.$request.get(API_CONFIG.endpoints.user.getUserInfo, {
+                headers: {
+                    Authorization: `Bearer ${this.token}`
+                }
+            }).then((res) => {
+                if(res.code === 200) {
+                    this.userInfo = res.data;
+                } else {
+                    // token可能已过期，清除token
+                    uni.removeStorageSync('token');
+                    this.userInfo = null;
+                }
+            }).catch((err) => {
+                console.error('获取用户信息失败', err);
+                // 网络错误时也清除token
+                uni.removeStorageSync('token');
+                this.userInfo = null;
+            });
+        },
+
+        goAppointmentList() {
+            if(!this.token) {
+                this.showLoginTip();
+                return;
+            }
+
+            ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.appointmentList);
+        },
+
+        goSettings() {
+            if(!this.token) {
+                this.showLoginTip();
+                return;
+            }
+
+            ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.settings);
+        },
+
+        goAbout() {
+            ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.about);
+        },
+
+        goLogin() {
+            ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.login);
+        },
+
+        logout() {
+            uni.showModal({
+                title: '提示',
+                content: '确定要退出登录吗？',
+                success: (res) => {
+                    if(res.confirm) {
+                        // 清除token和用户信息
+                        uni.removeStorageSync('token');
+                        this.userInfo = null;
+                        this.token = '';
+
+                        uni.showToast({
+                            title: '退出成功',
+                            icon: 'success'
+                        });
+                    }
+                }
+            });
+        },
+
+        showLoginTip() {
+            uni.showModal({
+                title: '提示',
+                content: '请先登录',
+                success: (res) => {
+                    if(res.confirm) {
+                        ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.login);
+                    }
+                }
+            });
         }
-      })
-    },
-    
-    showLoginTip() {
-      uni.showModal({
-        title: '提示',
-        content: '请先登录',
-        success: (res) => {
-          if (res.confirm) {
-            ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.login)
-          }
-        }
-      })
     }
-  }
-}
+};
 </script>
 
 <style scoped>

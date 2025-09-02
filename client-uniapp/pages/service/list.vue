@@ -7,7 +7,7 @@
         <input type="text" placeholder="搜索服务" v-model="searchText" @input="onSearchInput" class="input" />
       </view>
     </view>
-    
+
     <!-- 分类筛选 -->
     <view class="filter-bar">
       <scroll-view scroll-x class="category-scroll">
@@ -19,7 +19,7 @@
         </view>
       </scroll-view>
     </view>
-    
+
     <!-- 服务列表 -->
     <view class="service-list" v-if="services.length > 0">
       <view class="service-item" v-for="service in services" :key="service.id" @click="goServiceDetail(service.id)">
@@ -33,19 +33,19 @@
           </view>
         </view>
       </view>
-      
+
       <!-- 加载更多 -->
       <view class="load-more" @click="loadMore" v-if="hasMore">
         <text>上拉加载更多</text>
       </view>
     </view>
-    
+
     <!-- 空状态 -->
     <view class="empty" v-else-if="!loading">
       <image src="/static/images/empty.png" mode="aspectFit" class="empty-icon"></image>
       <text class="empty-text">暂无服务</text>
     </view>
-    
+
     <!-- 加载状态 -->
     <view class="loading" v-if="loading">
       <text>加载中...</text>
@@ -55,126 +55,126 @@
 
 <script>
 // 引入API配置
-import API_CONFIG from '../../config/api.config.js';
+import API_CONFIG from '../../config/api.config';
 // 引入路由配置
-import ROUTER_CONFIG from '../../config/router.config.js';
+import ROUTER_CONFIG from '../../config/router.config';
 
 export default {
-  data() {
-    return {
-      searchText: '',
-      categories: [],
-      services: [],
-      selectedCategory: 0,
-      page: 1,
-      pageSize: 10,
-      hasMore: true,
-      loading: false,
-      searchTimer: null
-    }
-  },
-  onLoad(options) {
-    // 检查是否有传入分类ID
-    if (options && options.category_id) {
-      this.selectedCategory = parseInt(options.category_id)
-    }
-    
-    // 获取分类列表
-    this.getCategories()
-    
-    // 获取服务列表
-    this.getServices()
-  },
-  onPullDownRefresh() {
-    // 下拉刷新
-    this.page = 1
-    this.hasMore = true
-    this.getServices(true)
-  },
-  onReachBottom() {
-    // 上拉加载更多
-    if (this.hasMore && !this.loading) {
-      this.loadMore()
-    }
-  },
-  methods: {
-    getCategories() {
-      uni.$http.get(API_CONFIG.endpoints.category.getCategories).then(res => {
-        if (res.code === 200) {
-          this.categories = res.data
+    data() {
+        return {
+            searchText: '',
+            categories: [],
+            services: [],
+            selectedCategory: 0,
+            page: 1,
+            pageSize: 10,
+            hasMore: true,
+            loading: false,
+            searchTimer: null
+        };
+    },
+    onLoad(options) {
+        // 检查是否有传入分类ID
+        if(options && options.category_id) {
+            this.selectedCategory = parseInt(options.category_id, 10);
         }
-      }).catch(err => {
-        console.error('获取分类失败', err)
-      })
+
+        // 获取分类列表
+        this.getCategories();
+
+        // 获取服务列表
+        this.getServices();
     },
-    
-    getServices(refresh = false) {
-      this.loading = true
-      
-      uni.$http.get(API_CONFIG.endpoints.service.getServices, {
-        category_id: this.selectedCategory === 0 ? null : this.selectedCategory,
-        search: this.searchText,
-        page: this.page,
-        page_size: this.pageSize
-      }).then(res => {
-        this.loading = false
-        
-        if (res.code === 200) {
-          if (refresh) {
-            this.services = res.data.list
-          } else {
-            this.services = [...this.services, ...res.data.list]
-          }
-          
-          // 判断是否还有更多数据
-          this.hasMore = res.data.list.length === this.pageSize
+    onPullDownRefresh() {
+        // 下拉刷新
+        this.page = 1;
+        this.hasMore = true;
+        this.getServices(true);
+    },
+    onReachBottom() {
+        // 上拉加载更多
+        if(this.hasMore && !this.loading) {
+            this.loadMore();
         }
-        
-        // 结束下拉刷新
-        if (refresh) {
-          uni.stopPullDownRefresh()
+    },
+    methods: {
+        getCategories() {
+            this.$request.get(API_CONFIG.endpoints.category.getCategories).then((res) => {
+                if(res.code === 200) {
+                    this.categories = res.data;
+                }
+            }).catch((err) => {
+                console.error('获取分类失败', err);
+            });
+        },
+
+        getServices(refresh = false) {
+            this.loading = true;
+
+            this.$request.get(API_CONFIG.endpoints.service.getServices, {
+                category_id: this.selectedCategory === 0 ? null : this.selectedCategory,
+                search: this.searchText,
+                page: this.page,
+                page_size: this.pageSize
+            }).then((res) => {
+                this.loading = false;
+
+                if(res.code === 200) {
+                    if(refresh) {
+                        this.services = res.data.list;
+                    } else {
+                        this.services = [...this.services, ...res.data.list];
+                    }
+
+                    // 判断是否还有更多数据
+                    this.hasMore = res.data.list.length === this.pageSize;
+                }
+
+                // 结束下拉刷新
+                if(refresh) {
+                    uni.stopPullDownRefresh();
+                }
+            }).catch((err) => {
+                this.loading = false;
+                console.error('获取服务失败', err);
+
+                // 结束下拉刷新
+                if(refresh) {
+                    uni.stopPullDownRefresh();
+                }
+            });
+        },
+
+        selectCategory(categoryId) {
+            this.selectedCategory = categoryId;
+            this.page = 1;
+            this.hasMore = true;
+            this.getServices(true);
+        },
+
+        onSearchInput() {
+            // 防抖处理
+            if(this.searchTimer) {
+                clearTimeout(this.searchTimer);
+            }
+
+            this.searchTimer = setTimeout(() => {
+                this.page = 1;
+                this.hasMore = true;
+                this.getServices(true);
+            }, 500);
+        },
+
+        loadMore() {
+            this.page++;
+            this.getServices();
+        },
+
+        goServiceDetail(serviceId) {
+            ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.serviceDetail, {id: serviceId});
         }
-      }).catch(err => {
-        this.loading = false
-        console.error('获取服务失败', err)
-        
-        // 结束下拉刷新
-        if (refresh) {
-          uni.stopPullDownRefresh()
-        }
-      })
-    },
-    
-    selectCategory(categoryId) {
-      this.selectedCategory = categoryId
-      this.page = 1
-      this.hasMore = true
-      this.getServices(true)
-    },
-    
-    onSearchInput() {
-      // 防抖处理
-      if (this.searchTimer) {
-        clearTimeout(this.searchTimer)
-      }
-      
-      this.searchTimer = setTimeout(() => {
-        this.page = 1
-        this.hasMore = true
-        this.getServices(true)
-      }, 500)
-    },
-    
-    loadMore() {
-      this.page++
-      this.getServices()
-    },
-    
-    goServiceDetail(serviceId) {
-      ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.serviceDetail, { id: serviceId })
     }
-  }
-}
+};
 </script>
 
 <style scoped>

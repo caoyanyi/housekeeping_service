@@ -7,7 +7,7 @@
       </swiper-item>
     </swiper>
     <view class="image-count">{{ currentImageIndex + 1 }}/{{ service.image_urls.length }}</view>
-    
+
     <!-- 服务基本信息 -->
     <view class="service-info">
       <text class="service-title">{{ service.title }}</text>
@@ -32,13 +32,13 @@
         </view>
       </view>
     </view>
-    
+
     <!-- 服务详情内容 -->
     <view class="service-content">
       <view class="section-title">服务详情</view>
       <rich-text :nodes="service.content"></rich-text>
     </view>
-    
+
     <!-- 底部预约按钮 -->
     <view class="bottom-bar">
       <view class="contact-info">
@@ -46,7 +46,7 @@
       </view>
       <button class="book-button" @click="showBookDialog">立即预约</button>
     </view>
-    
+
     <!-- 加载状态 -->
     <view class="loading" v-if="loading">
       <text>加载中...</text>
@@ -56,95 +56,95 @@
 
 <script>
 // 引入API配置
-import API_CONFIG from '../../config/api.config.js';
+import API_CONFIG from '../../config/api.config';
 // 引入路由配置
-import ROUTER_CONFIG from '../../config/router.config.js';
+import ROUTER_CONFIG from '../../config/router.config';
 
 export default {
-  data() {
-    return {
-      serviceId: null,
-      service: {
-        title: '',
-        price: 0,
-        description: '',
-        duration: 0,
-        category_name: '',
-        provider: '',
-        content: '',
-        image_urls: []
-      },
-      currentImageIndex: 0,
-      loading: false
-    }
-  },
-  onLoad(options) {
-    if (options && options.id) {
-      this.serviceId = options.id
-      this.getServiceDetail()
-    }
-  },
-  methods: {
-    getServiceDetail() {
-      this.loading = true
-      
-      uni.$http.get(`${API_CONFIG.endpoints.service.getService}/${this.serviceId}`).then(res => {
-        this.loading = false
-        
-        if (res.code === 200) {
-          this.service = res.data
-          // 处理图片URLs
-          if (typeof this.service.image_urls === 'string') {
-            try {
-              this.service.image_urls = JSON.parse(this.service.image_urls)
-            } catch (e) {
-              this.service.image_urls = [this.service.image_urls]
-            }
-          }
-        } else {
-          uni.showToast({
-            title: res.msg || '获取服务详情失败',
-            icon: 'none'
-          })
+    data() {
+        return {
+            serviceId: null,
+            service: {
+                title: '',
+                price: 0,
+                description: '',
+                duration: 0,
+                category_name: '',
+                provider: '',
+                content: '',
+                image_urls: []
+            },
+            currentImageIndex: 0,
+            loading: false
+        };
+    },
+    onLoad(options) {
+        if(options && options.id) {
+            this.serviceId = options.id;
+            this.getServiceDetail();
         }
-      }).catch(err => {
-        this.loading = false
-        console.error('获取服务详情失败', err)
-        
-        uni.showToast({
-          title: '网络错误，请重试',
-          icon: 'none'
-        })
-      })
     },
-    
-    onSwiperChange(e) {
-      this.currentImageIndex = e.detail.current
-    },
-    
-    showBookDialog() {
-      // 检查是否登录
-      const token = uni.getStorageSync('token')
-      if (!token) {
-        uni.showModal({
-          title: '提示',
-          content: '请先登录',
-          success: (res) => {
-            if (res.confirm) {
-              uni.navigateTo({
-                url: '/pages/login/login'
-              })
+    methods: {
+        getServiceDetail() {
+            this.loading = true;
+
+            this.$request.get(`${API_CONFIG.endpoints.service.getService}/${this.serviceId}`).then((res) => {
+                this.loading = false;
+
+                if(res.code === 200) {
+                    this.service = res.data;
+                    // 处理图片URLs
+                    if(typeof this.service.image_urls === 'string') {
+                        try {
+                            this.service.image_urls = JSON.parse(this.service.image_urls);
+                        } catch (e) {
+                            this.service.image_urls = [this.service.image_urls];
+                        }
+                    }
+                } else {
+                    uni.showToast({
+                        title: res.msg || '获取服务详情失败',
+                        icon: 'none'
+                    });
+                }
+            }).catch((err) => {
+                this.loading = false;
+                console.error('获取服务详情失败', err);
+
+                uni.showToast({
+                    title: '网络错误，请重试',
+                    icon: 'none'
+                });
+            });
+        },
+
+        onSwiperChange(e) {
+            this.currentImageIndex = e.detail.current;
+        },
+
+        showBookDialog() {
+            // 检查是否登录
+            const token = uni.getStorageSync('token');
+            if(!token) {
+                uni.showModal({
+                    title: '提示',
+                    content: '请先登录',
+                    success: (res) => {
+                        if(res.confirm) {
+                            uni.navigateTo({
+                                url: '/pages/login/login'
+                            });
+                        }
+                    }
+                });
+                return;
             }
-          }
-        })
-        return
-      }
-      
-      // 跳转到独立的预约页面
-      ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.appointment.create, { id: this.serviceId })
+
+            // 跳转到独立的预约页面
+            ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.appointment.create, {id: this.serviceId});
+        }
     }
-  }
-}
+};
 </script>
 
 <style scoped>

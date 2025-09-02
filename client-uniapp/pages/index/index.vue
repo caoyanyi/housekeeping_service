@@ -6,7 +6,7 @@
         <image :src="item.image" mode="aspectFill" class="banner-image"></image>
       </swiper-item>
     </swiper>
-    
+
     <!-- 分类导航 -->
     <view class="category">
       <view class="category-item" v-for="category in categories" :key="category.id" @click="goServiceList(category.id)">
@@ -14,14 +14,14 @@
         <text class="category-name">{{ category.name }}</text>
       </view>
     </view>
-    
+
     <!-- 热门服务 -->
     <view class="hot-services">
       <view class="section-header">
         <text class="section-title">热门服务</text>
         <text class="more" @click="goServiceList()">更多 ></text>
       </view>
-      
+
       <view class="service-list">
         <view class="service-item" v-for="service in hotServices" :key="service.id" @click="goServiceDetail(service.id)">
           <image :src="service.image_urls[0]" mode="aspectFill" class="service-image"></image>
@@ -30,7 +30,7 @@
         </view>
       </view>
     </view>
-    
+
     <!-- 公告 -->
     <view class="notice">
       <image src="/static/images/notice.png" mode="aspectFit" class="notice-icon"></image>
@@ -41,67 +41,67 @@
 
 <script>
 // 引入API配置
-import API_CONFIG from '../../config/api.config.js';
+import API_CONFIG from '../../config/api.config';
 // 引入路由配置
-import ROUTER_CONFIG from '../../config/router.config.js';
+import ROUTER_CONFIG from '../../config/router.config';
 
 export default {
-  data() {
-    return {
-      banners: [
-        { image: '/static/images/banner1.jpg' },
-        { image: '/static/images/banner2.jpg' },
-        { image: '/static/images/banner3.jpg' }
-      ],
-      categories: [],
-      hotServices: [],
-      noticeText: '欢迎使用家政服务平台，专业的家政服务让您的生活更美好！'
-    }
-  },
-  onLoad() {
-    // 获取分类列表
-    this.getCategories()
-    
-    // 获取热门服务
-    this.getHotServices()
-  },
-  methods: {
-    getCategories() {
-      uni.$http.get(API_CONFIG.endpoints.category.getCategories).then(res => {
-        if (res.code === 200) {
-          this.categories = res.data
+    data() {
+        return {
+            banners: [
+                {image: '/static/images/banner1.jpg'},
+                {image: '/static/images/banner2.jpg'},
+                {image: '/static/images/banner3.jpg'}
+            ],
+            categories: [],
+            hotServices: [],
+            noticeText: '欢迎使用家政服务平台，专业的家政服务让您的生活更美好！'
+        };
+    },
+    onLoad() {
+        // 获取分类列表
+        this.getCategories();
+
+        // 获取热门服务
+        this.getHotServices();
+    },
+    methods: {
+        getCategories() {
+            this.$request.get(API_CONFIG.endpoints.category.getCategories).then((res) => {
+                if(res.code === 200) {
+                    this.categories = res.data;
+                }
+            }).catch((err) => {
+                console.error('获取分类失败', err);
+            });
+        },
+
+        getHotServices() {
+            this.$request.get(API_CONFIG.endpoints.service.getServices, {
+                page: 1,
+                page_size: 4
+            }).then((res) => {
+                if(res.code === 200) {
+                    this.hotServices = res.data.list;
+                }
+            }).catch((err) => {
+                console.error('获取热门服务失败', err);
+            });
+        },
+
+        goServiceList(categoryId) {
+            if(categoryId) {
+                ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.service.list, {category_id: categoryId});
+            } else {
+                ROUTER_CONFIG.navigate.switchTab(ROUTER_CONFIG.pages.service.list);
+            }
+        },
+
+        goServiceDetail(serviceId) {
+            ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.service.detail, {id: serviceId});
         }
-      }).catch(err => {
-        console.error('获取分类失败', err)
-      })
-    },
-    
-    getHotServices() {
-      uni.$http.get(API_CONFIG.endpoints.service.getServices, {
-        page: 1,
-        page_size: 4
-      }).then(res => {
-        if (res.code === 200) {
-          this.hotServices = res.data.list
-        }
-      }).catch(err => {
-        console.error('获取热门服务失败', err)
-      })
-    },
-    
-    goServiceList(categoryId) {
-      if (categoryId) {
-        ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.service.list, { category_id: categoryId })
-      } else {
-        ROUTER_CONFIG.navigate.switchTab(ROUTER_CONFIG.pages.service.list)
-      }
-    },
-    
-    goServiceDetail(serviceId) {
-      ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.service.detail, { id: serviceId })
     }
-  }
-}
+};
 </script>
 
 <style scoped>

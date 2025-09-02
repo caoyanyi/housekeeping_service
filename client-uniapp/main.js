@@ -1,16 +1,16 @@
-import Vue from 'vue'
-import App from './App.vue'
+import Vue from 'vue';
+import App from './App.vue';
 
 // 全局配置
-Vue.config.productionTip = false
+Vue.config.productionTip = false;
 
 // 创建Vue实例
 const app = new Vue({
-  ...App
-})
+    ...App
+});
 
 // 挂载应用
-app.$mount()
+app.$mount();
 
 // 导出app实例（用于调试和测试）
-export default app
+export default app;

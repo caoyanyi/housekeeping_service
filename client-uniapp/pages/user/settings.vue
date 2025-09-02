@@ -5,7 +5,7 @@
       <text class="nav-title">设置</text>
       <view class="nav-right"></view>
     </view>
-    
+
     <!-- 个人信息设置 -->
     <view class="section">
       <text class="section-title">个人信息</text>
@@ -20,7 +20,7 @@
         <image src="/static/images/arrow_right.png" mode="aspectFit" class="arrow-icon"></image>
       </view>
     </view>
-    
+
     <!-- 账号与安全 -->
     <view class="section">
       <text class="section-title">账号与安全</text>
@@ -29,7 +29,7 @@
         <image src="/static/images/arrow_right.png" mode="aspectFit" class="arrow-icon"></image>
       </view>
     </view>
-    
+
     <!-- 修改用户名弹窗 -->
     <view class="dialog" v-if="showEditUsername">
       <view class="dialog-content">
@@ -41,7 +41,7 @@
         </view>
       </view>
     </view>
-    
+
     <!-- 修改密码弹窗 -->
     <view class="dialog" v-if="showChangePassword">
       <view class="dialog-content">
@@ -55,7 +55,7 @@
         </view>
       </view>
     </view>
-    
+
     <!-- 加载状态 -->
     <view class="loading" v-if="loading">
       <text>加载中...</text>
@@ -65,290 +65,291 @@
 
 <script>
 // 引入API配置
-import API_CONFIG from '../../config/api.config.js';
+import API_CONFIG from '../../config/api.config';
 // 引入路由配置
-import ROUTER_CONFIG from '../../config/router.config.js';
+import ROUTER_CONFIG from '../../config/router.config';
 
 export default {
-  data() {
-    return {
-      userInfo: {
-        username: '',
-        avatar: ''
-      },
-      token: '',
-      loading: false,
-      
-      // 修改用户名相关
-      showEditUsername: false,
-      username: '',
-      
-      // 修改密码相关
-      showChangePassword: false,
-      oldPassword: '',
-      newPassword: '',
-      confirmPassword: ''
-    }
-  },
-  onLoad() {
-    this.token = uni.getStorageSync('token')
-    this.getUserInfo()
-  },
-  methods: {
-    getUserInfo() {
-      this.loading = true
-      
-      uni.$http.get(API_CONFIG.endpoints.user.getUserInfo, {
-        headers: {
-          'Authorization': `Bearer ${this.token}`
-        }
-      }).then(res => {
-        this.loading = false
-        
-        if (res.code === 200) {
-          this.userInfo = res.data
-        } else {
-          uni.showToast({
-            title: res.msg || '获取用户信息失败',
-            icon: 'none'
-          })
-        }
-      }).catch(err => {
-        this.loading = false
-        console.error('获取用户信息失败', err)
-        
-        uni.showToast({
-          title: '网络错误，请重试',
-          icon: 'none'
-        })
-      })
+    name: 'user-settings',
+    data() {
+        return {
+            userInfo: {
+                username: '',
+                avatar: ''
+            },
+            token: '',
+            loading: false,
+
+            // 修改用户名相关
+            showEditUsername: false,
+            username: '',
+
+            // 修改密码相关
+            showChangePassword: false,
+            oldPassword: '',
+            newPassword: '',
+            confirmPassword: ''
+        };
     },
-    
-    goBack() {
-      ROUTER_CONFIG.navigate.back()
+    onLoad() {
+        this.token = uni.getStorageSync('token');
+        this.getUserInfo();
     },
-    
-    editUsername() {
-      this.username = this.userInfo.username || ''
-      this.showEditUsername = true
-    },
-    
-    cancelEditUsername() {
-      this.showEditUsername = false
-      this.username = ''
-    },
-    
-    submitUsername() {
-      if (!this.username.trim()) {
-        uni.showToast({
-          title: '用户名不能为空',
-          icon: 'none'
-        })
-        return
-      }
-      
-      if (this.username.length > 20) {
-        uni.showToast({
-          title: '用户名不能超过20个字符',
-          icon: 'none'
-        })
-        return
-      }
-      
-      this.loading = true
-      
-      uni.$http.post(API_CONFIG.endpoints.user.updateUserInfo, {
-        username: this.username
-      }, {
-        headers: {
-          'Authorization': `Bearer ${this.token}`
-        }
-      }).then(res => {
-        this.loading = false
-        
-        if (res.code === 200) {
-          uni.showToast({
-            title: '修改成功',
-            icon: 'success'
-          })
-          
-          // 更新本地用户信息
-          this.userInfo.username = this.username
-          this.showEditUsername = false
-        } else {
-          uni.showToast({
-            title: res.msg || '修改失败',
-            icon: 'none'
-          })
-        }
-      }).catch(err => {
-        this.loading = false
-        console.error('修改用户名失败', err)
-        
-        uni.showToast({
-          title: '网络错误，请重试',
-          icon: 'none'
-        })
-      })
-    },
-    
-    uploadAvatar() {
-      uni.chooseImage({
-        count: 1,
-        success: (res) => {
-          const tempFilePath = res.tempFilePaths[0]
-          
-          // 模拟上传图片
-          uni.showLoading({
-            title: '上传中...'
-          })
-          
-          // 这里应该有实际的图片上传逻辑
-          // 为了演示，我们使用模拟数据
-          setTimeout(() => {
-            uni.hideLoading()
-            
-            // 假设上传成功，返回一个图片URL
-            const avatarUrl = tempFilePath // 在实际项目中，这应该是服务器返回的URL
-            
-            // 更新用户头像
-            this.loading = true
-              
-              uni.$http.post(API_CONFIG.endpoints.user.updateUserInfo, {
-              avatar: avatarUrl
+    methods: {
+        getUserInfo() {
+            this.loading = true;
+
+            this.$request.get(API_CONFIG.endpoints.user.getUserInfo, {}, {
+                headers: {
+                    Authorization: `Bearer ${this.token}`
+                }
+            }).then((res) => {
+                this.loading = false;
+
+                if(res.code === 200) {
+                    this.userInfo = res.data;
+                } else {
+                    uni.showToast({
+                        title: res.msg || '获取用户信息失败',
+                        icon: 'none'
+                    });
+                }
+            }).catch((err) => {
+                this.loading = false;
+                console.error('获取用户信息失败', err);
+
+                uni.showToast({
+                    title: '网络错误，请重试',
+                    icon: 'none'
+                });
+            });
+        },
+
+        goBack() {
+            ROUTER_CONFIG.navigate.back();
+        },
+
+        editUsername() {
+            this.username = this.userInfo.username || '';
+            this.showEditUsername = true;
+        },
+
+        cancelEditUsername() {
+            this.showEditUsername = false;
+            this.username = '';
+        },
+
+        submitUsername() {
+            if(!this.username.trim()) {
+                uni.showToast({
+                    title: '用户名不能为空',
+                    icon: 'none'
+                });
+                return;
+            }
+
+            if(this.username.length > 20) {
+                uni.showToast({
+                    title: '用户名不能超过20个字符',
+                    icon: 'none'
+                });
+                return;
+            }
+
+            this.loading = true;
+
+            this.$request.post(API_CONFIG.endpoints.user.updateUserInfo, {
+                username: this.username
             }, {
-              headers: {
-                'Authorization': `Bearer ${this.token}`
-              }
-            }).then(res => {
-              this.loading = false
-              
-              if (res.code === 200) {
+                headers: {
+                    Authorization: `Bearer ${this.token}`
+                }
+            }).then((res) => {
+                this.loading = false;
+
+                if(res.code === 200) {
+                    uni.showToast({
+                        title: '修改成功',
+                        icon: 'success'
+                    });
+
+                    // 更新本地用户信息
+                    this.userInfo.username = this.username;
+                    this.showEditUsername = false;
+                } else {
+                    uni.showToast({
+                        title: res.msg || '修改失败',
+                        icon: 'none'
+                    });
+                }
+            }).catch((err) => {
+                this.loading = false;
+                console.error('修改用户名失败', err);
+
                 uni.showToast({
-                  title: '头像更新成功',
-                  icon: 'success'
-                })
-                
-                // 更新本地用户信息
-                this.userInfo.avatar = avatarUrl
-              } else {
+                    title: '网络错误，请重试',
+                    icon: 'none'
+                });
+            });
+        },
+
+        uploadAvatar() {
+            uni.chooseImage({
+                count: 1,
+                success: (res) => {
+                    const tempFilePath = res.tempFilePaths[0];
+
+                    // 模拟上传图片
+                    uni.showLoading({
+                        title: '上传中...'
+                    });
+
+                    // 这里应该有实际的图片上传逻辑
+                    // 为了演示，我们使用模拟数据
+                    setTimeout(() => {
+                        uni.hideLoading();
+
+                        // 假设上传成功，返回一个图片URL
+                        const avatarUrl = tempFilePath; // 在实际项目中，这应该是服务器返回的URL
+
+                        // 更新用户头像
+                        this.loading = true;
+
+                        this.$request.post(API_CONFIG.endpoints.user.updateUserInfo, {
+                            avatar: avatarUrl
+                        }, {
+                            headers: {
+                                Authorization: `Bearer ${this.token}`
+                            }
+                        }).then((response) => {
+                            this.loading = false;
+
+                            if(response.code === 200) {
+                                uni.showToast({
+                                    title: '头像更新成功',
+                                    icon: 'success'
+                                });
+
+                                // 更新本地用户信息
+                                this.userInfo.avatar = avatarUrl;
+                            } else {
+                                uni.showToast({
+                                    title: response.msg || '头像更新失败',
+                                    icon: 'none'
+                                });
+                            }
+                        }).catch((err) => {
+                            this.loading = false;
+                            console.error('更新头像失败', err);
+
+                            uni.showToast({
+                                title: '网络错误，请重试',
+                                icon: 'none'
+                            });
+                        });
+                    }, 1000);
+                }
+            });
+        },
+
+        changePassword() {
+            this.showChangePassword = true;
+        },
+
+        cancelChangePassword() {
+            this.showChangePassword = false;
+            this.oldPassword = '';
+            this.newPassword = '';
+            this.confirmPassword = '';
+        },
+
+        submitPassword() {
+            // 表单验证
+            if(!this.oldPassword) {
                 uni.showToast({
-                  title: res.msg || '头像更新失败',
-                  icon: 'none'
-                })
-              }
-            }).catch(err => {
-              this.loading = false
-              console.error('更新头像失败', err)
-              
-              uni.showToast({
-                title: '网络错误，请重试',
-                icon: 'none'
-              })
-            })
-          }, 1000)
+                    title: '请输入当前密码',
+                    icon: 'none'
+                });
+                return;
+            }
+
+            if(!this.newPassword) {
+                uni.showToast({
+                    title: '请输入新密码',
+                    icon: 'none'
+                });
+                return;
+            }
+
+            if(this.newPassword.length < 6) {
+                uni.showToast({
+                    title: '新密码不能少于6位',
+                    icon: 'none'
+                });
+                return;
+            }
+
+            if(this.newPassword !== this.confirmPassword) {
+                uni.showToast({
+                    title: '两次输入的密码不一致',
+                    icon: 'none'
+                });
+                return;
+            }
+
+            this.loading = true;
+
+            this.$request.post(API_CONFIG.endpoints.user.changePassword, {
+                old_password: this.oldPassword,
+                new_password: this.newPassword,
+                confirm_password: this.confirmPassword
+            }, {
+                headers: {
+                    Authorization: `Bearer ${this.token}`
+                }
+            }).then((res) => {
+                this.loading = false;
+
+                if(res.code === 200) {
+                    uni.showToast({
+                        title: '密码修改成功',
+                        icon: 'success'
+                    });
+
+                    // 关闭弹窗并清空表单
+                    this.cancelChangePassword();
+
+                    // 密码修改成功后，建议用户重新登录
+                    setTimeout(() => {
+                        uni.showModal({
+                            title: '提示',
+                            content: '密码修改成功，请重新登录',
+                            showCancel: false,
+                            success: () => {
+                                // 清除token并跳转到登录页
+                                uni.removeStorageSync('token');
+                                ROUTER_CONFIG.navigate.replace(ROUTER_CONFIG.pages.login);
+                            }
+                        });
+                    }, 1500);
+                } else {
+                    uni.showToast({
+                        title: res.msg || '密码修改失败',
+                        icon: 'none'
+                    });
+                }
+            }).catch((err) => {
+                this.loading = false;
+                console.error('修改密码失败', err);
+
+                uni.showToast({
+                    title: '网络错误，请重试',
+                    icon: 'none'
+                });
+            });
         }
-      })
-    },
-    
-    changePassword() {
-      this.showChangePassword = true
-    },
-    
-    cancelChangePassword() {
-      this.showChangePassword = false
-      this.oldPassword = ''
-      this.newPassword = ''
-      this.confirmPassword = ''
-    },
-    
-    submitPassword() {
-      // 表单验证
-      if (!this.oldPassword) {
-        uni.showToast({
-          title: '请输入当前密码',
-          icon: 'none'
-        })
-        return
-      }
-      
-      if (!this.newPassword) {
-        uni.showToast({
-          title: '请输入新密码',
-          icon: 'none'
-        })
-        return
-      }
-      
-      if (this.newPassword.length < 6) {
-        uni.showToast({
-          title: '新密码不能少于6位',
-          icon: 'none'
-        })
-        return
-      }
-      
-      if (this.newPassword !== this.confirmPassword) {
-        uni.showToast({
-          title: '两次输入的密码不一致',
-          icon: 'none'
-        })
-        return
-      }
-      
-      this.loading = true
-      
-      uni.$http.post(API_CONFIG.endpoints.user.changePassword, {
-        old_password: this.oldPassword,
-        new_password: this.newPassword,
-        confirm_password: this.confirmPassword
-      }, {
-        headers: {
-          'Authorization': `Bearer ${this.token}`
-        }
-      }).then(res => {
-        this.loading = false
-        
-        if (res.code === 200) {
-          uni.showToast({
-            title: '密码修改成功',
-            icon: 'success'
-          })
-          
-          // 关闭弹窗并清空表单
-          this.cancelChangePassword()
-          
-          // 密码修改成功后，建议用户重新登录
-          setTimeout(() => {
-            uni.showModal({
-              title: '提示',
-              content: '密码修改成功，请重新登录',
-              showCancel: false,
-              success: () => {
-                // 清除token并跳转到登录页
-                uni.removeStorageSync('token')
-                ROUTER_CONFIG.navigate.replace(ROUTER_CONFIG.pages.login)
-              }
-            })
-          }, 1500)
-        } else {
-          uni.showToast({
-            title: res.msg || '密码修改失败',
-            icon: 'none'
-          })
-        }
-      }).catch(err => {
-        this.loading = false
-        console.error('修改密码失败', err)
-        
-        uni.showToast({
-          title: '网络错误，请重试',
-          icon: 'none'
-        })
-      })
     }
-  }
-}
+};
 </script>
 
 <style scoped>

@@ -3,7 +3,7 @@
     <view class="header">
       <text class="title">预约服务</text>
     </view>
-    
+
     <view class="form-container">
       <!-- 服务信息 -->
       <view class="service-info" v-if="serviceInfo">
@@ -13,7 +13,7 @@
           <text class="service-price">¥{{ serviceInfo.price }}</text>
         </view>
       </view>
-      
+
       <!-- 预约表单 -->
       <view class="form">
         <!-- 预约日期 -->
@@ -25,7 +25,7 @@
             </view>
           </picker>
         </view>
-        
+
         <!-- 预约时间 -->
         <view class="form-item">
           <text class="label">预约时间</text>
@@ -35,26 +35,26 @@
             </view>
           </picker>
         </view>
-        
+
         <!-- 服务地址 -->
         <view class="form-item">
           <text class="label">服务地址</text>
           <input type="text" v-model="address" placeholder="请输入服务地址" />
         </view>
-        
+
         <!-- 联系方式 -->
         <view class="form-item">
           <text class="label">联系电话</text>
           <input type="number" v-model="phone" placeholder="请输入联系电话" />
         </view>
-        
+
         <!-- 备注信息 -->
         <view class="form-item">
           <text class="label">备注信息</text>
           <textarea v-model="remark" placeholder="请输入备注信息（选填）" rows="4"></textarea>
         </view>
       </view>
-      
+
       <!-- 提交按钮 -->
       <button class="submit-btn" @click="submitAppointment" :loading="isLoading">提交预约</button>
     </view>
@@ -63,134 +63,134 @@
 
 <script>
 // 引入API配置
-import API_CONFIG from '../../config/api.config.js';
+import API_CONFIG from '../../config/api.config';
 // 引入路由配置
-import ROUTER_CONFIG from '../../config/router.config.js';
+import ROUTER_CONFIG from '../../config/router.config';
 
 export default {
-  data() {
-    return {
-      serviceId: '',
-      serviceInfo: null,
-      appointmentDate: '',
-      appointmentTime: '',
-      address: '',
-      phone: '',
-      remark: '',
-      isLoading: false,
-      minDate: '',
-      maxDate: ''
-    }
-  },
-  onLoad(options) {
-    if (options.id) {
-      this.serviceId = options.id;
-      this.getServiceDetail();
-    }
-    
-    // 设置日期范围（今天到30天后）
-    const today = new Date();
-    const maxDate = new Date();
-    maxDate.setDate(today.getDate() + 30);
-    
-    // 格式化日期为YYYY-MM-DD格式
-    this.minDate = this.formatDate(today);
-    this.maxDate = this.formatDate(maxDate);
-  },
-  methods: {
-    // 获取服务详情
-    getServiceDetail() {
-      this.isLoading = true;
-      uni.$http.get(`${API_CONFIG.endpoints.service.getService}/${this.serviceId}`).then(res => {
-        this.isLoading = false;
-        if (res.code === 200) {
-          this.serviceInfo = res.data;
+    data() {
+        return {
+            serviceId: '',
+            serviceInfo: null,
+            appointmentDate: '',
+            appointmentTime: '',
+            address: '',
+            phone: '',
+            remark: '',
+            isLoading: false,
+            minDate: '',
+            maxDate: ''
+        };
+    },
+    onLoad(options) {
+        if(options.id) {
+            this.serviceId = options.id;
+            this.getServiceDetail();
         }
-      }).catch(err => {
-        this.isLoading = false;
-        console.error('获取服务详情失败', err);
-        uni.showToast({
-          title: '获取服务详情失败',
-          icon: 'none'
-        });
-      });
+
+        // 设置日期范围（今天到30天后）
+        const today = new Date();
+        const maxDate = new Date();
+        maxDate.setDate(today.getDate() + 30);
+
+        // 格式化日期为YYYY-MM-DD格式
+        this.minDate = this.formatDate(today);
+        this.maxDate = this.formatDate(maxDate);
     },
-    
-    // 日期选择
-    onDateChange(e) {
-      this.appointmentDate = e.detail.value;
-    },
-    
-    // 时间选择
-    onTimeChange(e) {
-      this.appointmentTime = e.detail.value;
-    },
-    
-    // 提交预约
-    submitAppointment() {
-      // 表单验证
-      if (!this.serviceId) {
-        return uni.showToast({ title: '请选择服务', icon: 'none' });
-      }
-      if (!this.appointmentDate) {
-        return uni.showToast({ title: '请选择预约日期', icon: 'none' });
-      }
-      if (!this.appointmentTime) {
-        return uni.showToast({ title: '请选择预约时间', icon: 'none' });
-      }
-      if (!this.address) {
-        return uni.showToast({ title: '请输入服务地址', icon: 'none' });
-      }
-      if (!this.phone) {
-        return uni.showToast({ title: '请输入联系电话', icon: 'none' });
-      }
-      
-      // 提交预约
-      this.isLoading = true;
-      
-      // 构建预约数据
-      const appointmentData = {
-        service_id: this.serviceId,
-        appointment_date: this.appointmentDate,
-        appointment_time: this.appointmentTime,
-        address: this.address,
-        phone: this.phone,
-        remark: this.remark
-      };
-      
-      // 调用创建预约API
-      uni.$http.post(API_CONFIG.endpoints.appointment.createAppointment, appointmentData).then(res => {
-        this.isLoading = false;
-        if (res.code === 200) {
-          // 预约成功，显示提示并跳转到预约列表页
-          uni.showToast({
-            title: '预约成功',
-            icon: 'success'
-          });
-          
-          // 延时跳转
-          setTimeout(() => {
-            ROUTER_CONFIG.navigate.switchTab(ROUTER_CONFIG.pages.appointment.list);
-          }, 1500);
+    methods: {
+        // 获取服务详情
+        getServiceDetail() {
+            this.isLoading = true;
+            this.$request.get(`${API_CONFIG.endpoints.service.getService}/${this.serviceId}`).then((res) => {
+                this.isLoading = false;
+                if(res.code === 200) {
+                    this.serviceInfo = res.data;
+                }
+            }).catch((err) => {
+                this.isLoading = false;
+                console.error('获取服务详情失败', err);
+                uni.showToast({
+                    title: '获取服务详情失败',
+                    icon: 'none'
+                });
+            });
+        },
+
+        // 日期选择
+        onDateChange(e) {
+            this.appointmentDate = e.detail.value;
+        },
+
+        // 时间选择
+        onTimeChange(e) {
+            this.appointmentTime = e.detail.value;
+        },
+
+        // 提交预约
+        submitAppointment() {
+            // 表单验证
+            if(!this.serviceId) {
+                return uni.showToast({title: '请选择服务', icon: 'none'});
+            }
+            if(!this.appointmentDate) {
+                return uni.showToast({title: '请选择预约日期', icon: 'none'});
+            }
+            if(!this.appointmentTime) {
+                return uni.showToast({title: '请选择预约时间', icon: 'none'});
+            }
+            if(!this.address) {
+                return uni.showToast({title: '请输入服务地址', icon: 'none'});
+            }
+            if(!this.phone) {
+                return uni.showToast({title: '请输入联系电话', icon: 'none'});
+            }
+
+            // 提交预约
+            this.isLoading = true;
+
+            // 构建预约数据
+            const appointmentData = {
+                service_id: this.serviceId,
+                appointment_date: this.appointmentDate,
+                appointment_time: this.appointmentTime,
+                address: this.address,
+                phone: this.phone,
+                remark: this.remark
+            };
+
+            // 调用创建预约API
+            this.$request.post(API_CONFIG.endpoints.appointment.createAppointment, appointmentData).then((res) => {
+                this.isLoading = false;
+                if(res.code === 200) {
+                    // 预约成功，显示提示并跳转到预约列表页
+                    uni.showToast({
+                        title: '预约成功',
+                        icon: 'success'
+                    });
+
+                    // 延时跳转
+                    setTimeout(() => {
+                        ROUTER_CONFIG.navigate.switchTab(ROUTER_CONFIG.pages.appointment.list);
+                    }, 1500);
+                }
+            }).catch((err) => {
+                this.isLoading = false;
+                console.error('提交预约失败', err);
+                uni.showToast({
+                    title: '提交预约失败',
+                    icon: 'none'
+                });
+            });
+        },
+
+        // 格式化日期
+        formatDate(date) {
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            return `${year}-${month}-${day}`;
         }
-      }).catch(err => {
-        this.isLoading = false;
-        console.error('提交预约失败', err);
-        uni.showToast({
-          title: '提交预约失败',
-          icon: 'none'
-        });
-      });
-    },
-    
-    // 格式化日期
-    formatDate(date) {
-      const year = date.getFullYear();
-      const month = (date.getMonth() + 1).toString().padStart(2, '0');
-      const day = date.getDate().toString().padStart(2, '0');
-      return `${year}-${month}-${day}`;
     }
-  }
 };
 </script>
 
