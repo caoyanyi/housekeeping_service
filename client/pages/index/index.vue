@@ -10,7 +10,7 @@
     <!-- 分类导航 -->
     <view class="category">
       <view class="category-item" v-for="category in categories" :key="category.id" @click="goServiceList(category.id)">
-        <image :src="category.icon" mode="aspectFit" class="category-icon"></image>
+        <image :src="`/static/images/${category.icon}`" mode="aspectFit" class="category-icon"></image>
         <text class="category-name">{{ category.name }}</text>
       </view>
     </view>
