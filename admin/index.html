@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>家政服务管理系统</title>
     <!-- 引入Vue.js -->
-    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.min.js"></script>
+    <script src="libs/vue/vue.min.js"></script>
     <!-- 引入Element UI -->
-    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
-    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <link rel="stylesheet" href="libs/element-ui/index.css">
+    <script src="libs/element-ui/index.js"></script>
     <!-- 引入Axios -->
     <script src="libs/axios/axios.min.js"></script>
     <!-- 引入Font Awesome -->
@@ -46,6 +46,10 @@
                             <i class="fa fa-calendar" slot="title"></i>
                             <span slot="title">预约管理</span>
                         </el-menu-item>
+                        <el-menu-item index="job_applications">
+                            <i class="fa fa-briefcase" slot="title"></i>
+                            <span slot="title">求职管理</span>
+                        </el-menu-item>
                         <el-menu-item index="admins">
                             <i class="fa fa-user-circle" slot="title"></i>
                             <span slot="title">管理员管理</span>
@@ -79,9 +83,9 @@
                 </header>
                 
                 <!-- 内容区域 -->
-                <div class="content">
-                    <!-- 仪表盘 -->
-                    <div v-if="activeMenu === 'dashboard'" class="dashboard">
+                    <div class="content">
+                        <!-- 仪表盘 -->
+                        <div v-if="activeMenu === 'dashboard'" class="dashboard">
                         <div class="dashboard-cards">
                             <div class="card">
                                 <div class="card-icon bg-blue">
@@ -133,32 +137,25 @@
                             </el-table>
                         </div>
                     </div>
-                    
-                    <!-- 用户管理 -->
-                    <div v-else-if="activeMenu === 'users'">
-                        <users></users>
+                        
+                        <!-- 用户管理 -->
+                        <users v-if="activeMenu === 'users'"></users>
+                        
+                        <!-- 分类管理 -->
+                        <categories v-if="activeMenu === 'categories'"></categories>
+                        
+                        <!-- 服务管理 -->
+                        <services v-if="activeMenu === 'services'"></services>
+                        
+                        <!-- 预约管理 -->
+                        <appointments v-if="activeMenu === 'appointments'"></appointments>
+                        
+                        <!-- 求职管理 -->
+                        <job-applications v-if="activeMenu === 'job_applications'"></job-applications>
+                        
+                        <!-- 管理员管理 -->
+                        <admins v-if="activeMenu === 'admins'"></admins>
                     </div>
-                    
-                    <!-- 分类管理 -->
-                    <div v-else-if="activeMenu === 'categories'">
-                        <categories></categories>
-                    </div>
-                    
-                    <!-- 服务管理 -->
-                    <div v-else-if="activeMenu === 'services'">
-                        <services></services>
-                    </div>
-                    
-                    <!-- 预约管理 -->
-                    <div v-else-if="activeMenu === 'appointments'">
-                        <appointments></appointments>
-                    </div>
-                    
-                    <!-- 管理员管理 -->
-                    <div v-else-if="activeMenu === 'admins'">
-                        <admins></admins>
-                    </div>
-                </div>
             </main>
         </div>
         
@@ -578,6 +575,155 @@
             </el-dialog>
         </div>
     </script>
+    
+    <!-- 求职管理模板 -->
+    <script type="text/x-template" id="job-applications-template">
+        <div class="job-applications-content">
+            <h2>求职管理</h2>
+            <div class="search-bar">
+                <el-input v-model="searchText" placeholder="搜索姓名或电话" style="width: 300px;" @keyup.enter.native="searchJobApplications"></el-input>
+                <el-select v-model="status" placeholder="状态" style="width: 150px; margin-left: 10px;">
+                    <el-option label="全部" value=""></el-option>
+                    <el-option label="待处理" value="pending"></el-option>
+                    <el-option label="已查看" value="reviewed"></el-option>
+                    <el-option label="已联系" value="contacted"></el-option>
+                    <el-option label="已拒绝" value="rejected"></el-option>
+                </el-select>
+                <el-button type="primary" @click="searchJobApplications" style="margin-left: 10px;">搜索</el-button>
+            </div>
+            
+            <div class="table-container">
+                <el-table :data="jobApplicationsData" stripe style="width: 100%">
+                    <el-table-column prop="id" label="ID" width="80"></el-table-column>
+                    <el-table-column prop="name" label="姓名" width="120"></el-table-column>
+                    <el-table-column prop="phone" label="电话" width="150"></el-table-column>
+                    <el-table-column prop="id_card" label="身份证号" width="200"></el-table-column>
+                    <el-table-column prop="work_years" label="工作年限" width="100"></el-table-column>
+                    <el-table-column prop="work_area" label="工作区域"></el-table-column>
+                    <el-table-column prop="status" label="状态" width="100">
+                        <template slot-scope="scope">
+                            <el-tag :type="getStatusType(scope.row.status)">{{ getStatusText(scope.row.status) }}</el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="created_at" label="提交时间" width="180"></el-table-column>
+                    <el-table-column label="操作" width="200" fixed="right">
+                        <template slot-scope="scope">
+                            <el-button type="primary" size="small" @click="viewJobApplication(scope.row)">查看</el-button>
+                            <el-button type="success" size="small" @click="editJobApplication(scope.row)">编辑</el-button>
+                            <el-button type="danger" size="small" @click="deleteJobApplication(scope.row.id)">删除</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </div>
+            
+            <div class="pagination-container">
+                <el-pagination
+                    @size-change="handleSizeChange"
+                    @current-change="handleCurrentChange"
+                    :current-page="currentPage"
+                    :page-sizes="[10, 20, 50, 100]"
+                    :page-size="pageSize"
+                    layout="total, sizes, prev, pager, next, jumper"
+                    :total="total">
+                </el-pagination>
+            </div>
+            
+            <!-- 查看详情弹窗 -->
+            <el-dialog title="求职详情" :visible.sync="viewDialogVisible" width="60%">
+                <div class="job-application-detail">
+                    <div class="detail-item">
+                        <span class="detail-label">姓名：</span>
+                        <span class="detail-value">{{ viewForm.name }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">电话：</span>
+                        <span class="detail-value">{{ viewForm.phone }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">身份证号：</span>
+                        <span class="detail-value">{{ viewForm.id_card }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">住址：</span>
+                        <span class="detail-value">{{ viewForm.address || '-' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">籍贯：</span>
+                        <span class="detail-value">{{ viewForm.birth_place || '-' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">证书：</span>
+                        <span class="detail-value">{{ getCertificatesText(viewForm.certificates) }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">工作年限：</span>
+                        <span class="detail-value">{{ viewForm.work_years || 0 }}年</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">工作区域：</span>
+                        <span class="detail-value">{{ viewForm.work_area || '-' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">备注：</span>
+                        <span class="detail-value">{{ viewForm.notes || '-' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">状态：</span>
+                        <span class="detail-value"><el-tag :type="getStatusType(viewForm.status)">{{ getStatusText(viewForm.status) }}</el-tag></span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">提交时间：</span>
+                        <span class="detail-value">{{ viewForm.created_at }}</span>
+                    </div>
+                </div>
+                <div slot="footer" class="dialog-footer">
+                    <el-button @click="viewDialogVisible = false">关闭</el-button>
+                </div>
+            </el-dialog>
+            
+            <!-- 编辑弹窗 -->
+            <el-dialog title="编辑求职信息" :visible.sync="editDialogVisible" width="60%">
+                <el-form :model="editForm" :rules="jobApplicationRules" ref="editForm" label-width="100px">
+                    <el-form-item label="姓名" prop="name">
+                        <el-input v-model="editForm.name"></el-input>
+                    </el-form-item>
+                    <el-form-item label="电话" prop="phone">
+                        <el-input v-model="editForm.phone"></el-input>
+                    </el-form-item>
+                    <el-form-item label="身份证号" prop="id_card">
+                        <el-input v-model="editForm.id_card"></el-input>
+                    </el-form-item>
+                    <el-form-item label="住址">
+                        <el-input v-model="editForm.address" type="textarea"></el-input>
+                    </el-form-item>
+                    <el-form-item label="籍贯">
+                        <el-input v-model="editForm.birth_place"></el-input>
+                    </el-form-item>
+                    <el-form-item label="工作年限">
+                        <el-input v-model.number="editForm.work_years" type="number" min="0"></el-input>
+                    </el-form-item>
+                    <el-form-item label="工作区域">
+                        <el-input v-model="editForm.work_area"></el-input>
+                    </el-form-item>
+                    <el-form-item label="备注">
+                        <el-input v-model="editForm.notes" type="textarea"></el-input>
+                    </el-form-item>
+                    <el-form-item label="状态">
+                        <el-select v-model="editForm.status">
+                            <el-option label="待处理" value="pending"></el-option>
+                            <el-option label="已查看" value="reviewed"></el-option>
+                            <el-option label="已联系" value="contacted"></el-option>
+                            <el-option label="已拒绝" value="rejected"></el-option>
+                        </el-select>
+                    </el-form-item>
+                </el-form>
+                <div slot="footer" class="dialog-footer">
+                    <el-button @click="editDialogVisible = false">取消</el-button>
+                    <el-button type="primary" @click="updateJobApplication">确定</el-button>
+                </div>
+            </el-dialog>
+        </div>
+    </script>    
     
     <!-- 主脚本 -->
     <script src="js/components.js"></script>

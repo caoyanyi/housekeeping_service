@@ -3,6 +3,7 @@
 // 高级跨域请求配置
 // 设置可信的源列表
 $trustedOrigins = [
+    'http://admin.oop.cc',
     'http://localhost:8000',
     'http://127.0.0.1:8000',
     'http://localhost:5173'

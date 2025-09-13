@@ -74,3 +74,20 @@ CREATE TABLE IF NOT EXISTS admin (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='管理员表';
+
+-- 求职信息表
+CREATE TABLE IF NOT EXISTS job_applications (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(50) NOT NULL COMMENT '姓名',
+  phone VARCHAR(11) NOT NULL COMMENT '电话',
+  id_card VARCHAR(20) NOT NULL COMMENT '身份证号',
+  address VARCHAR(255) COMMENT '住址',
+  birth_place VARCHAR(100) COMMENT '籍贯',
+  certificates TEXT COMMENT '证书JSON数组',
+  work_years INT DEFAULT 0 COMMENT '工作年限',
+  work_area VARCHAR(100) COMMENT '工作区域',
+  notes TEXT COMMENT '备注',
+  status VARCHAR(20) DEFAULT 'pending' COMMENT '状态 pending: 待处理, reviewed: 已查看, contacted: 已联系, rejected: 已拒绝',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='求职信息表';

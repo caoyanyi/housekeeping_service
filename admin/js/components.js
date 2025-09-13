@@ -1,3 +1,213 @@
+// 注册求职管理组件
+Vue.component('job-applications', {
+    template: '#job-applications-template',
+    data() {
+        return {
+            jobApplicationsData: [],
+            searchText: '',
+            status: '',
+            currentPage: 1,
+            pageSize: 10,
+            total: 0,
+            viewDialogVisible: false,
+            editDialogVisible: false,
+            viewForm: {
+                id: '',
+                name: '',
+                phone: '',
+                id_card: '',
+                address: '',
+                birth_place: '',
+                certificates: [],
+                work_years: 0,
+                work_area: '',
+                notes: '',
+                status: '',
+                created_at: ''
+            },
+            editForm: {
+                id: '',
+                name: '',
+                phone: '',
+                id_card: '',
+                address: '',
+                birth_place: '',
+                work_years: 0,
+                work_area: '',
+                notes: '',
+                status: ''
+            },
+            jobApplicationRules: {
+                name: [
+                    { required: true, message: '请输入姓名', trigger: 'blur' }
+                ],
+                phone: [
+                    { required: true, message: '请输入电话', trigger: 'blur' },
+                    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码', trigger: 'blur' }
+                ],
+                id_card: [
+                    { required: true, message: '请输入身份证号', trigger: 'blur' }
+                ]
+            }
+        };
+    },
+    mounted() {
+        this.getJobApplications();
+    },
+    methods: {
+        // 获取求职申请列表
+        getJobApplications() {
+            axios.get('/admin/job/application/applications', {
+                params: {
+                    page: this.currentPage,
+                    pageSize: this.pageSize,
+                    search: this.searchText,
+                    status: this.status
+                }
+            })
+                .then(response => {
+                    if (response.data.code === 200) {
+                        this.jobApplicationsData = response.data.data.list || [];
+                        this.total = response.data.data.total || 0;
+                    }
+                })
+                .catch(error => {
+                    console.error('获取求职申请列表失败:', error);
+                    this.$message.error('获取求职申请列表失败');
+                });
+        },
+        
+        // 搜索求职申请
+        searchJobApplications() {
+            this.currentPage = 1;
+            this.getJobApplications();
+        },
+        
+        // 查看求职申请详情
+        viewJobApplication(row) {
+            axios.get(`/admin/job/application/applications/${row.id}`)
+                .then(response => {
+                    if (response.data.code === 200) {
+                        this.viewForm = response.data.data.data;
+                        this.viewDialogVisible = true;
+                    }
+                })
+                .catch(error => {
+                    console.error('获取求职申请详情失败:', error);
+                    this.$message.error('获取求职申请详情失败');
+                });
+        },
+        
+        // 编辑求职申请
+        editJobApplication(row) {
+            axios.get(`/admin/job/application/applications/${row.id}`)
+                .then(response => {
+                    if (response.data.code === 200) {
+                        this.editForm = { ...response.data.data.data };
+                        // 排除证书字段，因为编辑界面不处理证书上传
+                        if (this.editForm.certificates) {
+                            delete this.editForm.certificates;
+                        }
+                        this.editDialogVisible = true;
+                    }
+                })
+                .catch(error => {
+                    console.error('获取求职申请详情失败:', error);
+                    this.$message.error('获取求职申请详情失败');
+                });
+        },
+        
+        // 更新求职申请
+        updateJobApplication() {
+            this.$refs.editForm.validate((valid) => {
+                if (valid) {
+                    axios.put(`/admin/job/application/applications/${this.editForm.id}`, this.editForm)
+                        .then(response => {
+                            if (response.data.code === 200) {
+                                this.$message.success('求职申请更新成功');
+                                this.editDialogVisible = false;
+                                this.getJobApplications();
+                            } else {
+                                this.$message.error(response.data.message || '求职申请更新失败');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('更新求职申请失败:', error);
+                            this.$message.error('求职申请更新失败');
+                        });
+                }
+            });
+        },
+        
+        // 删除求职申请
+        deleteJobApplication(id) {
+            this.$confirm('确定要删除该求职申请吗？', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                type: 'warning'
+            }).then(() => {
+                axios.delete(`/admin/job/application/applications/${id}`)
+                    .then(response => {
+                        if (response.data.code === 200) {
+                            this.$message.success('求职申请删除成功');
+                            this.getJobApplications();
+                        } else {
+                            this.$message.error(response.data.message || '求职申请删除失败');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('删除求职申请失败:', error);
+                        this.$message.error('求职申请删除失败');
+                    });
+            }).catch(() => {
+                // 用户取消
+            });
+        },
+        
+        // 处理分页大小变化
+        handleSizeChange(size) {
+            this.pageSize = size;
+            this.getJobApplications();
+        },
+        
+        // 处理当前页码变化
+        handleCurrentChange(current) {
+            this.currentPage = current;
+            this.getJobApplications();
+        },
+        
+        // 获取状态文本
+        getStatusText(status) {
+            const statusMap = {
+                'pending': '待处理',
+                'reviewed': '已查看',
+                'contacted': '已联系',
+                'rejected': '已拒绝'
+            };
+            return statusMap[status] || status;
+        },
+        
+        // 获取状态标签类型
+        getStatusType(status) {
+            const typeMap = {
+                'pending': 'warning',
+                'reviewed': 'info',
+                'contacted': 'success',
+                'rejected': 'danger'
+            };
+            return typeMap[status] || 'default';
+        },
+        
+        // 获取证书文本
+        getCertificatesText(certificates) {
+            if (!certificates || !Array.isArray(certificates) || certificates.length === 0) {
+                return '-';
+            }
+            return certificates.join('，');
+        }
+    }
+});
+
 // 注册用户管理组件
 Vue.component('users', {
     template: '#users-template',

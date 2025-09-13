@@ -22,7 +22,7 @@ define('JWT_SECRET', 'your_jwt_secret_key_here');
 define('JWT_EXPIRE', 3600 * 24); // token有效期24小时
 
 // API基础URL
-define('API_URL', 'http://127.0.0.1:8000');
+define('API_URL', 'http://127.0.0.1:8080');
 
 // 上传文件配置
 define('UPLOAD_PATH', PROJECT_ROOT . '/uploads/');

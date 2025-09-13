@@ -158,13 +158,33 @@ $restfulRoutes['appointment/appointments/{id}'] = [
 $restfulRoutes['category/categories'] = [
     'GET' => ['CategoryController', 'getCategories']
 ];
-
+// 服务相关路由
 $restfulRoutes['service/services'] = [
     'GET' => ['ServiceController', 'getServices']
 ];
 
 $restfulRoutes['service/services/{id}'] = [
     'GET' => ['ServiceController', 'getServiceDetail']
+];
+
+// 求职相关路由
+$restfulRoutes['admin/job/application/applications'] = [
+    'GET' => ['JobApplicationController', 'getJobApplications'],
+    'POST' => ['JobApplicationController', 'submitJobApplication']
+];
+
+$restfulRoutes['admin/job/application/applications/{id}'] = [
+    'GET' => ['JobApplicationController', 'getJobApplicationDetail'],
+    'PUT' => ['JobApplicationController', 'updateJobApplication'],
+    'DELETE' => ['JobApplicationController', 'deleteJobApplication']
+];
+
+$restfulRoutes['admin/job/application/applications/{id}/status'] = [
+    'PUT' => ['JobApplicationController', 'updateJobApplicationStatus']
+];
+
+$restfulRoutes['job/application'] = [
+    'POST' => ['JobApplicationController', 'submitJobApplication']
 ];
 
 // 解析请求URL并匹配路由

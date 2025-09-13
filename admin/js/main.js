@@ -1,5 +1,5 @@
 // 配置Axios默认请求头
-axios.defaults.baseURL = 'http://127.0.0.1:8000';
+axios.defaults.baseURL = 'http://127.0.0.1:8080';
 axios.defaults.headers.post['Content-Type'] = 'application/json';
 // 明确启用凭证模式，确保CORS请求正确发送cookies等凭证
 axios.defaults.withCredentials = true;
