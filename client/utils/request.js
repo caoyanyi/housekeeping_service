@@ -26,6 +26,7 @@ const request = {
         method: options.method || 'GET',
         data: options.data || {},
         header: headers,
+        timeout: 60000, // 设置超时时间为60秒
         success: (res) => {
           if (res.statusCode === 200) {
             if (res.data.code === 200) {

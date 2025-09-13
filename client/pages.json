@@ -61,6 +61,12 @@
 			"style": {
 				"navigationBarTitleText": "设置"
 			}
+		},
+		{
+			"path": "pages/job/apply",
+			"style": {
+				"navigationBarTitleText": "求职"
+			}
 		}
 	],
 	"globalStyle": {

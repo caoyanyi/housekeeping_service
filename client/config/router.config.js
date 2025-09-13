@@ -26,6 +26,11 @@ const ROUTER_CONFIG = {
     user: {
       profile: '/pages/user/profile',
       settings: '/pages/user/settings'
+    },
+    
+    // 求职相关
+    job: {
+      apply: '/pages/job/apply'
     }
   },
   

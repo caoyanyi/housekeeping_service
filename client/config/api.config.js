@@ -31,6 +31,11 @@ const API_CONFIG = {
       getUserInfo: '/user/profile',
       updateUserInfo: '/user/profile',
       changePassword: '/user/change-password'
+    },
+    
+    // 求职申请相关接口
+    jobApplication: {
+      submitJobApplication: '/job/application'
     }
   }
 };

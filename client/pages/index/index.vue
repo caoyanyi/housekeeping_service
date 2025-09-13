@@ -14,6 +14,15 @@
         <text class="category-name">{{ category.name }}</text>
       </view>
     </view>
+    
+    <!-- 求职入口 -->
+    <view class="job-entry" @click="goJobApply">
+      <view class="entry-content">
+        <image src="/static/images/job.svg" mode="aspectFit" class="entry-icon"></image>
+        <text class="entry-text">我要找工作</text>
+        <image src="/static/images/arrow_right.svg" mode="aspectFit" class="arrow-icon"></image>
+      </view>
+    </view>
 
     <!-- 热门服务 -->
     <view class="hot-services">
@@ -99,6 +108,11 @@ export default {
 
         goServiceDetail(serviceId) {
             ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.service.detail, {id: serviceId});
+        },
+        
+        // 跳转到求职申请页面
+        goJobApply() {
+            ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.job.apply);
         }
     }
 };
@@ -145,6 +159,38 @@ export default {
 .category-name {
   font-size: 12px;
   color: var(--text-color);
+}
+
+/* 求职入口 */
+.job-entry {
+  margin-top: 10px;
+  padding: 0 16px;
+  background-color: white;
+}
+
+.entry-content {
+  display: flex;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.entry-icon {
+  width: 32px;
+  height: 32px;
+  margin-right: 12px;
+}
+
+.entry-text {
+  font-size: 16px;
+  color: var(--text-color);
+  flex: 1;
+}
+
+.arrow-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--text-color-secondary);
 }
 
 /* 热门服务 */

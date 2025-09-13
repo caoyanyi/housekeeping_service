@@ -74,7 +74,7 @@ export default {
                     uni.setStorageSync('userInfo', res.data);
 
                     // 跳转到首页
-                    ROUTER_CONFIG.navigate.switchTab(ROUTER_CONFIG.pages.home);
+                    ROUTER_CONFIG.navigate.switchTab(ROUTER_CONFIG.pages.index);
                 } else {
                     uni.showToast({
                         title: res.message || '登录失败',

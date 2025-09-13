@@ -78,7 +78,7 @@ export default {
 
                     // 跳转到首页
                     setTimeout(() => {
-                        ROUTER_CONFIG.navigate.switchTab(ROUTER_CONFIG.pages.home);
+                        ROUTER_CONFIG.navigate.switchTab(ROUTER_CONFIG.pages.login);
                     }, 1500);
                 } else {
                     uni.showToast({
