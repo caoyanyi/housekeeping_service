@@ -45,7 +45,7 @@
     </view>
 
     <!-- 技师推荐 -->
-    <view class="technicians-section" v-if="technicians && technicians.length > 0">
+    <!-- <view class="technicians-section" v-if="technicians && technicians.length > 0">
       <text class="section-title">推荐技师</text>
       <scroll-view class="technicians-scroll" scroll-x>
         <view class="technician-item" v-for="technician in technicians" :key="technician.id">
@@ -55,7 +55,7 @@
           <text class="technician-score">{{ technician.score || 4.9 }}分</text>
         </view>
       </scroll-view>
-    </view>
+    </view> -->
 
     <!-- 用户评价 -->
     <view class="reviews-section" v-if="reviews && reviews.length > 0">
@@ -83,17 +83,9 @@
       <view class="appointment-content">
         <text class="appointment-title">确认预约</text>
         <text class="appointment-service">{{ serviceInfo.name }}</text>
-        <text class="appointment-price">¥{{ serviceInfo.price.toFixed(2) }}</text>
+        <text class="appointment-price">¥{{ serviceInfo.price }}</text>
         
-        <view class="form-item">
-          <text class="form-label">选择技师</text>
-          <picker @change="onTechnicianChange" :range="technicians" :range-key="'name'" mode="selector">
-            <view class="picker-view">
-              <text class="picker-text">{{ selectedTechnician ? selectedTechnician.name : '请选择技师' }}</text>
-              <image src="/static/images/arrow_right.svg" mode="aspectFit" class="picker-icon"></image>
-            </view>
-          </picker>
-        </view>
+        <!-- 技师选择已移除，由后台自动派单 -->
         
         <view class="dialog-buttons">
           <button class="cancel-button" @click="cancelAppointment">取消</button>
@@ -121,9 +113,7 @@ export default {
         return {
             serviceId: '',
             serviceInfo: null,
-            technicians: [],
             reviews: [],
-            selectedTechnician: null,
             showAppointmentDialog: false,
             loading: false,
             token: ''
@@ -134,7 +124,6 @@ export default {
             this.serviceId = options.serviceId;
             this.token = uni.getStorageSync('token');
             this.getServiceDetail();
-            this.getReviews();
         }
     },
     computed: {
@@ -214,20 +203,10 @@ export default {
         },
 
         confirmAppointment() {
-            if(!this.selectedTechnician) {
-                uni.showToast({
-                    title: '请选择技师',
-                    icon: 'none'
-                });
-                return;
-            }
-
             this.showAppointmentDialog = false;
 
-            // 跳转到预约页面
-            ROUTER_CONFIG.navigate.to({
-                url: `${ROUTER_CONFIG.pages.appointmentCreate}?serviceId=${this.serviceId}&technicianId=${this.selectedTechnician.id}`
-            });
+            // 跳转到预约页面，不再传递技师ID，由后台自动派单
+            ROUTER_CONFIG.navigate.to(`${ROUTER_CONFIG.pages.appointment.create}?serviceId=${this.serviceId}`);
         },
 
         goBack() {
