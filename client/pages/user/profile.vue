@@ -94,7 +94,7 @@ export default {
                 return;
             }
 
-            ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.appointmentList);
+            ROUTER_CONFIG.navigate.switchTab(ROUTER_CONFIG.pages.appointment.list);
         },
 
         goSettings() {

@@ -110,18 +110,12 @@ export default {
                     this.userInfo = res.data;
                 } else {
                     uni.showToast({
-                        title: res.msg || '获取用户信息失败',
+                        title: res.message || '获取用户信息失败',
                         icon: 'none'
                     });
                 }
             }).catch((err) => {
                 this.loading = false;
-                console.error('获取用户信息失败', err);
-
-                uni.showToast({
-                    title: '网络错误，请重试',
-                    icon: 'none'
-                });
             });
         },
 
@@ -178,18 +172,12 @@ export default {
                     this.showEditUsername = false;
                 } else {
                     uni.showToast({
-                        title: res.msg || '修改失败',
+                        title: res.message || '修改失败',
                         icon: 'none'
                     });
                 }
             }).catch((err) => {
                 this.loading = false;
-                console.error('修改用户名失败', err);
-
-                uni.showToast({
-                    title: '网络错误，请重试',
-                    icon: 'none'
-                });
             });
         },
 
@@ -240,12 +228,6 @@ export default {
                             }
                         }).catch((err) => {
                             this.loading = false;
-                            console.error('更新头像失败', err);
-
-                            uni.showToast({
-                                title: '网络错误，请重试',
-                                icon: 'none'
-                            });
                         });
                     }, 1000);
                 }
@@ -334,18 +316,12 @@ export default {
                     }, 1500);
                 } else {
                     uni.showToast({
-                        title: res.msg || '密码修改失败',
+                        title: res.message || '密码修改失败',
                         icon: 'none'
                     });
                 }
             }).catch((err) => {
                 this.loading = false;
-                console.error('修改密码失败', err);
-
-                uni.showToast({
-                    title: '网络错误，请重试',
-                    icon: 'none'
-                });
             });
         }
     }

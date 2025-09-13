@@ -21,15 +21,14 @@
     <scroll-view class="list-container" scroll-y @scrolltolower="loadMore" @refresherrefresh="refresh">
       <view class="list-item" v-for="appointment in appointmentList" :key="appointment.id" @click="goToDetail(appointment.id)">
         <view class="list-item-header">
-          <text class="appointment-code">订单编号：{{ appointment.code }}</text>
+          <text class="appointment-code">订单编号：{{ appointment.id }}</text>
           <text class="appointment-status" :class="`status-${appointment.status}`">{{ getStatusText(appointment.status) }}</text>
         </view>
         
         <view class="service-info">
-          <image :src="appointment.service.image" mode="aspectFit" class="service-image"></image>
           <view class="service-details">
-            <text class="service-name">{{ appointment.service.name }}</text>
-            <text class="service-price">¥{{ appointment.service.price.toFixed(2) }}</text>
+            <text class="service-name">{{ appointment.service_title }}</text>
+            <text class="service-price">¥{{ appointment.service_price }}</text>
             <text class="appointment-time">预约时间：{{ appointment.appointment_date }} {{ appointment.appointment_time }}</text>
           </view>
         </view>
@@ -124,7 +123,7 @@ export default {
                     this.hasMore = list.length === this.pageSize;
                 } else {
                     uni.showToast({
-                        title: res.msg || '获取预约列表失败',
+                        title: res.message || '获取预约列表失败',
                         icon: 'none'
                     });
                 }
@@ -162,9 +161,7 @@ export default {
         },
 
         goToDetail(appointmentId) {
-            ROUTER_CONFIG.navigate.to({
-                url: `${ROUTER_CONFIG.pages.appointmentDetail}?appointmentId=${appointmentId}`
-            });
+            ROUTER_CONFIG.navigate.to(`${ROUTER_CONFIG.pages.appointment.detail}?appointmentId=${appointmentId}`);
         },
 
         goToServiceList() {

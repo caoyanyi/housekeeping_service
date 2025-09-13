@@ -190,7 +190,7 @@ export default {
                     this.serviceInfo = res.data;
                     // 不再需要获取技师列表，由后台自动派单
                 } else {
-                    alert(res.msg || '获取服务信息失败');
+                    alert(res.message || '获取服务信息失败');
                 }
             }).catch((err) => {
                 this.loading = false;
@@ -308,7 +308,7 @@ export default {
                         window.location.href = `/#/pages/appointment/list?appointmentId=${res.data.id}`;
                     }, 1500);
                 } else {
-                    alert(res.msg || '预约失败');
+                    alert(res.message || '预约失败');
                 }
             }).catch((err) => {
                 this.loading = false;

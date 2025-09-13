@@ -158,18 +158,12 @@ export default {
                     this.reviews = res.data.reviews || [];
                 } else {
                     uni.showToast({
-                        title: res.msg || '获取服务详情失败',
+                        title: res.message || '获取服务详情失败',
                         icon: 'none'
                     });
                 }
             }).catch((err) => {
                 this.loading = false;
-                console.error('获取服务详情失败', err);
-
-                uni.showToast({
-                    title: '网络错误，请重试',
-                    icon: 'none'
-                });
             });
         },
 

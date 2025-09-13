@@ -17,7 +17,7 @@
       
       <view class="info-item">
         <text class="info-label">预约编号</text>
-        <text class="info-value">{{ appointmentInfo?.code }}</text>
+        <text class="info-value">{{ appointmentInfo?.id }}</text>
       </view>
 
       <view class="info-item">
@@ -32,12 +32,12 @@
 
       <view class="info-item">
         <text class="info-label">预约人</text>
-        <text class="info-value">{{ appointmentInfo?.user_name }}</text>
+        <text class="info-value">{{ appointmentInfo?.contact_name }}</text>
       </view>
 
       <view class="info-item">
         <text class="info-label">联系电话</text>
-        <text class="info-value">{{ appointmentInfo?.phone }}</text>
+        <text class="info-value">{{ appointmentInfo?.contact_phone }}</text>
         <image src="/static/images/phone.svg" mode="aspectFit" class="phone-icon" @click="makePhoneCall"></image>
       </view>
     </view>
@@ -143,18 +143,12 @@ export default {
                     this.appointmentInfo = res.data;
                 } else {
                     uni.showToast({
-                        title: res.msg || '获取预约详情失败',
+                        title: res.message || '获取预约详情失败',
                         icon: 'none'
                     });
                 }
             }).catch((err) => {
                 this.loading = false;
-                console.error('获取预约详情失败', err);
-
-                uni.showToast({
-                    title: '网络错误，请重试',
-                    icon: 'none'
-                });
             });
         },
 
@@ -189,7 +183,7 @@ export default {
       this.loading = true;
       this.showCancelDialog = false;
 
-      this.$request.put(`${API_CONFIG.endpoints.appointment.updateAppointmentStatus}/${this.appointmentId}`, {
+      this.$request.delete(`${API_CONFIG.endpoints.appointment.updateAppointmentStatus}/${this.appointmentId}`, {
         status: 'canceled'
       }, {
         headers: {
@@ -213,20 +207,14 @@ export default {
           }, 1500);
         } else {
           uni.showToast({
-            title: res.msg || '取消预约失败',
+            title: res.message || '取消预约失败',
             icon: 'none'
           });
         }
-            }).catch((err) => {
-                this.loading = false;
-                this.showCancelDialog = false;
-                console.error('取消预约失败', err);
-
-                uni.showToast({
-                    title: '网络错误，请重试',
-                    icon: 'none'
-                });
-            });
+        }).catch((err) => {
+            this.loading = false;
+            this.showCancelDialog = false;
+        });
         },
 
         goBack() {
@@ -512,7 +500,6 @@ export default {
   flex: 1;
   height: 44px;
   background-color: var(--danger-color);
-  color: white;
   margin-left: 8px;
   border-radius: 8px;
   font-size: 16px;

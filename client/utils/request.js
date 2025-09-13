@@ -53,10 +53,10 @@ const request = {
             reject(new Error('请重新登录'));
           } else {
             uni.showToast({
-              title: '网络错误',
+              title: res.data.message || '网络错误',
               icon: 'none'
             });
-            reject(new Error('网络错误'));
+            reject(new Error(res.data.message || '网络错误'));
           }
         },
         fail: (err) => {
