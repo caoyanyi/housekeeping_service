@@ -48,6 +48,10 @@
   content: "🔍";
 }
 
+.fa-briefcase:before {
+  content: "💼";
+}
+
 /* Element UI图标模拟 */
 .el-icon-user:before {
   content: "👤";
@@ -59,4 +63,22 @@
 
 .el-icon-arrow-right:before {
   content: "→";
+}
+
+.el-icon-arrow-up:before {
+  content: "↑";
+}
+
+.el-icon-date:before {
+  content: "📅";
+}
+
+/* 为了确保el-select__caret显示正确 */
+.el-select__caret {
+  display: inline-block;
+}
+
+/* 确保el-input__icon显示正确 */
+.el-input__icon {
+  display: inline-block;
 }
