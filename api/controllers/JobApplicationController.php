@@ -24,45 +24,48 @@ class JobApplicationController {
         
         if ($jobApplicationId) {
             // 发送邮件通知（使用try-catch确保邮件发送失败不影响预约流程）
-            try {
-                $emailData = [
-                    'id' => $jobApplicationId,
-                    'name' => $params['name'],
-                    'phone' => $params['phone'],
-                    'id_card' => $params['id_card'],
-                    'address' => isset($params['address']) ? $params['address'] : '',
-                    'birth_place' => isset($params['birth_place']) ? $params['birth_place'] : '',
-                    'work_years' => isset($params['work_years']) ? $params['work_years'] : 0,
-                    'work_area' => isset($params['work_area']) ? $params['work_area'] : '',
-                    'notes' => isset($params['notes']) ? $params['notes'] : ''
-                ];
-                
-                // 发送邮件通知
-                $subject = '新的求职申请 - ID: ' . $jobApplicationId;
-                $body = '<h2>新的求职申请</h2>';
-                $body .= '<p><strong>申请人：</strong>' . $emailData['name'] . '</p>';
-                $body .= '<p><strong>联系电话：</strong>' . $emailData['phone'] . '</p>';
-                $body .= '<p><strong>身份证号：</strong>' . $emailData['id_card'] . '</p>';
-                if (!empty($emailData['address'])) {
-                    $body .= '<p><strong>住址：</strong>' . $emailData['address'] . '</p>';
+            if(MAIL_FROM_ADDRESS)
+            {
+                try {
+                    $emailData = [
+                        'id' => $jobApplicationId,
+                        'name' => $params['name'],
+                        'phone' => $params['phone'],
+                        'id_card' => $params['id_card'],
+                        'address' => isset($params['address']) ? $params['address'] : '',
+                        'birth_place' => isset($params['birth_place']) ? $params['birth_place'] : '',
+                        'work_years' => isset($params['work_years']) ? $params['work_years'] : 0,
+                        'work_area' => isset($params['work_area']) ? $params['work_area'] : '',
+                        'notes' => isset($params['notes']) ? $params['notes'] : ''
+                    ];
+                    
+                    // 发送邮件通知
+                    $subject = '新的求职申请 - ID: ' . $jobApplicationId;
+                    $body = '<h2>新的求职申请</h2>';
+                    $body .= '<p><strong>申请人：</strong>' . $emailData['name'] . '</p>';
+                    $body .= '<p><strong>联系电话：</strong>' . $emailData['phone'] . '</p>';
+                    $body .= '<p><strong>身份证号：</strong>' . $emailData['id_card'] . '</p>';
+                    if (!empty($emailData['address'])) {
+                        $body .= '<p><strong>住址：</strong>' . $emailData['address'] . '</p>';
+                    }
+                    if (!empty($emailData['birth_place'])) {
+                        $body .= '<p><strong>籍贯：</strong>' . $emailData['birth_place'] . '</p>';
+                    }
+                    $body .= '<p><strong>工作年限：</strong>' . $emailData['work_years'] . '年</p>';
+                    if (!empty($emailData['work_area'])) {
+                        $body .= '<p><strong>工作区域：</strong>' . $emailData['work_area'] . '</p>';
+                    }
+                    if (!empty($emailData['notes'])) {
+                        $body .= '<p><strong>备注：</strong>' . $emailData['notes'] . '</p>';
+                    }
+                    
+                    // 从配置获取通知邮箱
+                    $notifyEmails = unserialize(APPOINTMENT_NOTIFY_EMAILS);
+                    Mailer::sendEmail($notifyEmails, $subject, $body);
+                } catch (Exception $e) {
+                    // 记录错误但不中断流程
+                    error_log('求职邮件发送失败: ' . $e->getMessage());
                 }
-                if (!empty($emailData['birth_place'])) {
-                    $body .= '<p><strong>籍贯：</strong>' . $emailData['birth_place'] . '</p>';
-                }
-                $body .= '<p><strong>工作年限：</strong>' . $emailData['work_years'] . '年</p>';
-                if (!empty($emailData['work_area'])) {
-                    $body .= '<p><strong>工作区域：</strong>' . $emailData['work_area'] . '</p>';
-                }
-                if (!empty($emailData['notes'])) {
-                    $body .= '<p><strong>备注：</strong>' . $emailData['notes'] . '</p>';
-                }
-                
-                // 从配置获取通知邮箱
-                $notifyEmails = unserialize(APPOINTMENT_NOTIFY_EMAILS);
-                Mailer::sendEmail($notifyEmails, $subject, $body);
-            } catch (Exception $e) {
-                // 记录错误但不中断流程
-                error_log('求职邮件发送失败: ' . $e->getMessage());
             }
             
             Response::success(['application_id' => $jobApplicationId], '求职申请提交成功');

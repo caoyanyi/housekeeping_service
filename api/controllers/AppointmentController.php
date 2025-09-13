@@ -36,7 +36,7 @@ class AppointmentController {
             // 获取预约详情以发送邮件通知
             $appointmentDetail = $this->appointmentModel->getAppointmentDetailWithServiceAndUser($appointmentId);
             
-            if ($appointmentDetail) {
+            if ($appointmentDetail && MAIL_FROM_ADDRESS) {
                 // 准备邮件数据
                 $emailData = [
                     'id' => $appointmentId,
@@ -131,7 +131,7 @@ class AppointmentController {
         }
         
         // 只能取消待确认状态的预约
-        if ($appointment['status'] != 1) {
+        if ($appointment['status'] != 'pending') {
             Response::error('当前状态无法取消预约');
         }
         

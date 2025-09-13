@@ -34,7 +34,7 @@ define('MAIL_PORT', 465); // 邮件服务器端口，通常SSL为465，TLS为587
 define('MAIL_USERNAME', 'your_email@example.com'); // 发送邮件的邮箱账号
 define('MAIL_PASSWORD', 'your_email_password'); // 发送邮件的邮箱密码或授权码
 define('MAIL_ENCRYPTION', 'ssl'); // 加密方式：ssl或tls
-define('MAIL_FROM_ADDRESS', 'your_email@example.com'); // 发件人邮箱
+define('MAIL_FROM_ADDRESS', ''); // 发件人邮箱
 define('MAIL_FROM_NAME', '家政服务系统'); // 发件人名称
 
 // 预约通知收件人配置
