@@ -4,6 +4,7 @@ const ROUTER_CONFIG = {
   pages: {
     // 登录相关
     login: '/pages/login/login',
+    register: '/pages/login/register',
     
     // 首页相关
     index: '/pages/index/index',

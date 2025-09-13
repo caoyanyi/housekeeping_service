@@ -1,7 +1,7 @@
 // API配置文件
 const API_CONFIG = {
   // API基础URL
-  baseURL: 'http://localhost:8000',
+  baseURL: 'https://api.jz.okrcn.com/api',
 
   // 接口路径配置
   endpoints: {

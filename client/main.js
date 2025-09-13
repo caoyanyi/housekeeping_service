@@ -1,11 +1,14 @@
-import App from './App.vue'
+// 外部依赖
 import { createSSRApp } from 'vue'
 
-// 引入API请求工具
+// 主要组件
+import App from './App.vue'
+
+// 工具类
 import request from './utils/request.js'
-// 引入API配置
+
+// 配置文件
 import API_CONFIG from './config/api.config.js'
-// 引入路由配置
 import ROUTER_CONFIG from './config/router.config.js'
 
 export function createApp() {
