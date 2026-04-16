@@ -18,7 +18,7 @@
 │   ├── models/        # 数据模型
 │   ├── routes/        # 路由配置
 │   └── utils/         # 工具类
-├── client-uniapp/     # 用户端应用（uni-app）
+├── client/            # 用户端应用（uni-app）
 │   ├── App.vue        # 应用根组件
 │   ├── common/        # 公共资源
 │   ├── pages/         # 页面组件
@@ -51,13 +51,7 @@ CREATE DATABASE `jiazheng` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode
 2. 导入数据库结构：
 ```bash
 mysql -u root -p jiazheng < database/structure.sql
-mysql -u root -p jiazheng < database/admin_structure.sql
-```
-
-3. 导入初始数据：
-```bash
 mysql -u root -p jiazheng < database/init_data.sql
-mysql -u root -p jiazheng < database/admin_init_data.sql
 ```
 
 ### 2. 配置API服务
@@ -96,7 +90,7 @@ axios.defaults.baseURL = 'https://your-api-domain.com/api';
 
 ### 4. 部署用户端（uni-app）
 
-1. 使用HBuilderX打开`client-uniapp`目录
+1. 使用HBuilderX打开`client`目录
 2. 在App.vue或全局配置文件中设置API基础URL
 3. 编译打包为微信小程序、H5或其他平台应用
 
@@ -108,8 +102,8 @@ axios.defaults.baseURL = 'https://your-api-domain.com/api';
 ### 管理端配置（admin/js/main.js）
 设置API请求的基础URL、请求拦截器和响应拦截器，用于处理身份验证和错误处理。
 
-### 用户端配置（client-uniapp/App.vue）
-配置全局样式、API基础URL和全局变量。
+### 用户端配置（client/config/api.config.js）
+配置API基础URL，必要时同步调整全局样式和路由配置。
 
 ## 管理员账号
 

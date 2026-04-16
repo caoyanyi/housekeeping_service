@@ -1,18 +1,27 @@
 <template>
-  <view class="container">
-    <!-- 头部信息 -->
+  <view class="page">
     <template v-if="userInfo">
-      <view class="header">
-        <image :src="userInfo.avatar || '/static/images/avatar.svg'" mode="aspectFit" class="avatar"></image>
-        <view class="user-info">
-          <text class="username">{{ userInfo.username || '未设置昵称' }}</text>
-          <text class="phone">{{ userInfo.phone }}</text>
+      <view class="hero-card">
+        <image :src="userInfo.avatar || '/static/images/avatar.svg'" mode="aspectFill" class="avatar"></image>
+        <view class="hero-content">
+          <text class="user-name">{{ displayName }}</text>
+          <text class="user-phone">{{ userInfo.phone }}</text>
+          <text class="user-tip">预约信息会自动同步常用联系电话和地址</text>
         </view>
-        <image src="/static/images/arrow_right.svg" mode="aspectFit" class="arrow-icon"></image>
       </view>
 
-      <!-- 功能菜单 -->
-      <view class="menu">
+      <view class="info-card">
+        <view class="info-item">
+          <text class="info-label">常用地址</text>
+          <text class="info-value">{{ userInfo.address || '暂未填写' }}</text>
+        </view>
+        <view class="info-item">
+          <text class="info-label">账号状态</text>
+          <text class="info-value">{{ userInfo.status === 1 ? '正常使用' : '受限' }}</text>
+        </view>
+      </view>
+
+      <view class="menu-card">
         <view class="menu-item" @click="goAppointmentList">
           <image src="/static/images/appointment.svg" mode="aspectFit" class="menu-icon"></image>
           <text class="menu-text">我的预约</text>
@@ -21,33 +30,31 @@
 
         <view class="menu-item" @click="goSettings">
           <image src="/static/images/settings.svg" mode="aspectFit" class="menu-icon"></image>
-          <text class="menu-text">设置</text>
+          <text class="menu-text">账户设置</text>
           <image src="/static/images/arrow_right.svg" mode="aspectFit" class="arrow-icon"></image>
         </view>
 
-        <view class="menu-item" @click="goAbout">
+        <view class="menu-item" @click="showAbout">
           <image src="/static/images/about.svg" mode="aspectFit" class="menu-icon"></image>
-          <text class="menu-text">关于我们</text>
+          <text class="menu-text">关于平台</text>
           <image src="/static/images/arrow_right.svg" mode="aspectFit" class="arrow-icon"></image>
         </view>
       </view>
 
-      <!-- 退出登录按钮 -->
       <button class="logout-button" @click="logout">退出登录</button>
     </template>
-    <!-- 未登录状态 -->
-    <view class="not-login" v-else>
-      <image src="/static/images/avatar.svg" mode="aspectFit" class="not-login-avatar"></image>
-      <text class="not-login-text">请先登录</text>
+
+    <view v-else class="state-block">
+      <image src="/static/images/avatar.svg" mode="aspectFit" class="state-image"></image>
+      <text class="state-title">登录后查看个人中心</text>
+      <text class="state-text">在这里可以查看预约记录、修改资料和管理账号设置。</text>
       <button class="login-button" @click="goLogin">去登录</button>
     </view>
   </view>
 </template>
 
 <script>
-// 引入API配置
 import API_CONFIG from '../../config/api.config';
-// 引入路由配置
 import ROUTER_CONFIG from '../../config/router.config';
 
 export default {
@@ -57,91 +64,72 @@ export default {
             token: ''
         };
     },
-    onShow() {
-        // 每次显示页面时获取用户信息
-        this.token = uni.getStorageSync('token');
-        if(this.token) {
-            this.getUserInfo();
-        } else {
-            this.userInfo = null;
+    computed: {
+        displayName() {
+            return this.userInfo?.nickname || `用户 ${this.userInfo?.phone || ''}`;
         }
+    },
+    onShow() {
+        this.token = uni.getStorageSync('token');
+        if (!this.token) {
+            this.userInfo = null;
+            return;
+        }
+
+        this.getUserInfo();
     },
     methods: {
         getUserInfo() {
-            this.$request.get(API_CONFIG.endpoints.user.getUserInfo, {
-                headers: {
-                    Authorization: `Bearer ${this.token}`
-                }
-            }).then((res) => {
-                if(res.code === 200) {
-                    this.userInfo = res.data;
-                } else {
-                    // token可能已过期，清除token
+            this.$request
+                .get(API_CONFIG.endpoints.user.getUserInfo, {}, {
+                    headers: {
+                        Authorization: `Bearer ${this.token}`
+                    }
+                })
+                .then((res) => {
+                    this.userInfo = res.data || null;
+                })
+                .catch(() => {
                     uni.removeStorageSync('token');
+                    uni.removeStorageSync('userInfo');
                     this.userInfo = null;
-                }
-            }).catch((err) => {
-                console.error('获取用户信息失败', err);
-                // 网络错误时也清除token
-                uni.removeStorageSync('token');
-                this.userInfo = null;
-            });
+                    this.token = '';
+                });
         },
-
         goAppointmentList() {
-            if(!this.token) {
-                this.showLoginTip();
-                return;
-            }
-
             ROUTER_CONFIG.navigate.switchTab(ROUTER_CONFIG.pages.appointment.list);
         },
-
         goSettings() {
-            if(!this.token) {
-                this.showLoginTip();
-                return;
-            }
-
-            ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.settings);
+            ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.user.settings);
         },
-
-        goAbout() {
-            ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.about);
+        showAbout() {
+            uni.showModal({
+                title: '关于平台',
+                content: '家政服务平台提供保洁、母婴、搬家、维修等到家服务，支持在线预约和进度查看。',
+                showCancel: false
+            });
         },
-
         goLogin() {
             ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.login);
         },
-
         logout() {
             uni.showModal({
-                title: '提示',
-                content: '确定要退出登录吗？',
-                success: (res) => {
-                    if(res.confirm) {
-                        // 清除token和用户信息
-                        uni.removeStorageSync('token');
-                        this.userInfo = null;
-                        this.token = '';
-
-                        uni.showToast({
-                            title: '退出成功',
-                            icon: 'success'
-                        });
+                title: '退出登录',
+                content: '确定退出当前账号吗？',
+                success: ({ confirm }) => {
+                    if (!confirm) {
+                        return;
                     }
-                }
-            });
-        },
 
-        showLoginTip() {
-            uni.showModal({
-                title: '提示',
-                content: '请先登录',
-                success: (res) => {
-                    if(res.confirm) {
-                        ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.login);
-                    }
+                    uni.removeStorageSync('token');
+                    uni.removeStorageSync('userInfo');
+                    this.userInfo = null;
+                    this.token = '';
+
+                    uni.showToast({
+                        title: '已退出登录',
+                        icon: 'success'
+                    });
                 }
             });
         }
@@ -150,118 +138,160 @@ export default {
 </script>
 
 <style scoped>
-.container {
-  padding-bottom: 20px;
+.page {
   min-height: 100vh;
-  background-color: #f5f5f5;
+  padding: 16px;
+  padding-bottom: 84px;
+  background: linear-gradient(180deg, #f4fbf6 0%, #f6f7f9 220px, #f6f7f9 100%);
 }
 
-/* 头部信息 */
-.header {
-  background-color: white;
-  padding: 20px 16px;
+.hero-card,
+.info-card,
+.menu-card {
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
+}
+
+.hero-card {
   display: flex;
   align-items: center;
-  margin-bottom: 10px;
+  padding: 18px;
 }
 
 .avatar {
-  width: 80px;
-  height: 80px;
+  width: 76px;
+  height: 76px;
   border-radius: 50%;
-  margin-right: 16px;
+  background: #eef2f7;
 }
 
-.user-info {
+.hero-content {
   flex: 1;
+  margin-left: 14px;
 }
 
-.username {
-  font-size: 18px;
-  font-weight: bold;
-  color: var(--text-color);
+.user-name {
   display: block;
-  margin-bottom: 8px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
 }
 
-.phone {
+.user-phone {
+  display: block;
+  margin-top: 6px;
   font-size: 14px;
-  color: var(--text-color-secondary);
+  color: #475467;
 }
 
-.arrow-icon {
-  width: 16px;
-  height: 16px;
-  color: var(--text-color-disabled);
+.user-tip {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #98a2b3;
 }
 
-/* 功能菜单 */
-.menu {
-  background-color: white;
-  margin-bottom: 10px;
+.info-card,
+.menu-card {
+  margin-top: 14px;
+  padding: 4px 16px;
 }
 
+.info-item,
 .menu-item {
   display: flex;
   align-items: center;
-  padding: 16px;
-  border-bottom: 1px solid #eeeeee;
+  justify-content: space-between;
+  padding: 15px 0;
+  border-bottom: 1px solid #f2f4f7;
 }
 
+.info-item:last-child,
 .menu-item:last-child {
   border-bottom: none;
+}
+
+.info-label {
+  font-size: 14px;
+  color: #667085;
+}
+
+.info-value {
+  max-width: 62%;
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: right;
+  color: #111827;
+}
+
+.menu-item {
+  justify-content: flex-start;
 }
 
 .menu-icon {
   width: 24px;
   height: 24px;
-  margin-right: 16px;
 }
 
 .menu-text {
   flex: 1;
-  font-size: 16px;
-  color: var(--text-color);
+  margin-left: 14px;
+  font-size: 15px;
+  color: #111827;
 }
 
-/* 退出登录按钮 */
+.arrow-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.logout-button,
+.login-button {
+  width: 100%;
+  height: 46px;
+  margin-top: 18px;
+  border-radius: 999px;
+  font-size: 16px;
+}
+
 .logout-button {
-  width: 90%;
-  height: 44px;
-  margin: 20px auto;
-  background-color: #f5f5f5;
-  color: var(--error-color);
-  border-radius: 22px;
-  font-size: 16px;
-}
-
-/* 未登录状态 */
-.not-login {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding-top: 80px;
-}
-
-.not-login-avatar {
-  width: 120px;
-  height: 120px;
-  margin-bottom: 20px;
-  opacity: 0.5;
-}
-
-.not-login-text {
-  font-size: 16px;
-  color: var(--text-color-disabled);
-  margin-bottom: 20px;
+  background: #ffffff;
+  color: #ef4444;
+  border: 1px solid #fecaca;
 }
 
 .login-button {
+  background: #1aad19;
+  color: #ffffff;
+}
+
+.state-block {
+  margin-top: 92px;
+  text-align: center;
+  padding: 0 28px;
+}
+
+.state-image {
   width: 120px;
-  height: 44px;
-  background-color: var(--primary-color);
-  color: white;
-  border-radius: 22px;
-  font-size: 16px;
+  height: 120px;
+  opacity: 0.92;
+}
+
+.state-title {
+  display: block;
+  margin-top: 14px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.state-text {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #98a2b3;
 }
 </style>

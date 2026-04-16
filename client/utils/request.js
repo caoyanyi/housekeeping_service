@@ -1,6 +1,38 @@
 import API_CONFIG from '../config/api.config.js';
 import ROUTER_CONFIG from '../config/router.config.js';
 
+function normalizeHeaders(options = {}) {
+  return {
+    ...(options.header || {}),
+    ...(options.headers || {})
+  };
+}
+
+function cleanData(data = {}) {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    return data;
+  }
+
+  return Object.keys(data).reduce((result, key) => {
+    const value = data[key];
+    if (value !== undefined && value !== null && value !== '') {
+      result[key] = value;
+    }
+    return result;
+  }, {});
+}
+
+function looksLikeOptions(payload) {
+  return Boolean(
+    payload &&
+      typeof payload === 'object' &&
+      !Array.isArray(payload) &&
+      (Object.prototype.hasOwnProperty.call(payload, 'headers') ||
+        Object.prototype.hasOwnProperty.call(payload, 'header') ||
+        Object.prototype.hasOwnProperty.call(payload, 'timeout'))
+  );
+}
+
 // 创建全局request对象
 const request = {
   // 创建http请求实例
@@ -15,16 +47,17 @@ const request = {
       }
 
       // 合并headers
+      const optionHeaders = normalizeHeaders(options);
       const headers = {
         'content-type': 'application/json',
         Authorization: token ? `Bearer ${token}` : '',
-        ...(options.headers || {})
+        ...optionHeaders
       };
 
       uni.request({
         url,
         method: options.method || 'GET',
-        data: options.data || {},
+        data: cleanData(options.data || {}),
         header: headers,
         timeout: 60000, // 设置超时时间为60秒
         success: (res) => {
@@ -73,12 +106,22 @@ const request = {
 
 // 封装常用请求方法
 ['get', 'post', 'put', 'delete'].forEach((method) => {
-  request[method] = (url, data, options = {}) => request.http({
-    url,
-    method: method.toUpperCase(),
-    data,
-    ...options
-  });
+  request[method] = (url, data = {}, options = {}) => {
+    let requestData = data;
+    let requestOptions = options;
+
+    if (looksLikeOptions(data) && Object.keys(options).length === 0) {
+      requestData = {};
+      requestOptions = data;
+    }
+
+    return request.http({
+      url,
+      method: method.toUpperCase(),
+      data: requestData,
+      ...requestOptions
+    });
+  };
 });
 
 export default request;

@@ -1,516 +1,340 @@
 <template>
-  <view class="container">
-    <view class="nav-bar">
-      <image src="/static/images/back.svg" mode="aspectFit" class="back-icon" @click="goBack"></image>
-      <text class="nav-title">预约详情</text>
-      <view class="nav-right"></view>
+  <view class="page">
+    <view v-if="loading" class="state-block">
+      <text class="state-text">预约详情加载中...</text>
     </view>
 
-    <!-- 预约状态 -->
-    <view class="status-section" :class="`status-${appointmentInfo?.status}`">
-      <text class="status-text">{{ getStatusText(appointmentInfo?.status) }}</text>
-    </view>
-
-    <!-- 预约信息 -->
-    <view class="info-section">
-      <text class="section-title">预约信息</text>
-      
-      <view class="info-item">
-        <text class="info-label">预约编号</text>
-        <text class="info-value">{{ appointmentInfo?.id }}</text>
+    <view v-else-if="appointmentInfo" class="content">
+      <view class="status-card" :class="`status-${appointment.status}`">
+        <text class="status-title">{{ appointment.status_text }}</text>
+        <text class="status-desc">订单号 #{{ appointment.id }}</text>
       </view>
 
-      <view class="info-item">
-        <text class="info-label">预约日期</text>
-        <text class="info-value">{{ appointmentInfo?.appointment_date }}</text>
-      </view>
-
-      <view class="info-item">
-        <text class="info-label">预约时间</text>
-        <text class="info-value">{{ appointmentInfo?.appointment_time }}</text>
-      </view>
-
-      <view class="info-item">
-        <text class="info-label">预约人</text>
-        <text class="info-value">{{ appointmentInfo?.contact_name }}</text>
-      </view>
-
-      <view class="info-item">
-        <text class="info-label">联系电话</text>
-        <text class="info-value">{{ appointmentInfo?.contact_phone }}</text>
-        <image src="/static/images/phone.svg" mode="aspectFit" class="phone-icon" @click="makePhoneCall"></image>
-      </view>
-    </view>
-
-    <!-- 服务信息 -->
-    <view class="service-section" v-if="appointmentInfo?.service">
-      <text class="section-title">服务信息</text>
-      
-      <view class="service-item">
-        <image :src="appointmentInfo.service.image" mode="aspectFit" class="service-image"></image>
-        <view class="service-details">
-          <text class="service-name">{{ appointmentInfo.service.name }}</text>
-          <text class="service-price">¥{{ appointmentInfo.service.price.toFixed(2) }}</text>
+      <view class="section-card">
+        <text class="section-title">预约信息</text>
+        <view class="info-row">
+          <text class="info-label">预约时间</text>
+          <text class="info-value">{{ appointment.appointment_datetime }}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">联系人</text>
+          <text class="info-value">{{ appointment.contact_name }}</text>
+        </view>
+        <view class="info-row" @click="makePhoneCall">
+          <text class="info-label">联系电话</text>
+          <text class="info-value action-text">{{ appointment.contact_phone || '未填写' }}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">服务地址</text>
+          <text class="info-value address-text">{{ appointment.address }}</text>
         </view>
       </view>
-    </view>
 
-    <!-- 技师信息 -->
-    <view class="technician-section" v-if="appointmentInfo?.technician">
-      <text class="section-title">技师信息</text>
-      
-      <view class="technician-item">
-        <image :src="appointmentInfo.technician.avatar" mode="aspectFit" class="technician-avatar"></image>
-        <view class="technician-details">
-          <text class="technician-name">{{ appointmentInfo.technician.name }}</text>
-          <text class="technician-level">{{ appointmentInfo.technician.level }}</text>
+      <view class="section-card">
+        <text class="section-title">服务信息</text>
+        <view class="service-row">
+          <image :src="appointment.service_image" mode="aspectFill" class="service-image"></image>
+          <view class="service-content">
+            <text class="service-title">{{ appointment.service_title }}</text>
+            <text class="service-price">¥{{ formatCurrency(appointment.service_price) }}</text>
+          </view>
         </view>
+      </view>
+
+      <view v-if="appointment.notes" class="section-card">
+        <text class="section-title">备注信息</text>
+        <text class="remark-text">{{ appointment.notes }}</text>
       </view>
     </view>
 
-    <!-- 备注信息 -->
-    <view class="remark-section" v-if="appointmentInfo?.remark">
-      <text class="section-title">备注信息</text>
-      <text class="remark-text">{{ appointmentInfo.remark }}</text>
+    <view v-else class="state-block">
+      <image src="/static/images/empty.svg" mode="aspectFit" class="state-image"></image>
+      <text class="state-text">预约信息不存在或已被删除</text>
     </view>
 
-    <!-- 操作按钮 -->
-    <view class="action-buttons" v-if="showCancelButton">
-      <button class="cancel-button" @click="showCancelConfirm">取消预约</button>
-    </view>
-
-    <!-- 取消预约确认弹窗 -->
-    <view class="dialog" v-if="showCancelDialog">
-      <view class="dialog-content">
-        <text class="dialog-title">取消预约</text>
-        <text class="dialog-message">确定要取消此预约吗？取消后无法恢复。</text>
-        <view class="dialog-buttons">
-          <button class="cancel-dialog-button" @click="cancelCancel">取消</button>
-          <button class="confirm-dialog-button" @click="confirmCancel">确定</button>
-        </view>
-      </view>
-    </view>
-
-    <!-- 加载状态 -->
-    <view class="loading" v-if="loading">
-      <text>加载中...</text>
+    <view v-if="showCancelButton" class="bottom-bar">
+      <button class="cancel-button" @click="confirmCancel">取消预约</button>
     </view>
   </view>
 </template>
 
 <script>
-// 引入API配置
 import API_CONFIG from '../../config/api.config';
-// 引入路由配置
 import ROUTER_CONFIG from '../../config/router.config';
+import {
+    formatCurrency,
+    normalizeAppointment
+} from '../../utils/view-models';
 
 export default {
-    name: 'appointment-detail',
     data() {
         return {
             appointmentId: '',
             appointmentInfo: null,
             token: '',
-            loading: false,
-            showCancelDialog: false
+            loading: false
         };
     },
-    onLoad(options) {
-        if(options.appointmentId) {
-            this.appointmentId = options.appointmentId;
-            this.token = uni.getStorageSync('token');
-            this.getAppointmentDetail();
+    computed: {
+        appointment() {
+            return this.appointmentInfo ? normalizeAppointment(this.appointmentInfo) : normalizeAppointment();
+        },
+        showCancelButton() {
+            return Boolean(this.appointmentInfo) && ['pending', 'accepted'].includes(this.appointment.status);
         }
     },
-    computed: {
-        showCancelButton() {
-            // 只有待确认和已确认的预约可以取消
-            return this.appointmentInfo && ['pending', 'confirmed'].includes(this.appointmentInfo.status);
+    onLoad(options) {
+        this.appointmentId = options?.appointmentId || options?.id || '';
+        this.token = uni.getStorageSync('token');
+
+        if (!this.appointmentId || !this.token) {
+            uni.showToast({
+                title: '预约信息不存在',
+                icon: 'none'
+            });
+            return;
         }
+
+        this.getAppointmentDetail();
     },
     methods: {
+        formatCurrency,
         getAppointmentDetail() {
             this.loading = true;
 
-            this.$request.get(`${API_CONFIG.endpoints.appointment.getAppointment}/${this.appointmentId}`, {}, {
-                headers: {
-                    Authorization: `Bearer ${this.token}`
-                }
-            }).then((res) => {
-                this.loading = false;
+            this.$request
+                .get(`${API_CONFIG.endpoints.appointment.getAppointment}/${this.appointmentId}`, {}, {
+                    headers: {
+                        Authorization: `Bearer ${this.token}`
+                    }
+                })
+                .then((res) => {
+                    this.appointmentInfo = res.data || null;
+                })
+                .catch(() => {
+                    this.appointmentInfo = null;
+                })
+                .finally(() => {
+                    this.loading = false;
+                });
+        },
+        makePhoneCall() {
+            if (!this.appointment.contact_phone) {
+                return;
+            }
 
-                if(res.code === 200) {
-                    this.appointmentInfo = res.data;
-                } else {
-                    uni.showToast({
-                        title: res.message || '获取预约详情失败',
-                        icon: 'none'
-                    });
-                }
-            }).catch((err) => {
-                this.loading = false;
+            uni.makePhoneCall({
+                phoneNumber: this.appointment.contact_phone
             });
         },
-
-        getStatusText(status) {
-            const statusMap = {
-                'pending': '待确认',
-                'confirmed': '已确认',
-                'canceled': '已取消',
-                'completed': '已完成',
-                'no_show': '未履约'
-            };
-            return statusMap[status] || '未知状态';
-        },
-
-        makePhoneCall() {
-            if(this.appointmentInfo?.phone) {
-                uni.makePhoneCall({
-                    phoneNumber: this.appointmentInfo.phone
-                });
-            }
-        },
-
-        showCancelConfirm() {
-            this.showCancelDialog = true;
-        },
-
-        cancelCancel() {
-            this.showCancelDialog = false;
-        },
-
         confirmCancel() {
-      this.loading = true;
-      this.showCancelDialog = false;
-
-      this.$request.delete(`${API_CONFIG.endpoints.appointment.updateAppointmentStatus}/${this.appointmentId}`, {
-        status: 'canceled'
-      }, {
-        headers: {
-          Authorization: `Bearer ${this.token}`
-        }
-      }).then((res) => {
-        this.loading = false;
-
-        if(res.code === 200) {
-          uni.showToast({
-            title: '预约已取消',
-            icon: 'success'
-          });
-
-          // 更新预约状态
-          this.appointmentInfo.status = 'canceled';
-
-          // 延迟返回上一页
-          setTimeout(() => {
-            ROUTER_CONFIG.navigate.back();
-          }, 1500);
-        } else {
-          uni.showToast({
-            title: res.message || '取消预约失败',
-            icon: 'none'
-          });
-        }
-        }).catch((err) => {
-            this.loading = false;
-            this.showCancelDialog = false;
-        });
+            uni.showModal({
+                title: '取消预约',
+                content: '确认取消当前预约吗？取消后需要重新下单。',
+                success: ({ confirm }) => {
+                    if (confirm) {
+                        this.cancelAppointment();
+                    }
+                }
+            });
         },
+        cancelAppointment() {
+            this.loading = true;
 
-        goBack() {
-            ROUTER_CONFIG.navigate.back();
+            this.$request
+                .delete(`${API_CONFIG.endpoints.appointment.updateAppointmentStatus}/${this.appointmentId}`, {}, {
+                    headers: {
+                        Authorization: `Bearer ${this.token}`
+                    }
+                })
+                .then(() => {
+                    this.appointmentInfo = {
+                        ...this.appointmentInfo,
+                        status: 'cancelled'
+                    };
+
+                    uni.showToast({
+                        title: '预约已取消',
+                        icon: 'success'
+                    });
+                })
+                .catch(() => {})
+                .finally(() => {
+                    this.loading = false;
+                });
         }
     }
 };
 </script>
 
 <style scoped>
-.container {
-  padding-bottom: 20px;
-}
-
-/* 导航栏 */
-.nav-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 44px;
-  padding: 0 16px;
-  background-color: white;
-  border-bottom: 1px solid #eeeeee;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 10;
-}
-
-.back-icon {
-  width: 20px;
-  height: 20px;
-}
-
-.nav-title {
-  font-size: 16px;
-  font-weight: bold;
-  color: var(--text-color);
-}
-
-.nav-right {
-  width: 20px;
-}
-
-/* 状态区域 */
-.status-section {
-  margin-top: 44px;
+.page {
+  min-height: 100vh;
   padding: 16px;
-  text-align: center;
+  padding-bottom: 88px;
+  background: #f6f7f9;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.status-card,
+.section-card {
+  padding: 18px 16px;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
+}
+
+.status-card {
+  color: #ffffff;
 }
 
 .status-pending {
-  background-color: #fff9e6;
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
 }
 
-.status-confirmed {
-  background-color: #e6f7ff;
-}
-
-.status-canceled {
-  background-color: #f5f5f5;
+.status-accepted {
+  background: linear-gradient(135deg, #1aad19 0%, #45c27b 100%);
 }
 
 .status-completed {
-  background-color: #f6ffed;
+  background: linear-gradient(135deg, #2563eb 0%, #4f7cff 100%);
 }
 
-.status-no_show {
-  background-color: #fff2f0;
+.status-cancelled {
+  background: linear-gradient(135deg, #667085 0%, #98a2b3 100%);
 }
 
-.status-text {
-  font-size: 16px;
-  font-weight: bold;
+.status-title {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
 }
 
-.status-pending .status-text {
-  color: #fa8c16;
-}
-
-.status-confirmed .status-text {
-  color: #1890ff;
-}
-
-.status-canceled .status-text {
-  color: #8c8c8c;
-}
-
-.status-completed .status-text {
-  color: #52c41a;
-}
-
-.status-no_show .status-text {
-  color: #f5222d;
-}
-
-/* 信息区域 */
-.info-section,
-.service-section,
-.technician-section,
-.remark-section {
-  margin-top: 10px;
-  background-color: white;
-  padding: 16px;
+.status-desc {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.84);
 }
 
 .section-title {
-  font-size: 16px;
-  font-weight: bold;
-  color: var(--text-color);
-  margin-bottom: 16px;
   display: block;
+  margin-bottom: 12px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #111827;
 }
 
-.info-item {
+.info-row {
   display: flex;
-  align-items: center;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
   padding: 12px 0;
-  border-bottom: 1px solid #eeeeee;
+  border-bottom: 1px solid #f2f4f7;
 }
 
-.info-item:last-child {
+.info-row:last-child {
   border-bottom: none;
+  padding-bottom: 0;
 }
 
 .info-label {
-  font-size: 14px;
-  color: var(--text-color-secondary);
-  width: 100px;
+  width: 72px;
+  font-size: 13px;
+  color: #667085;
 }
 
 .info-value {
-  font-size: 14px;
-  color: var(--text-color);
   flex: 1;
+  text-align: right;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #111827;
 }
 
-.phone-icon {
-  width: 20px;
-  height: 20px;
-  margin-left: 16px;
+.action-text {
+  color: #1aad19;
 }
 
-/* 服务信息 */
-.service-item {
+.address-text {
+  text-align: left;
+}
+
+.service-row {
   display: flex;
   align-items: center;
 }
 
 .service-image {
-  width: 100px;
-  height: 100px;
-  border-radius: 8px;
-  margin-right: 16px;
+  width: 84px;
+  height: 84px;
+  border-radius: 16px;
+  background: #eef2f7;
 }
 
-.service-details {
+.service-content {
   flex: 1;
+  margin-left: 12px;
 }
 
-.service-name {
-  font-size: 16px;
-  font-weight: bold;
-  color: var(--text-color);
+.service-title {
   display: block;
-  margin-bottom: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
 }
 
 .service-price {
-  font-size: 16px;
-  color: var(--danger-color);
-}
-
-/* 技师信息 */
-.technician-item {
-  display: flex;
-  align-items: center;
-}
-
-.technician-avatar {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  margin-right: 16px;
-}
-
-.technician-details {
-  flex: 1;
-}
-
-.technician-name {
-  font-size: 16px;
-  font-weight: bold;
-  color: var(--text-color);
   display: block;
-  margin-bottom: 8px;
+  margin-top: 8px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1aad19;
 }
 
-.technician-level {
-  font-size: 14px;
-  color: var(--text-color-secondary);
-}
-
-/* 备注信息 */
 .remark-text {
   font-size: 14px;
-  color: var(--text-color);
-  line-height: 1.5;
+  line-height: 1.8;
+  color: #4b5563;
 }
 
-/* 操作按钮 */
-.action-buttons {
-  margin: 20px 16px;
+.state-block {
+  margin-top: 90px;
+  text-align: center;
+}
+
+.state-image {
+  width: 132px;
+  height: 132px;
+}
+
+.state-text {
+  display: block;
+  margin-top: 12px;
+  font-size: 14px;
+  color: #98a2b3;
+}
+
+.bottom-bar {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: 18px;
 }
 
 .cancel-button {
-  width: 100%;
-  height: 48px;
-  background-color: #f5f5f5;
-  color: var(--text-color);
+  height: 46px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #ef4444;
+  border: 1px solid #fecaca;
   font-size: 16px;
-  border-radius: 24px;
-  padding: 0;
-}
-
-/* 弹窗 */
-.dialog {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 999;
-}
-
-.dialog-content {
-  width: 80%;
-  background-color: white;
-  border-radius: 16px;
-  padding: 20px;
-}
-
-.dialog-title {
-  display: block;
-  font-size: 18px;
-  font-weight: bold;
-  color: var(--text-color);
-  text-align: center;
-  margin-bottom: 16px;
-}
-
-.dialog-message {
-  display: block;
-  font-size: 14px;
-  color: var(--text-color-secondary);
-  text-align: center;
-  line-height: 1.5;
-  margin-bottom: 20px;
-}
-
-.dialog-buttons {
-  display: flex;
-  justify-content: space-between;
-}
-
-.cancel-dialog-button {
-  flex: 1;
-  height: 44px;
-  background-color: #f5f5f5;
-  color: var(--text-color);
-  margin-right: 8px;
-  border-radius: 8px;
-  font-size: 16px;
-  padding: 0;
-}
-
-.confirm-dialog-button {
-  flex: 1;
-  height: 44px;
-  background-color: var(--danger-color);
-  margin-left: 8px;
-  border-radius: 8px;
-  font-size: 16px;
-  padding: 0;
-}
-
-/* 加载状态 */
-.loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 200px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
 }
 </style>

@@ -1,181 +1,143 @@
 <template>
-  <view class="container">
-    <view class="nav-bar">
-      <image src="/static/images/back.svg" mode="aspectFit" class="back-icon" @click="goBack"></image>
-      <text class="nav-title">服务详情</text>
-      <view class="nav-right"></view>
+  <view class="page">
+    <swiper
+      v-if="serviceInfo && service.image_urls.length"
+      class="hero-swiper"
+      indicator-dots
+      circular
+      autoplay
+      interval="3200"
+    >
+      <swiper-item v-for="image in service.image_urls" :key="image">
+        <image :src="image" mode="aspectFill" class="hero-image"></image>
+      </swiper-item>
+    </swiper>
+
+    <view v-if="loading" class="state-block">
+      <text class="state-text">服务详情加载中...</text>
     </view>
 
-    <!-- 服务图片轮播 -->
-    <view class="swiper-container" v-if="serviceInfo">
-      <swiper class="swiper" indicator-dots circular autoplay>
-        <swiper-item v-for="image in serviceImages" :key="image">
-          <image :src="image" mode="aspectFill" class="swiper-image"></image>
-        </swiper-item>
-      </swiper>
-    </view>
-
-    <!-- 服务基本信息 -->
-    <view class="info-section" v-if="serviceInfo">
-      <text class="service-name">{{ serviceInfo.name }}</text>
-      <text class="service-price">¥{{ serviceInfo.price }}</text>
-      <text class="service-sales">销量 {{ serviceInfo.sales || 0 }} | 评价 {{ serviceInfo.ratings || 0 }}</text>
-      
-      <!-- 服务标签 -->
-      <view class="tags-container">
-        <view class="tag" v-for="tag in serviceTags" :key="tag">{{ tag }}</view>
-      </view>
-    </view>
-
-    <!-- 服务详情内容 -->
-    <view class="detail-section" v-if="serviceInfo">
-      <text class="section-title">服务详情</text>
-      <rich-text class="detail-content" :nodes="serviceInfo.description"></rich-text>
-    </view>
-
-    <!-- 服务流程 -->
-    <view class="process-section" v-if="serviceInfo?.process && serviceInfo.process.length > 0">
-      <text class="section-title">服务流程</text>
-      <view class="process-list">
-        <view class="process-item" v-for="(step, index) in serviceInfo.process" :key="index">
-          <view class="step-number">{{ index + 1 }}</view>
-          <text class="step-text">{{ step }}</text>
+    <view v-else-if="serviceInfo" class="content">
+      <view class="summary-card">
+        <text class="service-title">{{ service.title }}</text>
+        <view class="price-row">
+          <text class="service-price">¥{{ formatCurrency(service.price) }}</text>
+          <text class="price-tip">按次计费</text>
+        </view>
+        <view class="meta-row">
+          <text class="meta-item">{{ service.category_name || '精选家政服务' }}</text>
+          <text class="meta-item">{{ service.duration || 60 }}分钟起</text>
+        </view>
+        <view class="tag-row">
+          <text v-for="tag in service.tags.slice(0, 4)" :key="tag" class="tag">{{ tag }}</text>
         </view>
       </view>
-    </view>
 
-    <!-- 技师推荐 -->
-    <!-- <view class="technicians-section" v-if="technicians && technicians.length > 0">
-      <text class="section-title">推荐技师</text>
-      <scroll-view class="technicians-scroll" scroll-x>
-        <view class="technician-item" v-for="technician in technicians" :key="technician.id">
-          <image :src="technician.avatar" mode="aspectFit" class="technician-avatar"></image>
-          <text class="technician-name">{{ technician.name }}</text>
-          <text class="technician-level">{{ technician.level }}</text>
-          <text class="technician-score">{{ technician.score || 4.9 }}分</text>
-        </view>
-      </scroll-view>
-    </view> -->
+      <view class="section-card">
+        <text class="section-title">服务介绍</text>
+        <rich-text
+          v-if="hasRichText(service.description)"
+          class="rich-content"
+          :nodes="service.description"
+        ></rich-text>
+        <text v-else class="section-text">{{ service.description || '暂无服务介绍' }}</text>
+      </view>
 
-    <!-- 用户评价 -->
-    <view class="reviews-section" v-if="reviews && reviews.length > 0">
-      <text class="section-title">用户评价</text>
-      <view class="review-item" v-for="review in reviews" :key="review.id">
-        <view class="review-header">
-          <image :src="review.user_avatar" mode="aspectFit" class="user-avatar"></image>
-          <text class="user-name">{{ review.user_name }}</text>
-          <text class="review-time">{{ review.created_at }}</text>
+      <view v-if="service.process.length" class="section-card">
+        <text class="section-title">服务流程</text>
+        <view class="process-list">
+          <view v-for="(step, index) in service.process" :key="`${service.id}-${index}`" class="process-item">
+            <view class="process-index">{{ index + 1 }}</view>
+            <text class="process-text">{{ step }}</text>
+          </view>
         </view>
-        <text class="review-content">{{ review.content }}</text>
-        <view class="review-images" v-if="review.images && review.images.length > 0">
-          <image :src="image" mode="aspectFit" class="review-image" v-for="image in review.images" :key="image"></image>
+      </view>
+
+      <view class="section-card">
+        <text class="section-title">下单说明</text>
+        <view class="notice-list">
+          <text class="notice-item">预约提交后，平台会联系您确认具体上门时间。</text>
+          <text class="notice-item">服务价格以页面展示为准，特殊需求可在备注中说明。</text>
+          <text class="notice-item">如需取消或调整时间，可在“我的预约”中查看处理。</text>
         </view>
       </view>
     </view>
 
-    <!-- 底部预约按钮 -->
-    <view class="bottom-bar" v-if="serviceInfo">
+    <view v-else class="state-block">
+      <image src="/static/images/empty.svg" mode="aspectFit" class="state-image"></image>
+      <text class="state-text">没有找到对应服务</text>
+    </view>
+
+    <view v-if="serviceInfo" class="bottom-bar">
+      <view>
+        <text class="bottom-price">¥{{ formatCurrency(service.price) }}</text>
+        <text class="bottom-tip">立即预约即可提交需求</text>
+      </view>
       <button class="appointment-button" @click="makeAppointment">立即预约</button>
-    </view>
-
-    <!-- 预约弹窗 -->
-    <view class="appointment-dialog" v-if="showAppointmentDialog">
-      <view class="appointment-content">
-        <text class="appointment-title">确认预约</text>
-        <text class="appointment-service">{{ serviceInfo.name }}</text>
-        <text class="appointment-price">¥{{ serviceInfo.price }}</text>
-        
-        <!-- 技师选择已移除，由后台自动派单 -->
-        
-        <view class="dialog-buttons">
-          <button class="cancel-button" @click="cancelAppointment">取消</button>
-          <button class="confirm-button" @click="confirmAppointment">确定</button>
-        </view>
-      </view>
-    </view>
-
-    <!-- 加载状态 -->
-    <view class="loading" v-if="loading">
-      <text>加载中...</text>
     </view>
   </view>
 </template>
 
 <script>
-// 引入API配置
 import API_CONFIG from '../../config/api.config';
-// 引入路由配置
 import ROUTER_CONFIG from '../../config/router.config';
+import {
+    formatCurrency,
+    hasRichText,
+    normalizeService
+} from '../../utils/view-models';
 
 export default {
-    name: 'service-detail',
     data() {
         return {
             serviceId: '',
             serviceInfo: null,
-            reviews: [],
-            showAppointmentDialog: false,
-            loading: false,
-            token: ''
+            loading: false
         };
     },
-    onLoad(options) {
-        if(options.serviceId) {
-            this.serviceId = options.serviceId;
-            this.token = uni.getStorageSync('token');
-            this.getServiceDetail();
+    computed: {
+        service() {
+            return this.serviceInfo ? normalizeService(this.serviceInfo) : normalizeService();
         }
     },
-    computed: {
-        serviceImages() {
-            // 如果服务信息有图片，返回图片数组，否则返回默认图片
-            if(this.serviceInfo && this.serviceInfo.images) {
-                return this.serviceInfo.images.split(',');
-            }
-            return ['/static/images/default_service.svg'];
-        },
-        serviceTags() {
-            // 如果服务信息有标签，返回标签数组，否则返回空数组
-            if(this.serviceInfo && this.serviceInfo.tags) {
-                return this.serviceInfo.tags.split(',');
-            }
-            return [];
+    onLoad(options) {
+        this.serviceId = options?.serviceId || options?.id || '';
+        if (!this.serviceId) {
+            uni.showToast({
+                title: '服务信息不存在',
+                icon: 'none'
+            });
+            return;
         }
+
+        this.getServiceDetail();
     },
     methods: {
+        formatCurrency,
+        hasRichText,
         getServiceDetail() {
             this.loading = true;
-            this.$request.get(`${API_CONFIG.endpoints.service.getServices}/${this.serviceId}`, {}, {
-                headers: {
-                    Authorization: `Bearer ${this.token}`
-                }
-            }).then((res) => {
-                this.loading = false;
 
-                if(res.code === 200) {
-                    this.serviceInfo = res.data;
-                    // 模拟评价数据，因为API中没有reviews接口
-                    this.reviews = res.data.reviews || [];
-                } else {
-                    uni.showToast({
-                        title: res.message || '获取服务详情失败',
-                        icon: 'none'
-                    });
-                }
-            }).catch((err) => {
-                this.loading = false;
-            });
+            this.$request
+                .get(`${API_CONFIG.endpoints.service.getServices}/${this.serviceId}`)
+                .then((res) => {
+                    this.serviceInfo = res.data || null;
+                })
+                .catch(() => {
+                    this.serviceInfo = null;
+                })
+                .finally(() => {
+                    this.loading = false;
+                });
         },
-
         makeAppointment() {
-            // 检查用户是否登录
             const token = uni.getStorageSync('token');
-            if(!token) {
+            if (!token) {
                 uni.showModal({
-                    title: '提示',
-                    content: '请先登录',
-                    success: (res) => {
-                        if(res.confirm) {
+                    title: '请先登录',
+                    content: '登录后才能提交预约需求，是否现在去登录？',
+                    success: ({ confirm }) => {
+                        if (confirm) {
                             ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.login);
                         }
                     }
@@ -183,429 +145,204 @@ export default {
                 return;
             }
 
-            this.showAppointmentDialog = true;
-        },
-
-        onTechnicianChange(e) {
-            const index = e.detail.value;
-            this.selectedTechnician = this.technicians[index];
-        },
-
-        cancelAppointment() {
-            this.showAppointmentDialog = false;
-            this.selectedTechnician = null;
-        },
-
-        confirmAppointment() {
-            this.showAppointmentDialog = false;
-
-            // 跳转到预约页面，不再传递技师ID，由后台自动派单
-            ROUTER_CONFIG.navigate.to(`${ROUTER_CONFIG.pages.appointment.create}?serviceId=${this.serviceId}`);
-        },
-
-        goBack() {
-            ROUTER_CONFIG.navigate.back();
+            ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.appointment.create, {
+                serviceId: this.serviceId
+            });
         }
     }
 };
 </script>
 
 <style scoped>
-.container {
-  padding-bottom: 80px;
+.page {
+  min-height: 100vh;
+  padding-bottom: 96px;
+  background: #f6f7f9;
 }
 
-/* 导航栏 */
-.nav-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 44px;
-  padding: 0 16px;
-  background-color: white;
-  border-bottom: 1px solid #eeeeee;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 10;
+.hero-swiper {
+  height: 280px;
 }
 
-.back-icon {
-  width: 20px;
-  height: 20px;
-}
-
-.nav-title {
-  font-size: 16px;
-  font-weight: bold;
-  color: var(--text-color);
-}
-
-.nav-right {
-  width: 20px;
-}
-
-/* 轮播图 */
-.swiper-container {
-  margin-top: 44px;
-}
-
-.swiper {
-  height: 300px;
-}
-
-.swiper-image {
+.hero-image {
   width: 100%;
   height: 100%;
 }
 
-/* 基本信息 */
-.info-section {
-  background-color: white;
-  padding: 16px;
-  border-bottom: 1px solid #eeeeee;
+.content {
+  margin-top: -26px;
+  padding: 0 16px;
 }
 
-.service-name {
-  font-size: 18px;
-  font-weight: bold;
-  color: var(--text-color);
+.summary-card,
+.section-card {
+  margin-bottom: 14px;
+  padding: 18px 16px;
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.06);
+}
+
+.service-title {
   display: block;
-  margin-bottom: 8px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.4;
+}
+
+.price-row {
+  display: flex;
+  align-items: flex-end;
+  margin-top: 12px;
 }
 
 .service-price {
-  font-size: 18px;
-  color: var(--danger-color);
-  display: block;
-  margin-bottom: 8px;
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 700;
+  color: #1aad19;
 }
 
-.service-sales {
-  font-size: 12px;
-  color: var(--text-color-secondary);
+.price-tip {
+  margin-left: 8px;
+  font-size: 13px;
+  color: #9ca3af;
 }
 
-.tags-container {
-  margin-top: 12px;
+.meta-row {
   display: flex;
   flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
 }
 
+.meta-item,
 .tag {
-  padding: 4px 12px;
-  background-color: #f0f0f0;
-  color: var(--text-color-secondary);
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #f2f4f7;
   font-size: 12px;
-  border-radius: 12px;
-  margin-right: 8px;
-  margin-bottom: 8px;
+  color: #475467;
 }
 
-/* 详情内容 */
-.detail-section,
-.process-section,
-.technicians-section,
-.reviews-section {
-  margin-top: 10px;
-  background-color: white;
-  padding: 16px;
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .section-title {
-  font-size: 16px;
-  font-weight: bold;
-  color: var(--text-color);
-  margin-bottom: 16px;
   display: block;
+  margin-bottom: 12px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #111827;
 }
 
-.detail-content {
+.section-text,
+.rich-content {
   font-size: 14px;
-  color: var(--text-color);
   line-height: 1.8;
+  color: #4b5563;
 }
 
-/* 服务流程 */
 .process-list {
-  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .process-item {
   display: flex;
   align-items: flex-start;
-  margin-bottom: 16px;
-  position: relative;
 }
 
-.process-item::before {
-  content: '';
-  position: absolute;
-  left: -16px;
-  top: 20px;
-  bottom: -16px;
-  width: 1px;
-  background-color: #eeeeee;
-}
-
-.process-item:last-child::before {
-  display: none;
-}
-
-.step-number {
-  width: 24px;
-  height: 24px;
-  background-color: var(--primary-color);
-  color: white;
-  font-size: 12px;
-  font-weight: bold;
+.process-index {
+  width: 26px;
+  height: 26px;
+  line-height: 26px;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 12px;
-  position: relative;
-  z-index: 1;
-}
-
-.step-text {
-  flex: 1;
-  font-size: 14px;
-  color: var(--text-color);
-  line-height: 1.5;
-}
-
-/* 技师推荐 */
-.technicians-scroll {
-  white-space: nowrap;
-}
-
-.technician-item {
-  display: inline-block;
-  width: 100px;
+  background: #1aad19;
+  color: #ffffff;
+  font-size: 12px;
   text-align: center;
-  margin-right: 16px;
+  flex-shrink: 0;
 }
 
-.technician-avatar {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  margin-bottom: 8px;
-}
-
-.technician-name {
+.process-text {
+  margin-left: 10px;
   font-size: 14px;
-  font-weight: bold;
-  color: var(--text-color);
-  display: block;
-  margin-bottom: 4px;
+  line-height: 1.7;
+  color: #4b5563;
 }
 
-.technician-level {
-  font-size: 12px;
-  color: var(--text-color-secondary);
-  display: block;
-  margin-bottom: 4px;
-}
-
-.technician-score {
-  font-size: 12px;
-  color: var(--danger-color);
-}
-
-/* 用户评价 */
-.review-item {
-  padding: 16px 0;
-  border-bottom: 1px solid #eeeeee;
-}
-
-.review-item:last-child {
-  border-bottom: none;
-}
-
-.review-header {
+.notice-list {
   display: flex;
-  align-items: center;
-  margin-bottom: 12px;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.user-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  margin-right: 12px;
-}
-
-.user-name {
+.notice-item {
   font-size: 14px;
-  color: var(--text-color);
-  margin-right: 12px;
+  line-height: 1.7;
+  color: #4b5563;
 }
 
-.review-time {
-  font-size: 12px;
-  color: var(--text-color-secondary);
+.state-block {
+  padding: 80px 24px;
+  text-align: center;
 }
 
-.review-content {
-  font-size: 14px;
-  color: var(--text-color);
-  line-height: 1.5;
-  margin-bottom: 12px;
+.state-image {
+  width: 136px;
+  height: 136px;
+}
+
+.state-text {
   display: block;
+  margin-top: 12px;
+  font-size: 14px;
+  color: #9ca3af;
 }
 
-.review-images {
-  display: flex;
-  flex-wrap: wrap;
-}
-
-.review-image {
-  width: 80px;
-  height: 80px;
-  margin-right: 8px;
-  margin-bottom: 8px;
-  border-radius: 4px;
-}
-
-/* 底部预约按钮 */
 .bottom-bar {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 60px;
-  background-color: white;
-  border-top: 1px solid #eeeeee;
+  left: 16px;
+  right: 16px;
+  bottom: 18px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 0 16px;
+  justify-content: space-between;
+  padding: 14px 14px 14px 18px;
+  border-radius: 18px;
+  background: rgba(17, 24, 39, 0.96);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.2);
+}
+
+.bottom-price {
+  display: block;
+  font-size: 22px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.bottom-tip {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .appointment-button {
-  width: 100%;
-  height: 44px;
-  background-color: var(--primary-color);
-  color: white;
-  font-size: 16px;
-  border-radius: 22px;
-  padding: 0;
-}
-
-/* 预约弹窗 */
-.appointment-dialog {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 999;
-}
-
-.appointment-content {
-  width: 80%;
-  background-color: white;
-  border-radius: 16px;
-  padding: 20px;
-}
-
-.appointment-title {
-  display: block;
-  font-size: 18px;
-  font-weight: bold;
-  color: var(--text-color);
-  text-align: center;
-  margin-bottom: 16px;
-}
-
-.appointment-service {
-  display: block;
-  font-size: 16px;
-  color: var(--text-color);
-  text-align: center;
-  margin-bottom: 8px;
-}
-
-.appointment-price {
-  display: block;
-  font-size: 16px;
-  color: var(--danger-color);
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-.form-item {
-  margin-bottom: 20px;
-}
-
-.form-label {
-  font-size: 16px;
-  color: var(--text-color);
-  display: block;
-  margin-bottom: 8px;
-}
-
-.picker-view {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 44px;
-  border: 1px solid #eeeeee;
-  border-radius: 8px;
-  padding: 0 16px;
-}
-
-.picker-text {
-  font-size: 14px;
-  color: var(--text-color-secondary);
-}
-
-.picker-icon {
-  width: 16px;
-  height: 16px;
-}
-
-.dialog-buttons {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 20px;
-}
-
-.cancel-button {
-  flex: 1;
-  height: 44px;
-  background-color: #f5f5f5;
-  color: var(--text-color);
-  margin-right: 8px;
-  border-radius: 8px;
-  font-size: 16px;
-  padding: 0;
-}
-
-.confirm-button {
-  flex: 1;
-  height: 44px;
-  background-color: var(--primary-color);
-  color: white;
-  margin-left: 8px;
-  border-radius: 8px;
-  font-size: 16px;
-  padding: 0;
-}
-
-/* 加载状态 */
-.loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 200px;
-  margin-top: 44px;
+  min-width: 132px;
+  height: 42px;
+  margin: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1aad19 0%, #36c567 100%);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 600;
 }
 </style>

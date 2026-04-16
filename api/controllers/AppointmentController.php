@@ -130,12 +130,12 @@ class AppointmentController {
             Response::error('无权操作该预约');
         }
         
-        // 只能取消待确认状态的预约
-        if ($appointment['status'] != 'pending') {
+        // 仅允许待接单和已接单的预约取消
+        if (!in_array($appointment['status'], ['pending', 'accepted'])) {
             Response::error('当前状态无法取消预约');
         }
         
-        if ($this->appointmentModel->updateAppointmentStatus($id, 4)) {
+        if ($this->appointmentModel->updateAppointmentStatus($id, 'cancelled')) {
             Response::success([], '预约已取消');
         } else {
             Response::error('操作失败');

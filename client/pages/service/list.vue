@@ -1,63 +1,101 @@
 <template>
-  <view class="container">
-    <!-- 搜索栏 -->
-    <view class="search-bar">
-      <view class="search-input">
+  <view class="page">
+    <view class="toolbar">
+      <view class="search-box">
         <image src="/static/images/search.svg" mode="aspectFit" class="search-icon"></image>
-        <input type="text" placeholder="搜索服务" v-model="searchText" @input="onSearchInput" class="input" />
+        <input
+          v-model="searchText"
+          class="search-input"
+          type="text"
+          confirm-type="search"
+          placeholder="搜索保洁、母婴、维修等服务"
+          @input="onSearchInput"
+          @confirm="triggerSearch"
+        />
+        <text v-if="searchText" class="clear-btn" @click="clearSearch">清空</text>
       </view>
-    </view>
 
-    <!-- 分类筛选 -->
-    <view class="filter-bar">
-      <scroll-view scroll-x class="category-scroll">
-        <view class="category-item" :class="{active: selectedCategory === 0}" @click="selectCategory(0)">
-          <text>全部</text>
-        </view>
-        <view class="category-item" :class="{active: selectedCategory === item.id}" v-for="item in categories" :key="item.id" @click="selectCategory(item.id)">
-          <text>{{ item.name }}</text>
+      <scroll-view scroll-x class="category-scroll" show-scrollbar="false">
+        <view class="category-row">
+          <view
+            class="category-pill"
+            :class="{ active: selectedCategory === 0 }"
+            @click="selectCategory(0)"
+          >
+            全部
+          </view>
+          <view
+            v-for="item in categories"
+            :key="item.id"
+            class="category-pill"
+            :class="{ active: selectedCategory === item.id }"
+            @click="selectCategory(item.id)"
+          >
+            {{ item.name }}
+          </view>
         </view>
       </scroll-view>
     </view>
 
-    <!-- 服务列表 -->
-    <view class="service-list" v-if="services.length > 0">
-      <view class="service-item" v-for="service in services" :key="service.id" @click="goServiceDetail(service.id)">
-        <image :src="service.image_urls[0]" mode="aspectFill" class="service-image"></image>
-        <view class="service-info">
-          <text class="service-title">{{ service.title }}</text>
-          <text class="service-description">{{ service.description }}</text>
+    <view class="summary-row">
+      <text class="summary-text">{{ summaryText }}</text>
+      <text v-if="searchText || selectedCategory !== 0" class="summary-action" @click="resetFilters">
+        重置筛选
+      </text>
+    </view>
+
+    <view v-if="services.length" class="service-list">
+      <view
+        v-for="service in services"
+        :key="service.id"
+        class="service-card"
+        @click="goServiceDetail(service.id)"
+      >
+        <image :src="service.image" mode="aspectFill" class="service-image"></image>
+        <view class="service-body">
+          <view class="service-head">
+            <text class="service-title">{{ service.title }}</text>
+            <text class="service-price">¥{{ formatCurrency(service.price) }}</text>
+          </view>
+          <text class="service-desc">{{ service.plain_description || '暂无服务介绍' }}</text>
+          <view class="service-tags">
+            <text v-for="tag in service.tags.slice(0, 3)" :key="tag" class="service-tag">{{ tag }}</text>
+          </view>
           <view class="service-footer">
-            <text class="service-price">¥{{ service.price }}</text>
-            <text class="service-duration">{{ service.duration }}分钟</text>
+            <text class="service-duration">{{ service.duration || 60 }}分钟起</text>
+            <text class="service-link">查看详情</text>
           </view>
         </view>
       </view>
 
-      <!-- 加载更多 -->
-      <view class="load-more" @click="loadMore" v-if="hasMore">
-        <text>上拉加载更多</text>
+      <view class="load-state">
+        <text v-if="loading">加载中...</text>
+        <text v-else-if="hasMore">继续上滑加载更多</text>
+        <text v-else>已经到底了</text>
       </view>
     </view>
 
-    <!-- 空状态 -->
-    <view class="empty" v-else-if="!loading">
-      <image src="/static/images/empty.svg" mode="aspectFit" class="empty-icon"></image>
-      <text class="empty-text">暂无服务</text>
+    <view v-else-if="loading" class="state-block">
+      <text class="state-text">服务加载中...</text>
     </view>
 
-    <!-- 加载状态 -->
-    <view class="loading" v-if="loading">
-      <text>加载中...</text>
+    <view v-else class="state-block">
+      <image src="/static/images/empty.svg" mode="aspectFit" class="state-image"></image>
+      <text class="state-title">{{ emptyTitle }}</text>
+      <text class="state-text">{{ emptyText }}</text>
+      <button class="state-button" @click="resetFilters">重新看看</button>
     </view>
   </view>
 </template>
 
 <script>
-// 引入API配置
 import API_CONFIG from '../../config/api.config';
-// 引入路由配置
 import ROUTER_CONFIG from '../../config/router.config';
+import {
+    formatCurrency,
+    normalizeService,
+    SERVICE_LIST_FILTERS_KEY
+} from '../../utils/view-models';
 
 export default {
     data() {
@@ -68,279 +106,413 @@ export default {
             selectedCategory: 0,
             page: 1,
             pageSize: 10,
+            total: 0,
             hasMore: true,
             loading: false,
-            searchTimer: null
+            searchTimer: null,
+            initialized: false
         };
     },
+    computed: {
+        summaryText() {
+            const currentCategory = this.categories.find((item) => item.id === this.selectedCategory);
+            const categoryText = currentCategory ? `${currentCategory.name} · ` : '';
+            const searchText = this.searchText ? `“${this.searchText}” · ` : '';
+            const countText = this.total ? `共找到 ${this.total} 项服务` : '按服务类型快速筛选';
+
+            return `${categoryText}${searchText}${countText}`;
+        },
+        emptyTitle() {
+            return this.searchText ? '没有找到匹配的服务' : '当前分类暂无服务';
+        },
+        emptyText() {
+            return this.searchText
+                ? '可以换一个关键词，或者清空筛选后再试试。'
+                : '建议切换分类，看看其他可预约服务。';
+        }
+    },
     onLoad(options) {
-        // 检查是否有传入分类ID
-        if(options && options.category_id) {
-            this.selectedCategory = parseInt(options.category_id, 10);
+        if (options?.category_id) {
+            this.selectedCategory = Number(options.category_id) || 0;
         }
 
-        // 获取分类列表
+        this.initialized = true;
         this.getCategories();
+        this.resetAndFetch();
+    },
+    onShow() {
+        if (!this.initialized) {
+            return;
+        }
 
-        // 获取服务列表
-        this.getServices();
+        this.applyStoredFilters();
     },
     onPullDownRefresh() {
-        // 下拉刷新
-        this.page = 1;
-        this.hasMore = true;
-        this.getServices(true);
+        this.resetAndFetch(true);
     },
     onReachBottom() {
-        // 上拉加载更多
-        if(this.hasMore && !this.loading) {
-            this.loadMore();
+        this.loadMore();
+    },
+    onUnload() {
+        if (this.searchTimer) {
+            clearTimeout(this.searchTimer);
         }
     },
     methods: {
+        formatCurrency,
         getCategories() {
-            this.$request.get(API_CONFIG.endpoints.category.getCategories).then((res) => {
-                if(res.code === 200) {
-                    this.categories = res.data;
-                }
-            }).catch((err) => {
-                console.error('获取分类失败', err);
-            });
+            this.$request
+                .get(API_CONFIG.endpoints.category.getCategories)
+                .then((res) => {
+                    this.categories = Array.isArray(res.data) ? res.data : [];
+                })
+                .catch(() => {
+                    this.categories = [];
+                });
         },
+        applyStoredFilters() {
+            const stored = uni.getStorageSync(SERVICE_LIST_FILTERS_KEY);
+            if (!stored) {
+                return;
+            }
 
-        getServices(refresh = false) {
+            uni.removeStorageSync(SERVICE_LIST_FILTERS_KEY);
+
+            const nextCategory = Number(stored.categoryId || 0) || 0;
+            const resetSearch = Boolean(stored.resetSearch);
+            const shouldRefresh =
+                nextCategory !== this.selectedCategory || (resetSearch && this.searchText);
+
+            if (!shouldRefresh) {
+                return;
+            }
+
+            this.selectedCategory = nextCategory;
+            if (resetSearch) {
+                this.searchText = '';
+            }
+            this.resetAndFetch();
+        },
+        fetchServices(stopRefresh = false) {
+            if (this.loading) {
+                return;
+            }
+
             this.loading = true;
 
-            this.$request.get(API_CONFIG.endpoints.service.getServices, {
-                category_id: this.selectedCategory === 0 ? null : this.selectedCategory,
-                search: this.searchText,
-                page: this.page,
-                page_size: this.pageSize
-            }).then((res) => {
-                this.loading = false;
+            this.$request
+                .get(API_CONFIG.endpoints.service.getServices, {
+                    category_id: this.selectedCategory === 0 ? undefined : this.selectedCategory,
+                    search: this.searchText.trim(),
+                    page: this.page,
+                    page_size: this.pageSize
+                })
+                .then((res) => {
+                    const list = (res.data?.list || []).map((item) => normalizeService(item));
+                    this.total = Number(res.data?.total || 0);
 
-                if(res.code === 200) {
-                    if(refresh) {
-                        this.services = res.data.list;
+                    if (this.page === 1) {
+                        this.services = list;
                     } else {
-                        this.services = [...this.services, ...res.data.list];
+                        const existingIds = new Set(this.services.map((item) => item.id));
+                        const merged = list.filter((item) => !existingIds.has(item.id));
+                        this.services = this.services.concat(merged);
                     }
 
-                    // 判断是否还有更多数据
-                    this.hasMore = res.data.list.length === this.pageSize;
-                }
-
-                // 结束下拉刷新
-                if(refresh) {
-                    uni.stopPullDownRefresh();
-                }
-            }).catch((err) => {
-                this.loading = false;
-                console.error('获取服务失败', err);
-
-                // 结束下拉刷新
-                if(refresh) {
-                    uni.stopPullDownRefresh();
-                }
-            });
+                    this.hasMore = this.services.length < this.total;
+                })
+                .catch(() => {
+                    if (this.page > 1) {
+                        this.page -= 1;
+                    }
+                    if (this.page === 1) {
+                        this.services = [];
+                        this.total = 0;
+                    }
+                })
+                .finally(() => {
+                    this.loading = false;
+                    if (stopRefresh) {
+                        uni.stopPullDownRefresh();
+                    }
+                });
         },
-
-        selectCategory(categoryId) {
-            this.selectedCategory = categoryId;
+        resetAndFetch(stopRefresh = false) {
             this.page = 1;
+            this.total = 0;
             this.hasMore = true;
-            this.getServices(true);
+            this.fetchServices(stopRefresh);
         },
+        selectCategory(categoryId) {
+            if (this.selectedCategory === categoryId) {
+                return;
+            }
 
+            this.selectedCategory = categoryId;
+            this.resetAndFetch();
+        },
         onSearchInput() {
-            // 防抖处理
-            if(this.searchTimer) {
+            if (this.searchTimer) {
                 clearTimeout(this.searchTimer);
             }
 
             this.searchTimer = setTimeout(() => {
-                this.page = 1;
-                this.hasMore = true;
-                this.getServices(true);
-            }, 500);
+                this.resetAndFetch();
+            }, 350);
         },
-
+        triggerSearch() {
+            if (this.searchTimer) {
+                clearTimeout(this.searchTimer);
+            }
+            this.resetAndFetch();
+        },
+        clearSearch() {
+            this.searchText = '';
+            this.resetAndFetch();
+        },
+        resetFilters() {
+            this.searchText = '';
+            this.selectedCategory = 0;
+            this.resetAndFetch();
+        },
         loadMore() {
-            this.page++;
-            this.getServices();
-        },
+            if (this.loading || !this.hasMore) {
+                return;
+            }
 
+            this.page += 1;
+            this.fetchServices();
+        },
         goServiceDetail(serviceId) {
-            ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.service.detail, {serviceId});
+            ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.service.detail, { serviceId });
         }
     }
 };
 </script>
 
 <style scoped>
-.container {
-  padding-bottom: 60px;
+.page {
+  min-height: 100vh;
+  padding: 14px 16px 88px;
+  background: #f6f7f9;
 }
 
-/* 搜索栏 */
-.search-bar {
-  padding: 10px 16px;
-  background-color: white;
-  position: fixed;
-  top: 2.5rem;
-  left: 0;
-  right: 0;
-  z-index: 10;
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding: 14px 14px 10px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
 }
 
-.search-input {
+.search-box {
   display: flex;
   align-items: center;
-  background-color: #f5f5f5;
-  border-radius: 20px;
-  padding: 0 16px;
-  height: 36px;
+  height: 42px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: #f3f5f7;
 }
 
 .search-icon {
-  width: 20px;
-  height: 20px;
-  margin-right: 8px;
+  width: 18px;
+  height: 18px;
 }
 
-.input {
+.search-input {
   flex: 1;
   height: 100%;
-  background-color: transparent;
-  border: none;
+  margin-left: 10px;
   font-size: 14px;
+  color: #111827;
 }
 
-/* 分类筛选 */
-.filter-bar {
-  background-color: white;
-  margin-top: 56px;
-  position: fixed;
-  top: 2.5rem;
-  left: 0;
-  right: 0;
-  z-index: 9;
+.clear-btn {
+  font-size: 12px;
+  color: #1aad19;
 }
 
 .category-scroll {
-  white-space: nowrap;
-  padding: 12px 0;
-}
-
-.category-item {
-  display: inline-block;
-  padding: 0 16px;
-  font-size: 14px;
-  color: var(--text-color-secondary);
-}
-
-.category-item.active {
-  color: var(--primary-color);
-  font-weight: bold;
-}
-
-/* 服务列表 */
-.service-list {
-  margin-top: 102px;
-  padding: 10px;
-}
-
-.service-item {
-  display: flex;
-  background-color: white;
-  border-radius: 8px;
-  margin-bottom: 10px;
-  overflow: hidden;
-}
-
-.service-image {
-  width: 120px;
-  height: 120px;
-}
-
-.service-info {
-  flex: 1;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.service-title {
-  font-size: 16px;
-  color: var(--text-color);
-  margin-bottom: 8px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  margin-top: 12px;
   white-space: nowrap;
 }
 
-.service-description {
-  font-size: 12px;
-  color: var(--text-color-secondary);
-  line-height: 16px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  white-space: normal;
+.category-row {
+  display: inline-flex;
+  padding-right: 16px;
 }
 
-.service-footer {
+.category-pill {
+  margin-right: 10px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.category-pill.active {
+  background: #1aad19;
+  color: #ffffff;
+  box-shadow: 0 8px 20px rgba(26, 173, 25, 0.22);
+}
+
+.summary-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 8px;
+  margin: 16px 2px 12px;
+}
+
+.summary-text {
+  flex: 1;
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.summary-action {
+  margin-left: 12px;
+  font-size: 13px;
+  color: #1aad19;
+}
+
+.service-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.service-card {
+  display: flex;
+  padding: 12px;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+}
+
+.service-image {
+  width: 112px;
+  height: 112px;
+  border-radius: 16px;
+  background: #eef2f7;
+}
+
+.service-body {
+  flex: 1;
+  margin-left: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.service-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.service-title {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.4;
 }
 
 .service-price {
   font-size: 16px;
-  color: var(--error-color);
-  font-weight: bold;
+  font-weight: 700;
+  color: #1aad19;
+}
+
+.service-desc {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+.service-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.service-tag {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #eef8ef;
+  font-size: 11px;
+  color: #26803d;
+}
+
+.service-footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
 }
 
 .service-duration {
   font-size: 12px;
-  color: var(--text-color-disabled);
+  color: #9ca3af;
 }
 
-/* 加载更多 */
-.load-more {
-  text-align: center;
-  padding: 20px;
-  color: var(--text-color-secondary);
-  font-size: 14px;
+.service-link {
+  font-size: 12px;
+  color: #1aad19;
 }
 
-/* 空状态 */
-.empty {
-  margin-top: 102px;
-  padding: 60px 20px;
+.load-state,
+.state-block {
   text-align: center;
 }
 
-.empty-icon {
-  width: 100px;
-  height: 100px;
-  margin-bottom: 16px;
+.load-state {
+  padding: 18px 0 6px;
+  font-size: 12px;
+  color: #9ca3af;
 }
 
-.empty-text {
-  font-size: 14px;
-  color: var(--text-color-disabled);
+.state-block {
+  margin-top: 70px;
+  padding: 0 24px;
 }
 
-/* 加载状态 */
-.loading {
-  margin-top: 102px;
-  padding: 40px 0;
-  text-align: center;
-  color: var(--text-color-secondary);
+.state-image {
+  width: 132px;
+  height: 132px;
+  opacity: 0.9;
+}
+
+.state-title {
+  display: block;
+  margin-top: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.state-text {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #9ca3af;
+}
+
+.state-button {
+  width: 180px;
+  height: 42px;
+  margin-top: 18px;
+  border-radius: 999px;
+  background: #1aad19;
+  color: #ffffff;
+  font-size: 15px;
 }
 </style>

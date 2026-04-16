@@ -1,419 +1,399 @@
 <template>
-  <view class="container">
-    <view class="nav-bar">
-      <image src="/static/images/back.svg" mode="aspectFit" class="back-icon" @click="goBack"></image>
-      <text class="nav-title">我的预约</text>
-      <view class="nav-right"></view>
-    </view>
-
-    <!-- 状态筛选 -->
-    <view class="filter-section">
-      <view class="filter-tabs">
-        <view class="filter-tab" :class="{ active: activeStatus === '' }" @click="switchStatus('')">全部</view>
-        <view class="filter-tab" :class="{ active: activeStatus === 'pending' }" @click="switchStatus('pending')">待确认</view>
-        <view class="filter-tab" :class="{ active: activeStatus === 'confirmed' }" @click="switchStatus('confirmed')">已确认</view>
-        <view class="filter-tab" :class="{ active: activeStatus === 'completed' }" @click="switchStatus('completed')">已完成</view>
-        <view class="filter-tab" :class="{ active: activeStatus === 'canceled' }" @click="switchStatus('canceled')">已取消</view>
-      </view>
-    </view>
-
-    <!-- 预约列表 -->
-    <scroll-view class="list-container" scroll-y @scrolltolower="loadMore" @refresherrefresh="refresh">
-      <view class="list-item" v-for="appointment in appointmentList" :key="appointment.id" @click="goToDetail(appointment.id)">
-        <view class="list-item-header">
-          <text class="appointment-code">订单编号：{{ appointment.id }}</text>
-          <text class="appointment-status" :class="`status-${appointment.status}`">{{ getStatusText(appointment.status) }}</text>
+  <view class="page">
+    <scroll-view scroll-x class="tab-scroll" show-scrollbar="false">
+      <view class="tab-row">
+        <view
+          v-for="tab in statusTabs"
+          :key="tab.value || 'all'"
+          class="tab-item"
+          :class="{ active: activeStatus === tab.value }"
+          @click="switchStatus(tab.value)"
+        >
+          {{ tab.label }}
         </view>
-        
-        <view class="service-info">
-          <view class="service-details">
-            <text class="service-name">{{ appointment.service_title }}</text>
-            <text class="service-price">¥{{ appointment.service_price }}</text>
-            <text class="appointment-time">预约时间：{{ appointment.appointment_date }} {{ appointment.appointment_time }}</text>
-          </view>
-        </view>
-        
-        <view class="list-item-footer">
-          <text class="technician-name">{{ appointment.technician ? `技师：${appointment.technician.name}` : '-' }}</text>
-          <image src="/static/images/arrow_right.svg" mode="aspectFit" class="arrow-icon"></image>
-        </view>
-      </view>
-
-      <!-- 空状态 -->
-      <view class="empty-state" v-if="appointmentList.length === 0 && !loading">
-        <image src="/static/images/empty.svg" mode="aspectFit" class="empty-image"></image>
-        <text class="empty-text">暂无预约记录</text>
-        <button class="empty-button" @click="goToServiceList">立即预约</button>
-      </view>
-
-      <!-- 加载更多 -->
-      <view class="load-more" v-if="appointmentList.length > 0 && !loading">
-        <text class="load-more-text">{{ hasMore ? '上拉加载更多' : '没有更多了' }}</text>
-      </view>
-
-      <!-- 加载状态 -->
-      <view class="loading" v-if="loading">
-        <text>加载中...</text>
       </view>
     </scroll-view>
+
+    <view class="summary-row">
+      <text class="summary-text">{{ summaryText }}</text>
+    </view>
+
+    <view v-if="!token" class="state-block">
+      <image src="/static/images/avatar.svg" mode="aspectFit" class="state-image"></image>
+      <text class="state-title">登录后查看预约记录</text>
+      <text class="state-text">预约进度、时间和地址都会在这里同步展示。</text>
+      <button class="state-button" @click="goLogin">去登录</button>
+    </view>
+
+    <view v-else-if="appointmentList.length" class="appointment-list">
+      <view
+        v-for="appointment in appointmentList"
+        :key="appointment.id"
+        class="appointment-card"
+        @click="goToDetail(appointment.id)"
+      >
+        <view class="card-header">
+          <text class="order-no">订单号 #{{ appointment.id }}</text>
+          <text class="status-pill" :class="`status-${appointment.status}`">{{ appointment.status_text }}</text>
+        </view>
+
+        <view class="card-main">
+          <image :src="appointment.service_image" mode="aspectFill" class="service-image"></image>
+          <view class="card-content">
+            <text class="service-title">{{ appointment.service_title }}</text>
+            <text class="service-time">{{ appointment.appointment_datetime }}</text>
+            <text class="service-address">{{ appointment.address }}</text>
+          </view>
+        </view>
+
+        <view class="card-footer">
+          <text class="service-price">¥{{ formatCurrency(appointment.service_price) }}</text>
+          <text class="detail-link">查看详情</text>
+        </view>
+      </view>
+
+      <view class="load-state">
+        <text v-if="loading">加载中...</text>
+        <text v-else-if="hasMore">继续上滑加载更多</text>
+        <text v-else>已经到底了</text>
+      </view>
+    </view>
+
+    <view v-else-if="loading" class="state-block">
+      <text class="state-text">预约列表加载中...</text>
+    </view>
+
+    <view v-else class="state-block">
+      <image src="/static/images/empty.svg" mode="aspectFit" class="state-image"></image>
+      <text class="state-title">还没有预约记录</text>
+      <text class="state-text">去看看合适的服务，预约后会在这里展示。</text>
+      <button class="state-button" @click="goToServiceList">立即预约</button>
+    </view>
   </view>
 </template>
 
 <script>
-// 引入API配置
 import API_CONFIG from '../../config/api.config';
-// 引入路由配置
 import ROUTER_CONFIG from '../../config/router.config';
+import {
+    formatCurrency,
+    normalizeAppointment
+} from '../../utils/view-models';
 
 export default {
-    name: 'appointment-list',
     data() {
         return {
-            activeStatus: '', // 空字符串表示全部状态
+            statusTabs: [
+                { label: '全部', value: '' },
+                { label: '待接单', value: 'pending' },
+                { label: '已接单', value: 'accepted' },
+                { label: '已完成', value: 'completed' },
+                { label: '已取消', value: 'cancelled' }
+            ],
+            activeStatus: '',
             appointmentList: [],
             page: 1,
             pageSize: 10,
+            total: 0,
             hasMore: true,
             loading: false,
             token: ''
         };
     },
-    onLoad() {
+    computed: {
+        summaryText() {
+            const currentTab = this.statusTabs.find((item) => item.value === this.activeStatus);
+            const label = currentTab?.label || '全部';
+            return `当前查看：${label}${this.total ? ` · 共 ${this.total} 条预约` : ''}`;
+        }
+    },
+    onShow() {
         this.token = uni.getStorageSync('token');
-        this.getAppointmentList();
+        if (!this.token) {
+            this.appointmentList = [];
+            this.total = 0;
+            this.loading = false;
+            return;
+        }
+
+        this.resetAndFetch();
+    },
+    onPullDownRefresh() {
+        if (!this.token) {
+            uni.stopPullDownRefresh();
+            return;
+        }
+        this.resetAndFetch(true);
+    },
+    onReachBottom() {
+        this.loadMore();
     },
     methods: {
-        getAppointmentList() {
-            // 如果已经没有更多数据，则不再请求
-            if(!this.hasMore && this.page > 1) {
+        formatCurrency,
+        fetchAppointments(stopRefresh = false) {
+            if (this.loading || !this.token) {
                 return;
             }
 
             this.loading = true;
 
-            const params = {
-                page: this.page,
-                page_size: this.pageSize
-            };
+            this.$request
+                .get(
+                    API_CONFIG.endpoints.appointment.getAppointment,
+                    {
+                        page: this.page,
+                        page_size: this.pageSize,
+                        status: this.activeStatus || undefined
+                    },
+                    {
+                        headers: {
+                            Authorization: `Bearer ${this.token}`
+                        }
+                    }
+                )
+                .then((res) => {
+                    const list = (res.data?.list || []).map((item) => normalizeAppointment(item));
+                    this.total = Number(res.data?.total || 0);
 
-            // 如果有选中的状态，则添加状态筛选条件
-            if(this.activeStatus) {
-                params.status = this.activeStatus;
-            }
-
-            this.$request.get(API_CONFIG.endpoints.appointment.getAppointment, params, {
-                headers: {
-                    Authorization: `Bearer ${this.token}`
-                }
-            }).then((res) => {
-                this.loading = false;
-
-                if(res.code === 200) {
-                    const data = res.data || {};
-                    const list = data.list || [];
-
-                    // 如果是第一页，则替换列表，否则追加列表
-                    if(this.page === 1) {
+                    if (this.page === 1) {
                         this.appointmentList = list;
                     } else {
-                        this.appointmentList = [...this.appointmentList, ...list];
+                        this.appointmentList = this.appointmentList.concat(list);
                     }
 
-                    // 判断是否还有更多数据
-                    this.hasMore = list.length === this.pageSize;
-                } else {
-                    uni.showToast({
-                        title: res.message || '获取预约列表失败',
-                        icon: 'none'
-                    });
-                }
-            }).catch((err) => {
-                this.loading = false;
-                console.error('获取预约列表失败', err);
-            });
+                    this.hasMore = this.appointmentList.length < this.total;
+                })
+                .catch(() => {
+                    if (this.page > 1) {
+                        this.page -= 1;
+                    }
+                })
+                .finally(() => {
+                    this.loading = false;
+                    if (stopRefresh) {
+                        uni.stopPullDownRefresh();
+                    }
+                });
         },
-
-        getStatusText(status) {
-            const statusMap = {
-                'pending': '待确认',
-                'confirmed': '已确认',
-                'canceled': '已取消',
-                'completed': '已完成',
-                'no_show': '未履约'
-            };
-            return statusMap[status] || '未知状态';
+        resetAndFetch(stopRefresh = false) {
+            this.page = 1;
+            this.total = 0;
+            this.hasMore = true;
+            this.fetchAppointments(stopRefresh);
         },
-
         switchStatus(status) {
-            // 如果点击的是当前激活的状态，则不做任何操作
-            if(this.activeStatus === status) {
+            if (this.activeStatus === status) {
                 return;
             }
 
-            // 切换状态
             this.activeStatus = status;
-            // 重置页码
-            this.page = 1;
-            // 重置是否有更多数据的标记
-            this.hasMore = true;
-            // 重新获取列表
-            this.getAppointmentList();
+            this.resetAndFetch();
         },
-
-        goToDetail(appointmentId) {
-            ROUTER_CONFIG.navigate.to(`${ROUTER_CONFIG.pages.appointment.detail}?appointmentId=${appointmentId}`);
-        },
-
-        goToServiceList() {
-            ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.serviceList);
-        },
-
-        goBack() {
-            ROUTER_CONFIG.navigate.back();
-        },
-
-        refresh() {
-            // 重置页码
-            this.page = 1;
-            // 重置是否有更多数据的标记
-            this.hasMore = true;
-            // 重新获取列表
-            this.getAppointmentList();
-        },
-
         loadMore() {
-            // 如果正在加载中，或者没有更多数据，则不进行操作
-            if(this.loading || !this.hasMore) {
+            if (!this.token || this.loading || !this.hasMore) {
                 return;
             }
 
-            // 增加页码
-            this.page++;
-            // 获取更多数据
-            this.getAppointmentList();
+            this.page += 1;
+            this.fetchAppointments();
+        },
+        goToDetail(appointmentId) {
+            ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.appointment.detail, { appointmentId });
+        },
+        goToServiceList() {
+            ROUTER_CONFIG.navigate.switchTab(ROUTER_CONFIG.pages.service.list);
+        },
+        goLogin() {
+            ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.login);
         }
     }
 };
 </script>
 
 <style scoped>
-.container {
-  padding-bottom: 20px;
-}
-
-/* 导航栏 */
-.nav-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 44px;
-  padding: 0 16px;
-  background-color: white;
-  border-bottom: 1px solid #eeeeee;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 10;
-}
-
-.back-icon {
-  width: 20px;
-  height: 20px;
-}
-
-.nav-title {
-  font-size: 16px;
-  font-weight: bold;
-  color: var(--text-color);
-}
-
-.nav-right {
-  width: 20px;
-}
-
-/* 筛选区域 */
-.filter-section {
-  margin-top: 44px;
-  background-color: white;
-  border-bottom: 1px solid #eeeeee;
-}
-
-.filter-tabs {
-  display: flex;
-  overflow-x: auto;
-  white-space: nowrap;
-  padding: 0 16px;
-}
-
-.filter-tab {
-  padding: 12px 16px;
-  font-size: 14px;
-  color: var(--text-color-secondary);
-}
-
-.filter-tab.active {
-  color: var(--primary-color);
-  font-weight: bold;
-}
-
-/* 列表容器 */
-.list-container {
-  flex: 1;
-  height: calc(100vh - 44px - 48px);
-}
-
-/* 列表项 */
-.list-item {
-  margin: 10px 16px;
-  background-color: white;
-  border-radius: 8px;
+.page {
+  min-height: 100vh;
   padding: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding-bottom: 84px;
+  background: #f6f7f9;
 }
 
-.list-item-header {
+.tab-scroll {
+  white-space: nowrap;
+}
+
+.tab-row {
+  display: inline-flex;
+  padding-right: 16px;
+}
+
+.tab-item {
+  margin-right: 10px;
+  padding: 9px 15px;
+  border-radius: 999px;
+  background: #ffffff;
+  font-size: 13px;
+  color: #6b7280;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+}
+
+.tab-item.active {
+  background: #1aad19;
+  color: #ffffff;
+  box-shadow: 0 10px 22px rgba(26, 173, 25, 0.2);
+}
+
+.summary-row {
+  margin: 14px 4px 12px;
+}
+
+.summary-text {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.appointment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.appointment-card {
+  padding: 14px;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
+}
+
+.card-header,
+.card-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
 }
 
-.appointment-code {
+.order-no {
   font-size: 12px;
-  color: var(--text-color-disabled);
+  color: #98a2b3;
 }
 
-.appointment-status {
-  font-size: 14px;
-  font-weight: bold;
+.status-pill {
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 11px;
 }
 
 .status-pending {
-  color: #fa8c16;
+  background: #fff7e6;
+  color: #d48806;
 }
 
-.status-confirmed {
-  color: #1890ff;
-}
-
-.status-canceled {
-  color: #8c8c8c;
+.status-accepted {
+  background: #ecfdf3;
+  color: #027a48;
 }
 
 .status-completed {
-  color: #52c41a;
+  background: #eef4ff;
+  color: #175cd3;
 }
 
-.status-no_show {
-  color: #f5222d;
+.status-cancelled {
+  background: #f2f4f7;
+  color: #667085;
 }
 
-/* 服务信息 */
-.service-info {
+.card-main {
   display: flex;
-  margin-bottom: 12px;
+  margin-top: 14px;
 }
 
 .service-image {
-  width: 80px;
-  height: 80px;
-  border-radius: 8px;
-  margin-right: 12px;
+  width: 76px;
+  height: 76px;
+  border-radius: 16px;
+  background: #eef2f7;
 }
 
-.service-details {
+.card-content {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  margin-left: 12px;
 }
 
-.service-name {
-  font-size: 14px;
-  font-weight: bold;
-  color: var(--text-color);
-  margin-bottom: 4px;
+.service-title {
   display: block;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.service-time,
+.service-address {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #6b7280;
+}
+
+.card-footer {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #f2f4f7;
 }
 
 .service-price {
-  font-size: 14px;
-  color: var(--danger-color);
-  margin-bottom: 4px;
-  display: block;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1aad19;
 }
 
-.appointment-time {
+.detail-link {
   font-size: 12px;
-  color: var(--text-color-secondary);
-  display: block;
+  color: #1aad19;
 }
 
-/* 列表项底部 */
-.list-item-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.technician-name {
-  font-size: 12px;
-  color: var(--text-color-secondary);
-}
-
-.arrow-icon {
-  width: 16px;
-  height: 16px;
-}
-
-/* 空状态 */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 300px;
-}
-
-.empty-image {
-  width: 120px;
-  height: 120px;
-  margin-bottom: 16px;
-}
-
-.empty-text {
-  font-size: 14px;
-  color: var(--text-color-disabled);
-  margin-bottom: 16px;
-}
-
-.empty-button {
-  width: 120px;
-  height: 40px;
-  background-color: var(--primary-color);
-  color: white;
-  font-size: 14px;
-  border-radius: 20px;
-  padding: 0;
-}
-
-/* 加载更多 */
-.load-more {
+.load-state {
+  padding: 18px 0 6px;
   text-align: center;
-  padding: 16px;
-}
-
-.load-more-text {
   font-size: 12px;
-  color: var(--text-color-disabled);
+  color: #98a2b3;
 }
 
-/* 加载状态 */
-.loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
+.state-block {
+  margin-top: 72px;
+  text-align: center;
+  padding: 0 28px;
+}
+
+.state-image {
+  width: 132px;
+  height: 132px;
+}
+
+.state-title {
+  display: block;
+  margin-top: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.state-text {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #98a2b3;
+}
+
+.state-button {
+  width: 180px;
+  height: 42px;
+  margin-top: 18px;
+  border-radius: 999px;
+  background: #1aad19;
+  color: #ffffff;
+  font-size: 15px;
 }
 </style>
