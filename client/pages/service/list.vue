@@ -55,6 +55,18 @@
           </view>
         </view>
       </scroll-view>
+
+      <view class="quick-demand-row">
+        <text
+          v-for="item in quickDemandOptions"
+          :key="item.keyword"
+          class="quick-demand-pill"
+          :class="{ active: searchText === item.keyword }"
+          @click="applyQuickDemand(item.keyword)"
+        >
+          {{ item.label }}
+        </text>
+      </view>
     </view>
 
     <view class="summary-card">
@@ -65,6 +77,23 @@
       <text v-if="searchText || selectedCategory !== 0" class="summary-action" @click="resetFilters">
         重置筛选
       </text>
+    </view>
+
+    <view class="insight-card">
+      <view class="insight-main">
+        <text class="insight-title">{{ insightTitle }}</text>
+        <text class="insight-text">{{ insightText }}</text>
+      </view>
+      <view class="insight-metrics">
+        <view class="insight-metric">
+          <text class="insight-metric-value">{{ total || 0 }}</text>
+          <text class="insight-metric-label">筛选结果</text>
+        </view>
+        <view class="insight-metric">
+          <text class="insight-metric-value">{{ services.length }}</text>
+          <text class="insight-metric-label">当前已展示</text>
+        </view>
+      </view>
     </view>
 
     <view v-if="services.length" class="service-list">
@@ -81,6 +110,7 @@
             <text class="service-price">¥{{ formatCurrency(service.price) }}</text>
           </view>
           <text class="service-desc">{{ service.plain_description || '暂无服务介绍' }}</text>
+          <text class="service-recommend">{{ getServiceRecommendation(service) }}</text>
           <view class="service-tags">
             <text v-for="tag in service.tags.slice(0, 3)" :key="tag" class="service-tag">{{ tag }}</text>
           </view>
@@ -136,17 +166,61 @@ export default {
             hasMore: true,
             loading: false,
             searchTimer: null,
-            initialized: false
+            initialized: false,
+            quickDemandOptions: [
+                { label: '日常保洁', keyword: '保洁' },
+                { label: '深度清洁', keyword: '深度' },
+                { label: '母婴护理', keyword: '母婴' },
+                { label: '家电清洗', keyword: '清洗' }
+            ]
         };
     },
     computed: {
-        summaryText() {
+        currentCategoryName() {
             const currentCategory = this.categories.find((item) => item.id === this.selectedCategory);
-            const categoryText = currentCategory ? `${currentCategory.name} · ` : '';
+            return currentCategory?.name || '全部服务';
+        },
+        summaryText() {
+            const categoryText = this.selectedCategory ? `${this.currentCategoryName} · ` : '';
             const searchText = this.searchText ? `“${this.searchText}” · ` : '';
             const countText = this.total ? `共找到 ${this.total} 项服务` : '按服务类型快速筛选';
 
             return `${categoryText}${searchText}${countText}`;
+        },
+        firstService() {
+            return this.services[0] || null;
+        },
+        insightTitle() {
+            if (this.loading && !this.services.length) {
+                return '正在为你整理合适的服务';
+            }
+
+            if (!this.total) {
+                return this.searchText ? '这个关键词暂时没有匹配结果' : '先从常见需求开始筛选';
+            }
+
+            if (this.searchText) {
+                return `围绕“${this.searchText}”找到 ${this.total} 项服务`;
+            }
+
+            if (this.selectedCategory) {
+                return `${this.currentCategoryName} 下有 ${this.total} 项可预约服务`;
+            }
+
+            return '可以先看首屏推荐，再决定是否继续细筛';
+        },
+        insightText() {
+            if (!this.total) {
+                return this.searchText
+                    ? '可以试试更短的关键词，或者先切回分类浏览，再从服务详情页判断是否匹配。'
+                    : '如果你还不确定选哪项服务，可以先点常见需求标签，再从价格、时长和说明判断。';
+            }
+
+            if (this.firstService) {
+                return `如果你想更快做决定，可以先看“${this.firstService.title}”，再根据价格、时长和保障说明继续比较。`;
+            }
+
+            return '服务详情页里会补充流程、保障和下单说明，适合做最终判断。';
         },
         emptyTitle() {
             return this.searchText ? '没有找到匹配的服务' : '当前分类暂无服务';
@@ -301,6 +375,14 @@ export default {
             this.selectedCategory = 0;
             this.resetAndFetch();
         },
+        applyQuickDemand(keyword) {
+            if (this.searchTimer) {
+                clearTimeout(this.searchTimer);
+            }
+
+            this.searchText = keyword;
+            this.resetAndFetch();
+        },
         loadMore() {
             if (this.loading || !this.hasMore) {
                 return;
@@ -308,6 +390,17 @@ export default {
 
             this.page += 1;
             this.fetchServices();
+        },
+        getServiceRecommendation(service) {
+            const keywordMap = [
+                { keyword: '保洁', text: '适合需要快速恢复日常整洁的家庭场景。' },
+                { keyword: '母婴', text: '更适合对护理细节和陪护节奏有明确需求的家庭。' },
+                { keyword: '清洗', text: '如果是局部设备或重点区域处理，可以优先看看这类服务。' },
+                { keyword: '搬', text: '适合需要一次性处理打包、搬运或整理协助的场景。' }
+            ];
+            const matched = keywordMap.find((item) => service.title.includes(item.keyword));
+
+            return matched?.text || '建议结合服务说明、时长和备注要求再做最终选择。';
         },
         goServiceDetail(serviceId) {
             ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.service.detail, { serviceId });
@@ -442,6 +535,26 @@ export default {
   white-space: nowrap;
 }
 
+.quick-demand-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.quick-demand-pill {
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: #edf7ef;
+  font-size: 12px;
+  color: #267a4c;
+}
+
+.quick-demand-pill.active {
+  background: #1aad19;
+  color: #ffffff;
+}
+
 .category-row {
   display: inline-flex;
   padding-right: 14px;
@@ -498,6 +611,63 @@ export default {
   color: #1aad19;
 }
 
+.insight-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 0 2px 12px;
+  padding: 16px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbf8 100%);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+}
+
+.insight-main {
+  flex: 1;
+}
+
+.insight-title {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.insight-text {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #667085;
+}
+
+.insight-metrics {
+  display: flex;
+  gap: 10px;
+}
+
+.insight-metric {
+  min-width: 68px;
+  padding: 10px 8px;
+  border-radius: 16px;
+  background: #f3f7f4;
+  text-align: center;
+}
+
+.insight-metric-value {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.insight-metric-label {
+  display: block;
+  margin-top: 5px;
+  font-size: 11px;
+  color: #98a2b3;
+}
+
 .service-list {
   display: flex;
   flex-direction: column;
@@ -549,6 +719,14 @@ export default {
   font-size: 13px;
   line-height: 1.7;
   color: #6b7280;
+}
+
+.service-recommend {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #267a4c;
 }
 
 .service-tags {

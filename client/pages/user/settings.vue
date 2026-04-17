@@ -5,6 +5,26 @@
       <text class="hero-subtitle">完善常用资料后，预约页会自动带出联系人和地址信息。</text>
     </view>
 
+    <view class="summary-card">
+      <view class="summary-main">
+        <text class="summary-title">资料完善进度</text>
+        <text class="summary-text">{{ profileSummaryText }}</text>
+      </view>
+      <view class="summary-progress">
+        <view class="summary-progress-bar" :style="{ width: `${profileCompletion}%` }"></view>
+      </view>
+    </view>
+
+    <view class="tips-card">
+      <view class="tips-item" v-for="item in profileChecklist" :key="item.label">
+        <text class="tips-badge" :class="{ done: item.done }">{{ item.done ? '已完成' : '待完善' }}</text>
+        <view class="tips-copy">
+          <text class="tips-title">{{ item.label }}</text>
+          <text class="tips-text">{{ item.text }}</text>
+        </view>
+      </view>
+    </view>
+
     <view class="section-card">
       <text class="section-title">个人资料</text>
 
@@ -34,13 +54,14 @@
         ></textarea>
       </view>
 
-      <button class="primary-button" :loading="profileLoading" @click="saveProfile">
+      <button class="primary-button" :loading="profileLoading" :disabled="profileLoading" @click="saveProfile">
         保存资料
       </button>
     </view>
 
     <view class="section-card">
       <text class="section-title">修改密码</text>
+      <text class="section-subtitle">建议使用不低于 6 位的新密码，修改后需要重新登录。</text>
 
       <view class="field">
         <text class="field-label">当前密码</text>
@@ -75,7 +96,7 @@
         />
       </view>
 
-      <button class="secondary-button" :loading="passwordLoading" @click="submitPassword">
+      <button class="secondary-button" :loading="passwordLoading" :disabled="passwordLoading" @click="submitPassword">
         更新密码
       </button>
     </view>
@@ -104,6 +125,37 @@ export default {
                 confirmPassword: ''
             }
         };
+    },
+    computed: {
+        profileChecklist() {
+            return [
+                {
+                    label: '昵称',
+                    done: Boolean(this.profileForm.nickname),
+                    text: this.profileForm.nickname || '建议填写一个便于客服称呼的昵称。'
+                },
+                {
+                    label: '手机号',
+                    done: Boolean(this.profileForm.phone),
+                    text: this.profileForm.phone || '登录手机号会作为默认联系号码。'
+                },
+                {
+                    label: '常用地址',
+                    done: Boolean(this.profileForm.address),
+                    text: this.profileForm.address || '建议补充小区、楼栋和门牌号，预约时会自动带出。'
+                }
+            ];
+        },
+        profileCompletion() {
+            const completed = this.profileChecklist.filter((item) => item.done).length;
+            return Math.round((completed / this.profileChecklist.length) * 100);
+        },
+        profileSummaryText() {
+            const nextItem = this.profileChecklist.find((item) => !item.done);
+            return nextItem
+                ? `当前完成 ${this.profileCompletion}% ，还可补充：${nextItem.label}`
+                : '资料已完善，预约页会自动带出联系人和地址';
+        }
     },
     onShow() {
         this.token = uni.getStorageSync('token');
@@ -265,6 +317,8 @@ export default {
 }
 
 .hero-card,
+.summary-card,
+.tips-card,
 .section-card {
   border-radius: 22px;
   background: #ffffff;
@@ -290,17 +344,117 @@ export default {
   color: #667085;
 }
 
+.summary-card,
+.tips-card,
 .section-card {
   margin-top: 14px;
+}
+
+.summary-card {
+  padding: 16px;
+}
+
+.summary-title {
+  display: block;
+  font-size: 12px;
+  color: #98a2b3;
+}
+
+.summary-text {
+  display: block;
+  margin-top: 6px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #344054;
+}
+
+.summary-progress {
+  height: 8px;
+  margin-top: 12px;
+  border-radius: 999px;
+  background: #edf2f7;
+  overflow: hidden;
+}
+
+.summary-progress-bar {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(135deg, #1aad19 0%, #36c567 100%);
+}
+
+.tips-card {
+  padding: 16px;
+}
+
+.tips-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 0;
+  border-bottom: 1px solid #f2f4f7;
+}
+
+.tips-item:first-child {
+  padding-top: 0;
+}
+
+.tips-item:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.tips-badge {
+  min-width: 56px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #eef2f6;
+  font-size: 11px;
+  text-align: center;
+  color: #667085;
+}
+
+.tips-badge.done {
+  background: #e7f8eb;
+  color: #1f8f44;
+}
+
+.tips-copy {
+  flex: 1;
+}
+
+.tips-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.tips-text {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #667085;
+}
+
+.section-card {
   padding: 18px 16px;
 }
 
 .section-title {
   display: block;
-  margin-bottom: 14px;
+  margin-bottom: 8px;
   font-size: 17px;
   font-weight: 700;
   color: #111827;
+}
+
+.section-subtitle {
+  display: block;
+  margin-bottom: 14px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #98a2b3;
 }
 
 .field {
@@ -364,5 +518,10 @@ export default {
   background: #ffffff;
   color: #111827;
   border: 1px solid #d0d5dd;
+}
+
+.primary-button[disabled],
+.secondary-button[disabled] {
+  opacity: 0.65;
 }
 </style>
