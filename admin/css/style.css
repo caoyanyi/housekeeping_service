@@ -641,6 +641,104 @@ body {
     color: #7b8794;
 }
 
+.user-ops-grid,
+.job-ops-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.user-ops-card,
+.job-ops-card {
+    padding: 16px;
+    text-align: left;
+    border: 1px solid #e5edf7;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.user-ops-card:hover,
+.job-ops-card:hover {
+    transform: translateY(-1px);
+    border-color: #bfdbfe;
+    box-shadow: 0 10px 24px rgba(59, 130, 246, 0.08);
+}
+
+.user-ops-card.active,
+.job-ops-card.active {
+    border-color: #7cc4ff;
+    background: linear-gradient(180deg, #eff7ff 0%, #e6f2ff 100%);
+}
+
+.user-ops-title,
+.user-ops-value,
+.user-ops-desc,
+.job-ops-title,
+.job-ops-value,
+.job-ops-desc {
+    display: block;
+}
+
+.user-ops-title,
+.job-ops-title {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.user-ops-value,
+.job-ops-value {
+    margin-top: 10px;
+    font-size: 26px;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.user-ops-desc,
+.job-ops-desc {
+    margin-top: 8px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #7b8794;
+}
+
+.user-focus-card,
+.job-focus-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 18px;
+    padding: 16px 18px;
+    border-radius: 18px;
+    color: #ffffff;
+}
+
+.user-focus-card {
+    background: linear-gradient(135deg, #1f5a87 0%, #2f7cc2 100%);
+}
+
+.job-focus-card {
+    background: linear-gradient(135deg, #86511f 0%, #c27b2f 100%);
+}
+
+.user-focus-card h3,
+.job-focus-card h3 {
+    font-size: 16px;
+}
+
+.user-focus-card p,
+.job-focus-card p {
+    margin-top: 6px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.82);
+}
+
 .service-ops-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -869,6 +967,8 @@ body {
         margin-left: 0;
     }
 
+    .user-ops-grid,
+    .job-ops-grid,
     .service-ops-grid,
     .appointment-ops-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -906,11 +1006,15 @@ body {
         align-items: flex-start;
     }
 
+    .user-ops-grid,
+    .job-ops-grid,
     .service-ops-grid,
     .appointment-ops-grid {
         grid-template-columns: 1fr;
     }
 
+    .user-focus-card,
+    .job-focus-card,
     .service-focus-card,
     .appointment-focus-card {
         flex-direction: column;

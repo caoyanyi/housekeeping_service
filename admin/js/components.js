@@ -61,6 +61,7 @@ Vue.component('job-applications', {
             jobApplicationsData: [],
             searchText: '',
             status: '',
+            quickStatusFilter: '',
             currentPage: 1,
             pageSize: 10,
             total: 0,
@@ -111,6 +112,107 @@ Vue.component('job-applications', {
     mounted() {
         this.getJobApplications();
     },
+    computed: {
+        visibleJobApplicationsData() {
+            if (!this.quickStatusFilter) {
+                return this.jobApplicationsData;
+            }
+
+            return this.jobApplicationsData.filter(item => item.status === this.quickStatusFilter);
+        },
+        jobOverviewCards() {
+            const counts = this.jobApplicationsData.reduce((result, item) => {
+                const key = item.status || 'pending';
+                result[key] = (result[key] || 0) + 1;
+                if (this.getJobProfileHealth(item) !== '资料完整') {
+                    result.incomplete += 1;
+                }
+                return result;
+            }, {
+                pending: 0,
+                reviewed: 0,
+                contacted: 0,
+                rejected: 0,
+                incomplete: 0
+            });
+
+            return [
+                {
+                    title: '本页申请',
+                    value: this.jobApplicationsData.length,
+                    desc: '当前分页已加载',
+                    filterValue: ''
+                },
+                {
+                    title: '待处理',
+                    value: counts.pending,
+                    desc: '建议优先查看',
+                    filterValue: 'pending'
+                },
+                {
+                    title: '已联系',
+                    value: counts.contacted,
+                    desc: '进入跟进阶段',
+                    filterValue: 'contacted'
+                },
+                {
+                    title: '资料待补',
+                    value: counts.incomplete,
+                    desc: '证件或区域信息不完整',
+                    filterValue: ''
+                }
+            ];
+        },
+        jobFocusTitle() {
+            if (this.quickStatusFilter === 'pending') {
+                return '当前正在处理待跟进报名';
+            }
+
+            const pendingCount = this.jobApplicationsData.filter(item => item.status === 'pending').length;
+            if (pendingCount > 0) {
+                return `本页有 ${pendingCount} 位服务人员等待初次处理`;
+            }
+
+            return '本页供给跟进节奏较稳定';
+        },
+        jobFocusText() {
+            if (this.quickStatusFilter === 'pending') {
+                return '建议先判断报名信息是否完整，再尽快推进到已查看或已联系状态。';
+            }
+
+            return '优先联系资料完整、工作区域清晰的申请人，能更快补足服务供给。';
+        },
+        jobFocusFilter() {
+            return this.quickStatusFilter === 'pending' ? '' : 'pending';
+        },
+        jobDetailActionOptions() {
+            const optionMap = {
+                pending: [
+                    { label: '标记已查看', value: 'reviewed' },
+                    { label: '标记已联系', value: 'contacted' }
+                ],
+                reviewed: [
+                    { label: '标记已联系', value: 'contacted' },
+                    { label: '标记已拒绝', value: 'rejected' }
+                ],
+                contacted: [
+                    { label: '重新标记待处理', value: 'pending' }
+                ]
+            };
+
+            return optionMap[this.viewForm.status] || [];
+        },
+        currentJobGuide() {
+            const guideMap = {
+                pending: '建议先核对身份、区域和工作年限，再决定是否进入联系阶段。',
+                reviewed: '说明该申请已完成初步查看，下一步可尽快联系确认到岗意向。',
+                contacted: '该申请已进入沟通阶段，建议在线下持续跟进转化结果。',
+                rejected: '该申请已结束处理，建议复盘拒绝原因，优化后续筛选标准。'
+            };
+
+            return guideMap[this.viewForm.status] || '在这里可以查看候选人信息并推进供给跟进。';
+        }
+    },
     methods: {
         // 获取求职申请列表
         getJobApplications() {
@@ -146,8 +248,13 @@ Vue.component('job-applications', {
         resetFilters() {
             this.searchText = '';
             this.status = '';
+            this.quickStatusFilter = '';
             this.currentPage = 1;
             this.getJobApplications();
+        },
+
+        applyQuickStatusFilter(status = '') {
+            this.quickStatusFilter = status;
         },
         
         // 查看求职申请详情
@@ -155,7 +262,10 @@ Vue.component('job-applications', {
             axios.get(`/admin/job/application/applications/${row.id}`)
                 .then(response => {
                     if (response.data.code === 200) {
-                        this.viewForm = response.data.data.data;
+                        this.viewForm = {
+                            ...response.data.data.data,
+                            status: response.data.data.data.status || 'pending'
+                        };
                         this.viewDialogVisible = true;
                     }
                 })
@@ -179,6 +289,46 @@ Vue.component('job-applications', {
                 })
                 .catch(error => {
                     showActionError(this, error, '求职申请详情加载失败，请稍后重试');
+                });
+        },
+
+        quickUpdateJobStatus(row, nextStatus, keepDialogOpen = false) {
+            if (!row?.id || !nextStatus) {
+                return;
+            }
+
+            this.submitting = true;
+            axios.put(`/admin/job/application/applications/${row.id}`, {
+                status: nextStatus
+            })
+                .then(response => {
+                    if (response.data.code === 200) {
+                        const target = this.jobApplicationsData.find(item => String(item.id) === String(row.id));
+                        if (target) {
+                            target.status = nextStatus;
+                        }
+
+                        if (String(this.viewForm.id) === String(row.id)) {
+                            this.viewForm = {
+                                ...this.viewForm,
+                                status: nextStatus
+                            };
+                        }
+
+                        showActionSuccess(this, `报名状态已更新为${this.getStatusText(nextStatus)}`);
+
+                        if (!keepDialogOpen) {
+                            this.viewDialogVisible = false;
+                        }
+                    } else {
+                        this.$message.error(response.data.message || '求职申请更新失败');
+                    }
+                })
+                .catch(error => {
+                    showActionError(this, error, '求职申请更新失败，请稍后重试');
+                })
+                .finally(() => {
+                    this.submitting = false;
                 });
         },
         
@@ -266,6 +416,33 @@ Vue.component('job-applications', {
                 return '-';
             }
             return certificates.join('，');
+        },
+
+        getJobProfileHealth(row) {
+            const hasIdentity = Boolean(row.id_card);
+            const hasArea = Boolean(row.work_area);
+            const hasYears = Number(row.work_years || 0) > 0;
+
+            if (hasIdentity && hasArea && hasYears) {
+                return '资料完整';
+            }
+
+            if (!hasIdentity && !hasArea) {
+                return '待补关键信息';
+            }
+
+            return '待补资料';
+        },
+
+        getJobProfileHealthType(row) {
+            const healthText = this.getJobProfileHealth(row);
+            const typeMap = {
+                '资料完整': 'success',
+                '待补资料': 'warning',
+                '待补关键信息': 'danger'
+            };
+
+            return typeMap[healthText] || 'info';
         }
     }
 });
@@ -277,6 +454,7 @@ Vue.component('users', {
         return {
             usersData: [],
             searchText: '',
+            quickStatusFilter: '',
             currentPage: 1,
             pageSize: 10,
             total: 0,
@@ -285,6 +463,78 @@ Vue.component('users', {
     },
     mounted() {
         this.getUsers();
+    },
+    computed: {
+        visibleUsersData() {
+            if (this.quickStatusFilter === '') {
+                return this.usersData;
+            }
+
+            return this.usersData.filter(item => String(item.status) === String(this.quickStatusFilter));
+        },
+        userOverviewCards() {
+            const counts = this.usersData.reduce((result, item) => {
+                const statusKey = Number(item.status) === 1 ? 'enabled' : 'disabled';
+                result[statusKey] += 1;
+                if (this.getUserProfileHealth(item) !== '资料完整') {
+                    result.incomplete += 1;
+                }
+                return result;
+            }, {
+                enabled: 0,
+                disabled: 0,
+                incomplete: 0
+            });
+
+            return [
+                {
+                    title: '本页用户',
+                    value: this.usersData.length,
+                    desc: '当前分页已加载',
+                    filterValue: ''
+                },
+                {
+                    title: '已启用',
+                    value: counts.enabled,
+                    desc: '可正常预约和登录',
+                    filterValue: 1
+                },
+                {
+                    title: '已禁用',
+                    value: counts.disabled,
+                    desc: '建议回看禁用原因',
+                    filterValue: 0
+                },
+                {
+                    title: '资料待补',
+                    value: counts.incomplete,
+                    desc: '昵称或手机号缺失',
+                    filterValue: ''
+                }
+            ];
+        },
+        userFocusTitle() {
+            if (this.quickStatusFilter === 0) {
+                return '当前正在查看受限用户';
+            }
+
+            const disabledCount = this.usersData.filter(item => Number(item.status) !== 1).length;
+            if (disabledCount > 0) {
+                return `本页有 ${disabledCount} 位用户处于禁用状态`;
+            }
+
+            return '本页用户状态整体平稳';
+        },
+        userFocusText() {
+            if (this.quickStatusFilter === 0) {
+                return '建议优先回看禁用用户的手机号和注册时间，判断是否需要恢复。';
+            }
+
+            return '先处理资料不完整和禁用用户，再回看预约沟通记录，能更快定位服务问题。';
+        },
+        userFocusFilter() {
+            return this.quickStatusFilter === 0 ? '' : 0;
+        }
     },
     methods: {
         // 获取用户列表
@@ -319,8 +569,13 @@ Vue.component('users', {
 
         resetSearch() {
             this.searchText = '';
+            this.quickStatusFilter = '';
             this.currentPage = 1;
             this.getUsers();
+        },
+
+        applyQuickStatusFilter(status = '') {
+            this.quickStatusFilter = status;
         },
         
         // 切换用户状态
@@ -348,9 +603,35 @@ Vue.component('users', {
         
         // 查看用户详情
         viewUser(row) {
-            this.$alert(`用户ID: ${row.id}\n用户名: ${row.nickname}\n手机号: ${row.phone}\n注册时间: ${row.created_at}`, '用户详情', {
+            this.$alert(`用户ID: ${row.id}\n用户名: ${row.nickname || '-'}\n手机号: ${row.phone || '-'}\n资料状态: ${this.getUserProfileHealth(row)}\n注册时间: ${row.created_at}`, '用户详情', {
                 confirmButtonText: '确定'
             });
+        },
+
+        getUserProfileHealth(row) {
+            const hasNickname = Boolean(String(row.nickname || '').trim());
+            const hasPhone = Boolean(String(row.phone || '').trim());
+
+            if (hasNickname && hasPhone) {
+                return '资料完整';
+            }
+
+            if (!hasNickname && !hasPhone) {
+                return '待补关键信息';
+            }
+
+            return '待补资料';
+        },
+
+        getUserProfileHealthType(row) {
+            const healthText = this.getUserProfileHealth(row);
+            const typeMap = {
+                '资料完整': 'success',
+                '待补资料': 'warning',
+                '待补关键信息': 'danger'
+            };
+
+            return typeMap[healthText] || 'info';
         },
         
         // 处理分页大小变化
