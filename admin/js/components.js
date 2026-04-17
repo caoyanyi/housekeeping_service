@@ -809,6 +809,97 @@ Vue.component('appointments', {
             };
 
             return optionMap[this.currentStatus] || [];
+        },
+        appointmentOverviewCards() {
+            const pageCounts = this.appointmentsData.reduce((result, item) => {
+                const key = String(item.status || 'pending');
+                result[key] = (result[key] || 0) + 1;
+                return result;
+            }, {});
+
+            return [
+                {
+                    title: '全部预约',
+                    value: this.total || 0,
+                    desc: '当前筛选总量',
+                    filterValue: ''
+                },
+                {
+                    title: '待接单',
+                    value: pageCounts.pending || 0,
+                    desc: '建议优先跟进',
+                    filterValue: 'pending'
+                },
+                {
+                    title: '已接单',
+                    value: pageCounts.accepted || 0,
+                    desc: '服务准备阶段',
+                    filterValue: 'accepted'
+                },
+                {
+                    title: '异常状态',
+                    value: (pageCounts.cancelled || 0) + (pageCounts.rejected || 0) + (pageCounts.no_show || 0),
+                    desc: '取消、拒绝与未履约',
+                    filterValue: 'cancelled'
+                }
+            ];
+        },
+        appointmentFocusTitle() {
+            if (this.status === 'pending') {
+                return '当前正在处理待接单预约';
+            }
+
+            if (this.status === 'accepted') {
+                return '当前正在跟进已接单预约';
+            }
+
+            const pendingCount = this.appointmentsData.filter(item => item.status === 'pending').length;
+            if (pendingCount > 0) {
+                return `本页有 ${pendingCount} 笔预约等待处理`;
+            }
+
+            return '当前页没有待接单积压';
+        },
+        appointmentFocusText() {
+            if (this.status === 'pending') {
+                return '建议优先确认上门时间、地址和备注信息，缩短用户等待时间。';
+            }
+
+            if (this.status === 'accepted') {
+                return '可以继续核对服务准备情况，及时把订单推进到完成状态。';
+            }
+
+            return '如果想快速处理最新订单，可以先切到待接单视图，再做接单和状态流转。';
+        },
+        appointmentFocusFilter() {
+            return this.status === 'pending' ? '' : 'pending';
+        },
+        detailActionOptions() {
+            const optionMap = {
+                pending: [
+                    { label: '标记已接单', value: 'accepted' },
+                    { label: '标记已拒绝', value: 'rejected' }
+                ],
+                accepted: [
+                    { label: '标记已完成', value: 'completed' },
+                    { label: '标记已取消', value: 'cancelled' }
+                ]
+            };
+
+            return optionMap[String(this.currentAppointment?.status || '')] || [];
+        },
+        currentAppointmentGuide() {
+            const status = String(this.currentAppointment?.status || '');
+            const guideMap = {
+                pending: '建议先确认用户时间、地址和备注，再决定接单或拒绝。',
+                accepted: '当前订单已进入执行准备阶段，完成服务后可直接更新状态。',
+                completed: '该订单已经闭环完成，可作为复盘服务体验的参考。',
+                cancelled: '该订单已取消，建议关注取消原因并优化确认流程。',
+                rejected: '该订单未被受理，建议回看时间和备注信息是否存在不匹配。',
+                no_show: '该订单未履约，建议线下复盘沟通和履约节点。'
+            };
+
+            return guideMap[status] || '在这里可以集中查看预约信息和下一步处理建议。';
         }
     },
     mounted() {
@@ -866,13 +957,27 @@ Vue.component('appointments', {
             this.currentPage = 1;
             this.getAppointments();
         },
+
+        applyStatusFilter(status = '') {
+            if (this.status === status) {
+                this.searchAppointments();
+                return;
+            }
+
+            this.status = status;
+            this.currentPage = 1;
+            this.getAppointments();
+        },
         
         // 查看预约详情
         viewAppointment(row) {
             axios.get(`/admin/appointment/appointments/${row.id}`)
                 .then(response => {
                     if (response.data.code === 200) {
-                        this.currentAppointment = response.data.data;
+                        this.currentAppointment = {
+                            ...response.data.data,
+                            status: String(response.data.data.status || '')
+                        };
                         this.detailDialogVisible = true;
                     }
                 })
@@ -884,9 +989,51 @@ Vue.component('appointments', {
         // 显示更新状态弹窗
         updateAppointmentStatus(id, status) {
             this.currentAppointmentId = id;
-            this.currentStatus = status;
+            this.currentStatus = String(status);
             this.statusForm.status = '';
             this.statusDialogVisible = true;
+        },
+
+        quickUpdateAppointmentStatus(row, nextStatus, keepDialogOpen = false) {
+            if (!row?.id || !nextStatus) {
+                return;
+            }
+
+            this.submitting = true;
+            axios.put(`/admin/appointment/appointments/${row.id}`, {
+                status: nextStatus
+            })
+                .then(response => {
+                    if (response.data.code === 200) {
+                        const previousStatus = row.status;
+                        row.status = nextStatus;
+
+                        if (this.currentAppointment && String(this.currentAppointment.id) === String(row.id)) {
+                            this.currentAppointment = {
+                                ...this.currentAppointment,
+                                status: nextStatus
+                            };
+                        }
+
+                        showActionSuccess(this, `预约已更新为${this.formatStatus({ status: nextStatus })}`);
+
+                        if (!keepDialogOpen) {
+                            this.detailDialogVisible = false;
+                        }
+
+                        if (this.status && this.status !== nextStatus && this.status === previousStatus) {
+                            this.getAppointments();
+                        }
+                    } else {
+                        this.$message.error(response.data.message || '预约状态更新失败');
+                    }
+                })
+                .catch(error => {
+                    showActionError(this, error, '预约状态更新失败，请稍后重试');
+                })
+                .finally(() => {
+                    this.submitting = false;
+                });
         },
         
         // 确认更新状态
@@ -928,7 +1075,8 @@ Vue.component('appointments', {
                 accepted: 'success',
                 completed: 'primary',
                 cancelled: 'info',
-                rejected: 'danger'
+                rejected: 'danger',
+                no_show: 'warning'
             };
 
             return typeMap[status] || 'info';
