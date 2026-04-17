@@ -53,6 +53,14 @@
       <text class="insight-text">{{ insightText }}</text>
     </view>
 
+    <view v-if="token" class="action-card">
+      <view class="action-card-copy">
+        <text class="action-card-title">{{ currentGuide.title }}</text>
+        <text class="action-card-desc">{{ currentGuide.desc }}</text>
+      </view>
+      <button class="action-card-button" @click="handleGuideAction">{{ currentGuide.actionText }}</button>
+    </view>
+
     <view v-if="!token" class="state-block">
       <image src="/static/images/avatar.svg" mode="aspectFit" class="state-image"></image>
       <text class="state-title">登录后查看预约记录</text>
@@ -87,6 +95,11 @@
             <text class="footer-note">{{ footerNote(appointment.status) }}</text>
           </view>
           <text class="detail-link">查看详情</text>
+        </view>
+
+        <view class="card-insight">
+          <text class="card-insight-tag" :class="`status-${appointment.status}`">{{ appointmentActionLabel(appointment.status) }}</text>
+          <text class="card-insight-text">{{ appointmentActionHint(appointment.status) }}</text>
         </view>
       </view>
 
@@ -237,6 +250,59 @@ export default {
             }
 
             return '待接单表示平台正在确认安排，已接单表示服务准备中，进入详情页可以查看更完整的信息。';
+        },
+        currentGuide() {
+            if (!this.total) {
+                return {
+                    title: '当前没有需要跟进的预约',
+                    desc: '去看看服务列表或热门项目，新提交的预约会自动同步到这里。',
+                    actionText: '去看服务',
+                    action: 'service'
+                };
+            }
+
+            if (this.activeStatus === 'pending') {
+                return {
+                    title: '这一页最重要的是保持电话畅通',
+                    desc: '待接单阶段平台通常会优先核对时间、地址和备注，越早接通越容易锁定安排。',
+                    actionText: '查看个人中心',
+                    action: 'profile'
+                };
+            }
+
+            if (this.activeStatus === 'accepted') {
+                return {
+                    title: '已接单预约建议再确认一次现场信息',
+                    desc: '尤其是地址细节、门牌号和补充备注，避免服务临近时再来回沟通。',
+                    actionText: '查看个人中心',
+                    action: 'profile'
+                };
+            }
+
+            if (['cancelled', 'rejected', 'no_show'].includes(this.activeStatus)) {
+                return {
+                    title: '异常或结束订单更适合尽快决定是否重新预约',
+                    desc: '如果需求还在，可以直接从服务列表重新发起，避免临时再找服务耽误时间。',
+                    actionText: '重新挑服务',
+                    action: 'service'
+                };
+            }
+
+            if (this.activeStatus === 'completed') {
+                return {
+                    title: '已完成订单最适合用来快速复购',
+                    desc: '进入详情页可以回看原订单信息，再次预约时会更省步骤。',
+                    actionText: '查看详情',
+                    action: 'detail'
+                };
+            }
+
+            return {
+                title: '建议优先关注待接单和已接单预约',
+                desc: '这两类订单最影响当前服务体验和预约进度，适合优先查看详情。',
+                actionText: '切到待接单',
+                action: 'pending'
+            };
         }
     },
     onShow() {
@@ -345,6 +411,50 @@ export default {
             };
 
             return noteMap[status] || '查看详细进度';
+        },
+        appointmentActionLabel(status) {
+            const map = {
+                pending: '当前建议',
+                accepted: '执行准备',
+                completed: '适合复购',
+                cancelled: '已结束',
+                rejected: '建议重提',
+                no_show: '需要补救'
+            };
+
+            return map[status] || '查看详情';
+        },
+        appointmentActionHint(status) {
+            const map = {
+                pending: '留意平台来电，确认时间和地址后通常会更快进入接单状态。',
+                accepted: '可以先确认现场信息是否完整，减少服务前临时沟通。',
+                completed: '如果这次体验合适，进入详情页可直接再约同类服务。',
+                cancelled: '如果需求仍在，建议重新预约并补充更完整的时间说明。',
+                rejected: '通常需要重新确认需求或预约时间，再重新提交更稳妥。',
+                no_show: '建议查看详情回顾原因，再决定是否重新预约。'
+            };
+
+            return map[status] || '进入详情页查看完整状态和下一步动作。';
+        },
+        handleGuideAction() {
+            if (this.currentGuide.action === 'service') {
+                this.goToServiceList();
+                return;
+            }
+
+            if (this.currentGuide.action === 'profile') {
+                this.goUserCenter();
+                return;
+            }
+
+            if (this.currentGuide.action === 'pending') {
+                this.switchStatus('pending');
+                return;
+            }
+
+            if (this.currentGuide.action === 'detail' && this.appointmentList.length) {
+                this.goToDetail(this.appointmentList[0].id);
+            }
         },
         goToDetail(appointmentId) {
             ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.appointment.detail, { appointmentId });
@@ -536,6 +646,39 @@ export default {
   color: #667085;
 }
 
+.action-card {
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+}
+
+.action-card-title {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.action-card-desc {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #667085;
+}
+
+.action-card-button {
+  margin-top: 14px;
+  height: 42px;
+  line-height: 42px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1d79c2 0%, #48a7df 100%);
+  color: #ffffff;
+  font-size: 14px;
+}
+
 .appointment-list {
   display: flex;
   flex-direction: column;
@@ -655,6 +798,30 @@ export default {
 .detail-link {
   font-size: 13px;
   color: #1d79c2;
+}
+
+.card-insight {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f2f4f7;
+}
+
+.card-insight-tag {
+  min-width: 56px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  text-align: center;
+}
+
+.card-insight-text {
+  flex: 1;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #667085;
 }
 
 .load-state {

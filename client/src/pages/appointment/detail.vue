@@ -11,6 +11,12 @@
         <text class="status-order">订单号 #{{ appointment.id }}</text>
       </view>
 
+      <view class="priority-card">
+        <text class="priority-label">当前建议</text>
+        <text class="priority-title">{{ detailRecommendation.title }}</text>
+        <text class="priority-desc">{{ detailRecommendation.desc }}</text>
+      </view>
+
       <view class="section-card">
         <text class="section-title">接下来会发生什么</text>
         <view class="journey-list">
@@ -66,6 +72,16 @@
         <view class="followup-actions">
           <button class="followup-button ghost" @click="viewSimilarServices">看同类服务</button>
           <button class="followup-button" @click="goAppointmentList">回到预约列表</button>
+        </view>
+      </view>
+
+      <view class="section-card">
+        <text class="section-title">如果当前状态不理想，可以这样处理</text>
+        <view class="recovery-list">
+          <view v-for="item in recoveryOptions" :key="item.title" class="recovery-item">
+            <text class="recovery-title">{{ item.title }}</text>
+            <text class="recovery-desc">{{ item.desc }}</text>
+          </view>
         </view>
       </view>
 
@@ -136,6 +152,55 @@ export default {
                 {
                     title: '从同类服务继续比较',
                     desc: '如果本次需求没有完全匹配，可以回到同类服务列表继续挑选更合适的项目。'
+                }
+            ];
+        },
+        detailRecommendation() {
+            const map = {
+                pending: {
+                    title: '先保持联系电话畅通，等待平台确认',
+                    desc: '待接单通常意味着平台正在核对时间、地址和需求范围，及时接通会更快推进。'
+                },
+                accepted: {
+                    title: '重点确认地址、门牌号和补充备注',
+                    desc: '订单已进入准备阶段，这时把现场信息看一遍，能减少服务前临时改动。'
+                },
+                completed: {
+                    title: '这笔订单最适合作为下一次预约的参考',
+                    desc: '如果本次服务体验不错，可以直接沿用同类服务再约一次，省去重新比较的时间。'
+                },
+                cancelled: {
+                    title: '如果需求还在，建议重新发起更完整的预约',
+                    desc: '取消后订单不会继续推进，重新提交时把时间、地址和重点需求补充完整会更稳妥。'
+                },
+                rejected: {
+                    title: '建议先回看需求信息，再重新提交',
+                    desc: '未受理往往意味着时间、地址或需求不匹配，先补充说明再预约成功率更高。'
+                },
+                no_show: {
+                    title: '建议先复盘这次未履约原因，再决定是否重约',
+                    desc: '如果仍有服务需求，重新预约时最好在备注中写清现场限制和时间要求。'
+                }
+            };
+
+            return map[this.appointment.status] || {
+                title: '进入详情后可以继续跟进当前预约',
+                desc: '平台会根据状态变化持续同步进度，必要时可再预约同类服务。'
+            };
+        },
+        recoveryOptions() {
+            return [
+                {
+                    title: '时间不合适时，重新预约比等待更高效',
+                    desc: '取消、拒绝或未履约后，如果需求仍在，建议尽快重新选择更合适的时间段。'
+                },
+                {
+                    title: '把地址和现场信息写得更完整',
+                    desc: '小区、楼栋、门牌号和重点区域越明确，平台越容易判断服务安排是否可行。'
+                },
+                {
+                    title: '如果本次服务不完全匹配，先看同类服务再下单',
+                    desc: '回到同类服务列表比较承接范围和说明，通常比直接重复提交更稳。'
                 }
             ];
         },
@@ -396,6 +461,34 @@ export default {
   color: rgba(255, 255, 255, 0.72);
 }
 
+.priority-card {
+  padding: 18px 16px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
+}
+
+.priority-label {
+  font-size: 11px;
+  color: #1d79c2;
+}
+
+.priority-title {
+  display: block;
+  margin-top: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.priority-desc {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #667085;
+}
+
 .section-title {
   display: block;
   margin-bottom: 12px;
@@ -579,6 +672,33 @@ export default {
   background: #ffffff;
   color: #1d79c2;
   border: 1px solid rgba(29, 121, 194, 0.22);
+}
+
+.recovery-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.recovery-item {
+  padding: 14px;
+  border-radius: 18px;
+  background: #f8fafc;
+}
+
+.recovery-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.recovery-desc {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #667085;
 }
 
 .state-block {

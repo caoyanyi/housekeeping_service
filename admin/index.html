@@ -657,6 +657,18 @@
                     </div>
                     <el-button type="primary" size="mini" @click="applyStatusFilter(appointmentFocusFilter)">立即筛选</el-button>
                 </div>
+                <div class="appointment-pipeline-grid">
+                    <div
+                        v-for="item in appointmentPipelineCards"
+                        :key="item.title"
+                        class="appointment-pipeline-card"
+                        :class="`appointment-pipeline-card-${item.type}`"
+                    >
+                        <span class="appointment-pipeline-title">{{ item.title }}</span>
+                        <span class="appointment-pipeline-value">{{ item.value }}</span>
+                        <span class="appointment-pipeline-desc">{{ item.desc }}</span>
+                    </div>
+                </div>
                 <el-table :data="appointmentsData" stripe v-loading="loading" empty-text="暂无预约数据" style="width: 100%">
                     <el-table-column prop="id" label="ID" width="80"></el-table-column>
                     <el-table-column prop="user_name" label="用户" width="120"></el-table-column>
@@ -667,6 +679,11 @@
                     <el-table-column prop="status" label="状态" width="110">
                         <template slot-scope="scope">
                             <el-tag :type="getStatusTagType(scope.row.status)" size="mini">{{ formatStatus(scope.row) }}</el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="处理提示" min-width="180">
+                        <template slot-scope="scope">
+                            <span class="table-hint">{{ getAppointmentOpsHint(scope.row) }}</span>
                         </template>
                     </el-table-column>
                     <el-table-column prop="created_at" label="创建时间" width="180"></el-table-column>
@@ -726,6 +743,10 @@
                     <div class="detail-highlight">
                         <span class="detail-highlight-title">{{ formatStatus(currentAppointment) }}</span>
                         <span class="detail-highlight-desc">{{ currentAppointmentGuide }}</span>
+                    </div>
+                    <div class="detail-highlight detail-highlight-secondary">
+                        <span class="detail-highlight-title">{{ currentAppointmentActionTitle }}</span>
+                        <span class="detail-highlight-desc">{{ currentAppointmentActionDesc }}</span>
                     </div>
                     <div class="detail-item">
                         <span class="detail-label">订单号：</span>

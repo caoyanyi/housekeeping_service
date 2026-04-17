@@ -1004,6 +1004,71 @@ body {
     color: rgba(255, 255, 255, 0.82);
 }
 
+.appointment-pipeline-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.appointment-pipeline-card {
+    padding: 16px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    border: 1px solid #e5edf7;
+}
+
+.appointment-pipeline-card-warning {
+    background: linear-gradient(180deg, #fffaf2 0%, #fff1db 100%);
+}
+
+.appointment-pipeline-card-info {
+    background: linear-gradient(180deg, #f7fbff 0%, #eef5ff 100%);
+}
+
+.appointment-pipeline-card-danger {
+    background: linear-gradient(180deg, #fff7f5 0%, #fde9e4 100%);
+}
+
+.appointment-pipeline-card-success {
+    background: linear-gradient(180deg, #f6fcf7 0%, #eaf8ee 100%);
+}
+
+.appointment-pipeline-card-plain {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.appointment-pipeline-title,
+.appointment-pipeline-value,
+.appointment-pipeline-desc {
+    display: block;
+}
+
+.appointment-pipeline-title {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.appointment-pipeline-value {
+    margin-top: 10px;
+    font-size: 24px;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.appointment-pipeline-desc {
+    margin-top: 8px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #7b8794;
+}
+
+.table-hint {
+    font-size: 12px;
+    line-height: 1.6;
+    color: #6b7280;
+}
+
 .pagination {
     margin-top: 20px;
     text-align: right;
@@ -1021,6 +1086,10 @@ body {
     padding: 16px;
     border-radius: 18px;
     background: linear-gradient(180deg, #f8fbff 0%, #eef5ff 100%);
+}
+
+.detail-highlight.detail-highlight-secondary {
+    background: linear-gradient(180deg, #f6fcf7 0%, #eef8f1 100%);
 }
 
 .detail-highlight-title,
@@ -1085,6 +1154,10 @@ body {
     .service-ops-grid,
     .appointment-ops-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .appointment-pipeline-grid {
+        grid-template-columns: 1fr;
     }
 }
 

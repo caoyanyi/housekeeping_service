@@ -1309,6 +1309,36 @@ Vue.component('appointments', {
         appointmentFocusFilter() {
             return this.status === 'pending' ? '' : 'pending';
         },
+        appointmentPipelineCards() {
+            const counts = this.appointmentsData.reduce((result, item) => {
+                const key = String(item.status || 'pending');
+                result[key] = (result[key] || 0) + 1;
+                return result;
+            }, {});
+
+            const exceptionCount = (counts.cancelled || 0) + (counts.rejected || 0) + (counts.no_show || 0);
+
+            return [
+                {
+                    title: '待首轮确认',
+                    value: counts.pending || 0,
+                    desc: counts.pending ? '建议优先联系并确认时间、地址与备注。' : '当前没有待首轮处理积压。',
+                    type: counts.pending ? 'warning' : 'success'
+                },
+                {
+                    title: '准备执行中',
+                    value: counts.accepted || 0,
+                    desc: counts.accepted ? '说明已有订单进入履约准备，可继续推进完成。' : '当前没有处于执行准备阶段的订单。',
+                    type: counts.accepted ? 'info' : 'plain'
+                },
+                {
+                    title: '异常与结束',
+                    value: exceptionCount,
+                    desc: exceptionCount ? '建议复盘取消、拒绝和未履约原因，优化确认流程。' : '当前页异常订单较少，履约节奏相对稳定。',
+                    type: exceptionCount ? 'danger' : 'success'
+                }
+            ];
+        },
         detailActionOptions() {
             const optionMap = {
                 pending: [
@@ -1335,6 +1365,32 @@ Vue.component('appointments', {
             };
 
             return guideMap[status] || '在这里可以集中查看预约信息和下一步处理建议。';
+        },
+        currentAppointmentActionTitle() {
+            const status = String(this.currentAppointment?.status || '');
+            const titleMap = {
+                pending: '当前最重要的是尽快给用户明确反馈',
+                accepted: '当前最重要的是把订单推进到履约完成',
+                completed: '当前最重要的是把它当作已闭环样本复盘',
+                cancelled: '当前最重要的是判断取消是否源于确认流程问题',
+                rejected: '当前最重要的是回看是否存在需求不匹配',
+                no_show: '当前最重要的是复盘履约中断节点'
+            };
+
+            return titleMap[status] || '当前最重要的是先判断这笔订单所处阶段';
+        },
+        currentAppointmentActionDesc() {
+            const status = String(this.currentAppointment?.status || '');
+            const descMap = {
+                pending: '如果用户预约时间临近，建议优先处理，避免等待感过强影响转化体验。',
+                accepted: '建议再核对服务地址、联系人和备注，减少执行前反复沟通。',
+                completed: '可用来观察哪些服务更容易顺利闭环，辅助后续优化首页推荐和服务描述。',
+                cancelled: '如果取消集中出现，通常值得回看时间确认、上门范围说明是否不够清楚。',
+                rejected: '如果拒绝较多，建议复盘服务承接范围、服务详情表达和预约前提示是否不足。',
+                no_show: '未履约订单适合重点复盘，通常最能暴露确认、沟通或排班问题。'
+            };
+
+            return descMap[status] || '结合订单详情判断下一步动作，避免只做状态流转。';
         }
     },
     mounted() {
@@ -1502,6 +1558,18 @@ Vue.component('appointments', {
         // 格式化状态
         formatStatus(row) {
             return APPOINTMENT_STATUS_TEXT_MAP[row.status] || row.status;
+        },
+        getAppointmentOpsHint(row) {
+            const map = {
+                pending: '优先确认时间和地址，尽快给用户明确反馈。',
+                accepted: '继续跟进入场准备，避免服务前信息缺失。',
+                completed: '可作为顺利履约样本回看服务闭环。',
+                cancelled: '关注取消原因，判断是否需要优化确认流程。',
+                rejected: '回看需求与服务承接是否匹配。',
+                no_show: '复盘履约中断节点，避免重复发生。'
+            };
+
+            return map[String(row.status || '')] || '查看详情并判断下一步处理动作。';
         },
 
         getStatusTagType(status) {
