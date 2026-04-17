@@ -1,6 +1,10 @@
 import API_CONFIG from '../config/api.config.js';
 import ROUTER_CONFIG from '../config/router.config.js';
 
+const DEFAULT_ERROR_MESSAGE = '操作未完成，请稍后重试';
+const NETWORK_ERROR_MESSAGE = '网络开小差了，请稍后重试';
+const LOGIN_EXPIRED_MESSAGE = '登录状态已失效，请重新登录';
+
 function normalizeHeaders(options = {}) {
   return {
     ...(options.header || {}),
@@ -75,7 +79,7 @@ const request = {
         timeout: requestOptions.timeout || 60000,
         success: (res) => {
           const responseCode = Number(res.data?.code || res.statusCode);
-          const responseMessage = res.data?.message || '请求失败';
+          const responseMessage = res.data?.message || DEFAULT_ERROR_MESSAGE;
 
           if (res.statusCode === 200 && responseCode === 200) {
               resolve(res.data);
@@ -88,7 +92,7 @@ const request = {
             uni.removeStorageSync('userInfo');
             if (showError) {
               uni.showToast({
-                title: '请重新登录',
+                title: LOGIN_EXPIRED_MESSAGE,
                 icon: 'none'
               });
             }
@@ -97,26 +101,26 @@ const request = {
                 ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.login);
               }, 1500);
             }
-            reject(new Error('请重新登录'));
+            reject(new Error(LOGIN_EXPIRED_MESSAGE));
             return;
           }
 
           if (showError) {
             uni.showToast({
-              title: responseMessage || '网络错误',
+              title: responseMessage,
               icon: 'none'
             });
           }
-          reject(new Error(responseMessage || '网络错误'));
+          reject(new Error(responseMessage));
         },
         fail: (err) => {
           if (showError) {
             uni.showToast({
-              title: '请求失败',
+              title: NETWORK_ERROR_MESSAGE,
               icon: 'none'
             });
           }
-          reject(err);
+          reject(new Error(err?.errMsg || NETWORK_ERROR_MESSAGE));
         }
       });
     });

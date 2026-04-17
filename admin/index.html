@@ -158,6 +158,24 @@
                                             <span class="quick-link-note">{{ item.note }}</span>
                                         </button>
                                     </div>
+                                    <div class="alert-list">
+                                        <div class="alert-list-header">
+                                            <h4>业务提醒</h4>
+                                            <span>基于当前看板数据自动生成</span>
+                                        </div>
+                                        <div
+                                            v-for="item in dashboardAlerts"
+                                            :key="item.title"
+                                            class="alert-item"
+                                            :class="`alert-item-${item.type}`"
+                                        >
+                                            <span class="alert-dot"></span>
+                                            <div class="alert-copy">
+                                                <span class="alert-title">{{ item.title }}</span>
+                                                <span class="alert-desc">{{ item.desc }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </section>
                             </div>
 

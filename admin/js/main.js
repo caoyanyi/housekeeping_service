@@ -263,6 +263,50 @@ const app = new Vue({
                     note: '查看最新申请'
                 }
             ];
+        },
+
+        dashboardAlerts() {
+            const alerts = [];
+
+            if (this.pendingAppointmentsCount > 0) {
+                alerts.push({
+                    type: 'warning',
+                    title: '待接单预约需要优先跟进',
+                    desc: `当前有 ${this.pendingAppointmentsCount} 笔预约处于待接单状态，建议优先确认服务时间和上门安排。`
+                });
+            }
+
+            if (!this.statistics.services) {
+                alerts.push({
+                    type: 'danger',
+                    title: '当前还没有可维护服务',
+                    desc: '建议先补充服务标题、价格、时长和上架状态，避免前台无项目可约。'
+                });
+            } else if (!this.statistics.todayAppointments) {
+                alerts.push({
+                    type: 'info',
+                    title: '今日预约量暂时为空',
+                    desc: '可以检查首页推荐、服务排序和投放入口，确认是否影响转化。'
+                });
+            }
+
+            if (!this.recentAppointments.length) {
+                alerts.push({
+                    type: 'info',
+                    title: '最近没有新的订单流入',
+                    desc: '可同步检查分类展示、服务上架状态以及用户侧入口体验。'
+                });
+            }
+
+            if (!alerts.length) {
+                alerts.push({
+                    type: 'info',
+                    title: '当前业务运行平稳',
+                    desc: '可以继续优化服务详情、首页推荐和预约跟进效率，保持转化与履约体验。'
+                });
+            }
+
+            return alerts.slice(0, 3);
         }
     },
 

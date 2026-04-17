@@ -105,6 +105,16 @@
         </view>
       </view>
 
+      <view class="section-card">
+        <text class="section-title">下单前常见问题</text>
+        <view class="faq-list">
+          <view v-for="item in serviceFaqs" :key="item.question" class="faq-item">
+            <text class="faq-question">{{ item.question }}</text>
+            <text class="faq-answer">{{ item.answer }}</text>
+          </view>
+        </view>
+      </view>
+
       <view class="section-card emphasis">
         <text class="section-title">下单说明</text>
         <view class="notice-list">
@@ -157,6 +167,20 @@ export default {
                 {
                     title: '适合补充个性化需求',
                     desc: '若有特殊清洁区域或时间要求，可在预约备注里提前说明。'
+                }
+            ],
+            serviceFaqs: [
+                {
+                    question: '提交预约后多久会有人联系我？',
+                    answer: '平台会尽快回访确认，通常会优先核对预约时间、地址和是否存在特殊需求。'
+                },
+                {
+                    question: '页面价格是不是最终价格？',
+                    answer: '页面价格可作为参考，若现场环境或附加需求有明显差异，平台会在确认环节提前和您沟通。'
+                },
+                {
+                    question: '临时需要改时间怎么办？',
+                    answer: '可以先在“我的预约”查看当前状态，并尽快联系平台处理改期或取消，避免影响排班。'
                 }
             ],
             serviceJourney: [
@@ -465,14 +489,16 @@ export default {
 .journey-list,
 .process-list,
 .notice-list,
-.assurance-list {
+.assurance-list,
+.faq-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
 .journey-item,
-.assurance-item {
+.assurance-item,
+.faq-item {
   display: flex;
   align-items: flex-start;
   padding: 14px;
@@ -509,6 +535,25 @@ export default {
 .assurance-desc {
   display: block;
   margin-top: 5px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #5f6b76;
+}
+
+.faq-item {
+  display: block;
+}
+
+.faq-question {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #17212f;
+}
+
+.faq-answer {
+  display: block;
+  margin-top: 8px;
   font-size: 13px;
   line-height: 1.7;
   color: #5f6b76;

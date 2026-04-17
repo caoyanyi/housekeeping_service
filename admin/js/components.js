@@ -24,6 +24,35 @@ function stringifyImageUrls(imageUrls) {
     return '';
 }
 
+const JOB_STATUS_TEXT_MAP = {
+    pending: '待处理',
+    reviewed: '已查看',
+    contacted: '已联系',
+    rejected: '已拒绝'
+};
+
+const APPOINTMENT_STATUS_TEXT_MAP = {
+    pending: '待接单',
+    accepted: '已接单',
+    completed: '已完成',
+    cancelled: '已取消',
+    rejected: '已拒绝',
+    no_show: '未履约'
+};
+
+function getActionErrorMessage(error, fallback = '操作未完成，请稍后重试') {
+    return error?.response?.data?.message || fallback;
+}
+
+function showActionError(vm, error, fallback = '操作未完成，请稍后重试') {
+    console.error(fallback, error);
+    vm.$message.error(getActionErrorMessage(error, fallback));
+}
+
+function showActionSuccess(vm, message) {
+    vm.$message.success(message);
+}
+
 // 注册求职管理组件
 Vue.component('job-applications', {
     template: '#job-applications-template',
@@ -101,8 +130,7 @@ Vue.component('job-applications', {
                     }
                 })
                 .catch(error => {
-                    console.error('获取求职申请列表失败:', error);
-                    this.$message.error('获取求职申请列表失败');
+                    showActionError(this, error, '求职申请列表加载失败，请稍后重试');
                 })
                 .finally(() => {
                     this.loading = false;
@@ -132,8 +160,7 @@ Vue.component('job-applications', {
                     }
                 })
                 .catch(error => {
-                    console.error('获取求职申请详情失败:', error);
-                    this.$message.error('获取求职申请详情失败');
+                    showActionError(this, error, '求职申请详情加载失败，请稍后重试');
                 });
         },
         
@@ -151,8 +178,7 @@ Vue.component('job-applications', {
                     }
                 })
                 .catch(error => {
-                    console.error('获取求职申请详情失败:', error);
-                    this.$message.error('获取求职申请详情失败');
+                    showActionError(this, error, '求职申请详情加载失败，请稍后重试');
                 });
         },
         
@@ -164,7 +190,7 @@ Vue.component('job-applications', {
                     axios.put(`/admin/job/application/applications/${this.editForm.id}`, this.editForm)
                         .then(response => {
                             if (response.data.code === 200) {
-                                this.$message.success('求职申请更新成功');
+                                showActionSuccess(this, '求职申请已更新');
                                 this.editDialogVisible = false;
                                 this.getJobApplications();
                             } else {
@@ -172,8 +198,7 @@ Vue.component('job-applications', {
                             }
                         })
                         .catch(error => {
-                            console.error('更新求职申请失败:', error);
-                            this.$message.error('求职申请更新失败');
+                            showActionError(this, error, '求职申请更新失败，请稍后重试');
                         })
                         .finally(() => {
                             this.submitting = false;
@@ -192,15 +217,14 @@ Vue.component('job-applications', {
                 axios.delete(`/admin/job/application/applications/${id}`)
                     .then(response => {
                         if (response.data.code === 200) {
-                            this.$message.success('求职申请删除成功');
+                            showActionSuccess(this, '求职申请已删除');
                             this.getJobApplications();
                         } else {
                             this.$message.error(response.data.message || '求职申请删除失败');
                         }
                     })
                     .catch(error => {
-                        console.error('删除求职申请失败:', error);
-                        this.$message.error('求职申请删除失败');
+                        showActionError(this, error, '求职申请删除失败，请稍后重试');
                     });
             }).catch(() => {
                 // 用户取消
@@ -222,13 +246,7 @@ Vue.component('job-applications', {
         
         // 获取状态文本
         getStatusText(status) {
-            const statusMap = {
-                'pending': '待处理',
-                'reviewed': '已查看',
-                'contacted': '已联系',
-                'rejected': '已拒绝'
-            };
-            return statusMap[status] || status;
+            return JOB_STATUS_TEXT_MAP[status] || status;
         },
         
         // 获取状态标签类型
@@ -286,8 +304,7 @@ Vue.component('users', {
                     }
                 })
                 .catch(error => {
-                    console.error('获取用户列表失败:', error);
-                    this.$message.error('获取用户列表失败');
+                    showActionError(this, error, '用户列表加载失败，请稍后重试');
                 })
                 .finally(() => {
                     this.loading = false;
@@ -315,7 +332,7 @@ Vue.component('users', {
             })
                 .then(response => {
                     if (response.data.code === 200) {
-                        this.$message.success('状态更新成功');
+                        showActionSuccess(this, '用户状态已更新');
                     } else {
                         // 恢复原状态
                         row.status = previousStatus;
@@ -323,10 +340,9 @@ Vue.component('users', {
                     }
                 })
                 .catch(error => {
-                    console.error('更新用户状态失败:', error);
                     // 恢复原状态
                     row.status = previousStatus;
-                    this.$message.error('状态更新失败');
+                    showActionError(this, error, '用户状态更新失败，请稍后重试');
                 });
         },
         
@@ -396,8 +412,7 @@ Vue.component('categories', {
                     }
                 })
                 .catch(error => {
-                    console.error('获取分类列表失败:', error);
-                    this.$message.error('获取分类列表失败');
+                    showActionError(this, error, '分类列表加载失败，请稍后重试');
                     // 出错时也确保categoriesData是一个数组
                     this.categoriesData = [];
                 })
@@ -430,7 +445,7 @@ Vue.component('categories', {
                     axios.post('/admin/category/categories', categoryData)
                             .then(response => {
                                 if (response.data.code === 200) {
-                                    this.$message.success('分类添加成功');
+                                    showActionSuccess(this, '分类已添加');
                                     this.addDialogVisible = false;
                                     this.getCategories(); // 添加成功后刷新列表
                                 } else {
@@ -438,8 +453,7 @@ Vue.component('categories', {
                                 }
                             })
                         .catch(error => {
-                            console.error('添加分类失败:', error);
-                            this.$message.error('分类添加失败');
+                            showActionError(this, error, '分类添加失败，请稍后重试');
                         });
                 }
             });
@@ -464,7 +478,7 @@ Vue.component('categories', {
                     axios.put(`/admin/category/categories/${this.editForm.id}`, this.editForm)
                         .then(response => {
                             if (response.data.code === 200) {
-                                this.$message.success('分类更新成功');
+                                showActionSuccess(this, '分类已更新');
                                 this.editDialogVisible = false;
                                 this.getCategories();
                             } else {
@@ -472,8 +486,7 @@ Vue.component('categories', {
                             }
                         })
                         .catch(error => {
-                            console.error('更新分类失败:', error);
-                            this.$message.error('分类更新失败');
+                            showActionError(this, error, '分类更新失败，请稍后重试');
                         });
                 }
             });
@@ -490,15 +503,14 @@ Vue.component('categories', {
                 axios.delete(`/admin/category/categories/${id}`)
                     .then(response => {
                         if (response.data.code === 200) {
-                            this.$message.success('分类删除成功');
+                            showActionSuccess(this, '分类已删除');
                             this.getCategories();
                         } else {
                             this.$message.error(response.data.message || '分类删除失败');
                         }
                     })
                     .catch(error => {
-                        console.error('删除分类失败:', error);
-                        this.$message.error('分类删除失败');
+                        showActionError(this, error, '分类删除失败，请稍后重试');
                     });
             }).catch(() => {
                 // 用户取消
@@ -583,8 +595,7 @@ Vue.component('services', {
                     }
                 })
                 .catch(error => {
-                    console.error('获取服务列表失败:', error);
-                    this.$message.error('获取服务列表失败');
+                    showActionError(this, error, '服务列表加载失败，请稍后重试');
                 })
                 .finally(() => {
                     this.loading = false;
@@ -600,7 +611,7 @@ Vue.component('services', {
                     }
                 })
                 .catch(error => {
-                    console.error('获取分类列表失败:', error);
+                    showActionError(this, error, '分类数据加载失败，请稍后重试');
                 });
         },
         
@@ -649,7 +660,7 @@ Vue.component('services', {
                     axios.post('/admin/service/services', payload)
                         .then(response => {
                             if (response.data.code === 200) {
-                                this.$message.success('服务添加成功');
+                                showActionSuccess(this, '服务已添加');
                                 this.addDialogVisible = false;
                                 this.getServices();
                             } else {
@@ -657,8 +668,7 @@ Vue.component('services', {
                             }
                         })
                         .catch(error => {
-                            console.error('添加服务失败:', error);
-                            this.$message.error('服务添加失败');
+                            showActionError(this, error, '服务添加失败，请稍后重试');
                         })
                         .finally(() => {
                             this.submitting = false;
@@ -700,7 +710,7 @@ Vue.component('services', {
                     axios.put(`/admin/service/services/${this.editForm.id}`, payload)
                         .then(response => {
                             if (response.data.code === 200) {
-                                this.$message.success('服务更新成功');
+                                showActionSuccess(this, '服务已更新');
                                 this.editDialogVisible = false;
                                 this.getServices();
                             } else {
@@ -708,8 +718,7 @@ Vue.component('services', {
                             }
                         })
                         .catch(error => {
-                            console.error('更新服务失败:', error);
-                            this.$message.error('服务更新失败');
+                            showActionError(this, error, '服务更新失败，请稍后重试');
                         })
                         .finally(() => {
                             this.submitting = false;
@@ -728,15 +737,14 @@ Vue.component('services', {
                 axios.delete(`/admin/service/services/${id}`)
                     .then(response => {
                         if (response.data.code === 200) {
-                            this.$message.success('服务删除成功');
+                            showActionSuccess(this, '服务已删除');
                             this.getServices();
                         } else {
                             this.$message.error(response.data.message || '服务删除失败');
                         }
                     })
                     .catch(error => {
-                        console.error('删除服务失败:', error);
-                        this.$message.error('服务删除失败');
+                        showActionError(this, error, '服务删除失败，请稍后重试');
                     });
             }).catch(() => {
                 // 用户取消
@@ -779,11 +787,7 @@ Vue.component('appointments', {
             pageSize: 10,
             total: 0,
             statusMap: {
-                'pending': '待接单',
-                'accepted': '已接单',
-                'completed': '已完成',
-                'cancelled': '已取消',
-                'rejected': '已拒绝'
+                ...APPOINTMENT_STATUS_TEXT_MAP
             },
             statusForm: {
                 status: ''
@@ -836,8 +840,7 @@ Vue.component('appointments', {
                     }
                 })
                 .catch(error => {
-                    console.error('获取预约列表失败:', error);
-                    this.$message.error('获取预约列表失败');
+                    showActionError(this, error, '预约列表加载失败，请稍后重试');
                 })
                 .finally(() => {
                     this.loading = false;
@@ -874,8 +877,7 @@ Vue.component('appointments', {
                     }
                 })
                 .catch(error => {
-                    console.error('获取预约详情失败:', error);
-                    this.$message.error('获取预约详情失败');
+                    showActionError(this, error, '预约详情加载失败，请稍后重试');
                 });
         },
         
@@ -900,7 +902,7 @@ Vue.component('appointments', {
             })
                 .then(response => {
                     if (response.data.code === 200) {
-                        this.$message.success('状态更新成功');
+                        showActionSuccess(this, '预约状态已更新');
                         this.statusDialogVisible = false;
                         this.getAppointments();
                     } else {
@@ -908,8 +910,7 @@ Vue.component('appointments', {
                     }
                 })
                 .catch(error => {
-                    console.error('更新预约状态失败:', error);
-                    this.$message.error('状态更新失败');
+                    showActionError(this, error, '预约状态更新失败，请稍后重试');
                 })
                 .finally(() => {
                     this.submitting = false;
@@ -918,7 +919,7 @@ Vue.component('appointments', {
         
         // 格式化状态
         formatStatus(row) {
-            return this.statusMap[row.status] || row.status;
+            return APPOINTMENT_STATUS_TEXT_MAP[row.status] || row.status;
         },
 
         getStatusTagType(status) {
@@ -1007,8 +1008,7 @@ Vue.component('admins', {
                     }
                 })
                 .catch(error => {
-                    console.error('获取管理员列表失败:', error);
-                    this.$message.error('获取管理员列表失败');
+                    showActionError(this, error, '管理员列表加载失败，请稍后重试');
                     // 出错时确保adminsData是一个数组
                     this.adminsData = [];
                 })
@@ -1054,7 +1054,7 @@ Vue.component('admins', {
                     axios.post('/admin/admin/admins', this.adminForm)
                         .then(response => {
                             if (response.data.code === 200) {
-                                this.$message.success('管理员添加成功');
+                                showActionSuccess(this, '管理员已添加');
                                 this.addDialogVisible = false;
                                 this.getAdmins();
                             } else {
@@ -1062,8 +1062,7 @@ Vue.component('admins', {
                             }
                         })
                         .catch(error => {
-                            console.error('添加管理员失败:', error);
-                            this.$message.error('管理员添加失败');
+                            showActionError(this, error, '管理员添加失败，请稍后重试');
                         })
                         .finally(() => {
                             this.submitting = false;
@@ -1098,7 +1097,7 @@ Vue.component('admins', {
                     axios.put(`/admin/admin/admins/${this.editForm.id}`, updateData)
                         .then(response => {
                             if (response.data.code === 200) {
-                                this.$message.success('管理员更新成功');
+                                showActionSuccess(this, '管理员已更新');
                                 this.editDialogVisible = false;
                                 this.getAdmins();
                             } else {
@@ -1106,8 +1105,7 @@ Vue.component('admins', {
                             }
                         })
                         .catch(error => {
-                            console.error('更新管理员失败:', error);
-                            this.$message.error('管理员更新失败');
+                            showActionError(this, error, '管理员更新失败，请稍后重试');
                         })
                         .finally(() => {
                             this.submitting = false;
@@ -1131,15 +1129,14 @@ Vue.component('admins', {
                 axios.delete(`/admin/admin/admins/${id}`)
                     .then(response => {
                         if (response.data.code === 200) {
-                            this.$message.success('管理员删除成功');
+                            showActionSuccess(this, '管理员已删除');
                             this.getAdmins();
                         } else {
                             this.$message.error(response.data.message || '管理员删除失败');
                         }
                     })
                     .catch(error => {
-                        console.error('删除管理员失败:', error);
-                        this.$message.error('管理员删除失败');
+                        showActionError(this, error, '管理员删除失败，请稍后重试');
                     });
             }).catch(() => {
                 // 用户取消

@@ -164,6 +164,21 @@
       </view>
     </view>
 
+    <view class="section-card">
+      <view class="section-header">
+        <view>
+          <text class="section-title">预约前准备</text>
+          <text class="section-subtitle">提前准备这些信息，平台确认会更顺畅</text>
+        </view>
+      </view>
+      <view class="prep-list">
+        <view v-for="item in bookingChecklist" :key="item.title" class="prep-item">
+          <text class="prep-title">{{ item.title }}</text>
+          <text class="prep-desc">{{ item.desc }}</text>
+        </view>
+      </view>
+    </view>
+
     <view class="notice-card">
       <image src="/static/images/notice.svg" mode="aspectFit" class="notice-icon"></image>
       <view class="notice-content">
@@ -217,6 +232,20 @@ export default {
                 {
                     title: '适合高频家庭需求',
                     desc: '从日常保洁到母婴护理都能统一入口预约，减少分散咨询成本。'
+                }
+            ],
+            bookingChecklist: [
+                {
+                    title: '确认联系人和电话',
+                    desc: '平台会优先按预约单里的联系人信息回访，减少因为号码不一致导致的确认失败。'
+                },
+                {
+                    title: '准备准确服务地址',
+                    desc: '地址越完整，越方便平台判断服务范围并安排上门时间。'
+                },
+                {
+                    title: '提前写清特殊需求',
+                    desc: '如果有重点清洁区域、宠物或时间限制，建议在备注里一次说明。'
                 }
             ],
             serviceFlow: [
@@ -692,10 +721,23 @@ export default {
   gap: 12px;
 }
 
+.prep-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .promise-item {
   padding: 14px;
   border-radius: 18px;
   background: #f7faf8;
+}
+
+.prep-item {
+  padding: 14px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #fcfdfc 0%, #f3f8f4 100%);
+  border: 1px solid rgba(38, 122, 76, 0.08);
 }
 
 .promise-title {
@@ -706,6 +748,21 @@ export default {
 }
 
 .promise-desc {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #5f6b76;
+}
+
+.prep-title {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  color: #173126;
+}
+
+.prep-desc {
   display: block;
   margin-top: 6px;
   font-size: 12px;
