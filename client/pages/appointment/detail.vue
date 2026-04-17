@@ -7,7 +7,21 @@
     <view v-else-if="appointmentInfo" class="content">
       <view class="status-card" :class="`status-${appointment.status}`">
         <text class="status-title">{{ appointment.status_text }}</text>
-        <text class="status-desc">订单号 #{{ appointment.id }}</text>
+        <text class="status-desc">{{ statusDescription }}</text>
+        <text class="status-order">订单号 #{{ appointment.id }}</text>
+      </view>
+
+      <view class="section-card">
+        <text class="section-title">接下来会发生什么</text>
+        <view class="journey-list">
+          <view v-for="item in statusJourney" :key="item.title" class="journey-item">
+            <view class="journey-index" :class="{ done: item.done, active: item.active }">{{ item.step }}</view>
+            <view class="journey-copy">
+              <text class="journey-title">{{ item.title }}</text>
+              <text class="journey-desc">{{ item.desc }}</text>
+            </view>
+          </view>
+        </view>
       </view>
 
       <view class="section-card">
@@ -20,9 +34,9 @@
           <text class="info-label">联系人</text>
           <text class="info-value">{{ appointment.contact_name }}</text>
         </view>
-        <view class="info-row" @click="makePhoneCall">
+        <view class="info-row" @click="copyContactPhone">
           <text class="info-label">联系电话</text>
-          <text class="info-value action-text">{{ appointment.contact_phone || '未填写' }}</text>
+          <text class="info-value action-text">{{ contactPhoneText }}</text>
         </view>
         <view class="info-row">
           <text class="info-label">服务地址</text>
@@ -52,8 +66,9 @@
       <text class="state-text">预约信息不存在或已被删除</text>
     </view>
 
-    <view v-if="showCancelButton" class="bottom-bar">
-      <button class="cancel-button" @click="confirmCancel">取消预约</button>
+    <view v-if="appointmentInfo" class="bottom-bar" :class="{ stacked: !showCancelButton }">
+      <button v-if="showCancelButton" class="bottom-button secondary" @click="confirmCancel">取消预约</button>
+      <button class="bottom-button primary" @click="goBookAgain">{{ primaryActionText }}</button>
     </view>
   </view>
 </template>
@@ -79,8 +94,73 @@ export default {
         appointment() {
             return this.appointmentInfo ? normalizeAppointment(this.appointmentInfo) : normalizeAppointment();
         },
+        contactPhoneText() {
+            return this.appointment.contact_phone
+                ? `${this.appointment.contact_phone} · 点击复制`
+                : '未填写';
+        },
         showCancelButton() {
             return Boolean(this.appointmentInfo) && ['pending', 'accepted'].includes(this.appointment.status);
+        },
+        hasServiceLink() {
+            return Boolean(this.appointment.service_id || this.appointment.service?.id);
+        },
+        primaryActionText() {
+            return this.hasServiceLink ? '再约一次' : '返回预约列表';
+        },
+        statusDescription() {
+            const map = {
+                pending: '平台正在确认服务安排，建议保持电话畅通。',
+                accepted: '预约已被受理，接下来会进入上门准备阶段。',
+                completed: '本次服务已经完成，如有需要可以再次预约。',
+                cancelled: '本次预约已取消，如仍有需求可重新提交。',
+                rejected: '本次预约暂未受理，建议重新确认时间和需求后再提交。',
+                no_show: '本次预约未能按计划完成履约，如仍有需求可重新预约。'
+            };
+
+            return map[this.appointment.status] || '平台会根据预约状态持续同步进度。';
+        },
+        statusJourney() {
+            const steps = [
+                {
+                    step: 1,
+                    title: '提交预约',
+                    desc: '您已提交服务时间、地址和联系人信息。',
+                    done: true,
+                    active: false
+                },
+                {
+                    step: 2,
+                    title: '平台确认',
+                    desc: '平台会联系您核对需求，并安排具体服务执行。',
+                    done: ['accepted', 'completed'].includes(this.appointment.status),
+                    active: this.appointment.status === 'pending'
+                },
+                {
+                    step: 3,
+                    title: '完成服务',
+                    desc: '服务完成后，订单状态会更新为已完成或其他最终状态。',
+                    done: this.appointment.status === 'completed',
+                    active: ['accepted', 'cancelled', 'rejected', 'no_show'].includes(this.appointment.status)
+                }
+            ];
+
+            if (this.appointment.status === 'cancelled') {
+                steps[2].title = '预约已取消';
+                steps[2].desc = '当前订单已经结束，如仍需要服务，可以重新预约。';
+            }
+
+            if (this.appointment.status === 'rejected') {
+                steps[2].title = '预约未受理';
+                steps[2].desc = '建议重新确认需求、时间和备注后再次提交预约。';
+            }
+
+            if (this.appointment.status === 'no_show') {
+                steps[2].title = '本次未履约';
+                steps[2].desc = '订单未按计划完成，如仍需要服务，建议重新预约并确认时间。';
+            }
+
+            return steps;
         }
     },
     onLoad(options) {
@@ -137,13 +217,19 @@ export default {
                     this.loading = false;
                 });
         },
-        makePhoneCall() {
+        copyContactPhone() {
             if (!this.appointment.contact_phone) {
                 return;
             }
 
-            uni.makePhoneCall({
-                phoneNumber: this.appointment.contact_phone
+            uni.setClipboardData({
+                data: this.appointment.contact_phone,
+                success: () => {
+                    uni.showToast({
+                        title: '联系电话已复制',
+                        icon: 'none'
+                    });
+                }
             });
         },
         confirmCancel() {
@@ -182,6 +268,16 @@ export default {
                 .finally(() => {
                     this.loading = false;
                 });
+        },
+        goBookAgain() {
+            if (!this.hasServiceLink) {
+                ROUTER_CONFIG.navigate.switchTab(ROUTER_CONFIG.pages.appointment.list);
+                return;
+            }
+
+            ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.appointment.create, {
+                serviceId: this.appointment.service_id || this.appointment.service?.id
+            });
         }
     }
 };
@@ -229,6 +325,14 @@ export default {
   background: linear-gradient(135deg, #667085 0%, #98a2b3 100%);
 }
 
+.status-rejected {
+  background: linear-gradient(135deg, #c01048 0%, #e64980 100%);
+}
+
+.status-no_show {
+  background: linear-gradient(135deg, #b54708 0%, #f38744 100%);
+}
+
 .status-title {
   display: block;
   font-size: 20px;
@@ -242,12 +346,73 @@ export default {
   color: rgba(255, 255, 255, 0.84);
 }
 
+.status-order {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.72);
+}
+
 .section-title {
   display: block;
   margin-bottom: 12px;
   font-size: 17px;
   font-weight: 700;
   color: #111827;
+}
+
+.journey-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.journey-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  background: #f8fafc;
+}
+
+.journey-index {
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  border-radius: 50%;
+  background: #d0d5dd;
+  text-align: center;
+  font-size: 12px;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.journey-index.done {
+  background: #1aad19;
+}
+
+.journey-index.active {
+  background: #1d79c2;
+}
+
+.journey-copy {
+  flex: 1;
+}
+
+.journey-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.journey-desc {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #667085;
 }
 
 .info-row {
@@ -346,15 +511,30 @@ export default {
   left: 16px;
   right: 16px;
   bottom: 18px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 }
 
-.cancel-button {
+.bottom-bar.stacked {
+  grid-template-columns: 1fr;
+}
+
+.bottom-button {
   height: 46px;
   border-radius: 999px;
+  font-size: 16px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+}
+
+.bottom-button.secondary {
   background: #ffffff;
   color: #ef4444;
   border: 1px solid #fecaca;
-  font-size: 16px;
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+}
+
+.bottom-button.primary {
+  background: linear-gradient(135deg, #1d79c2 0%, #48a7df 100%);
+  color: #ffffff;
 }
 </style>

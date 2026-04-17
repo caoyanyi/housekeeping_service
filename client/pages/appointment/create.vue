@@ -51,6 +51,22 @@
       </view>
     </view>
 
+    <view class="readiness-card">
+      <view class="section-head">
+        <text class="section-title">提交前检查</text>
+        <text class="section-subtitle">{{ submitHintText }}</text>
+      </view>
+      <view class="readiness-list">
+        <view v-for="item in readinessItems" :key="item.label" class="readiness-item">
+          <text class="readiness-badge" :class="{ done: item.done }">{{ item.done ? '已就绪' : '待完善' }}</text>
+          <view class="readiness-copy">
+            <text class="readiness-title">{{ item.label }}</text>
+            <text class="readiness-desc">{{ item.desc }}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
     <view class="form-card">
       <view class="section-head">
         <text class="section-title">预约信息</text>
@@ -73,6 +89,17 @@
             {{ selectedTime || '请选择预约时间' }}
           </view>
         </picker>
+        <view class="quick-slots">
+          <text
+            v-for="slot in quickTimeOptions"
+            :key="slot.value"
+            class="quick-slot"
+            :class="{ active: selectedTime === slot.value }"
+            @click="selectQuickTime(slot.value)"
+          >
+            {{ slot.label }}
+          </text>
+        </view>
       </view>
 
       <view class="field">
@@ -163,6 +190,35 @@ export default {
                     !this.loading
             );
         },
+        readinessItems() {
+            return [
+                {
+                    label: '预约时段',
+                    desc:
+                        this.selectedDate && this.selectedTime
+                            ? `${this.formatDisplayDate(this.selectedDate)} ${this.selectedTime}`
+                            : '请选择日期和时间，避免平台二次确认时反复沟通。',
+                    done: Boolean(this.selectedDate && this.selectedTime)
+                },
+                {
+                    label: '联系人信息',
+                    desc:
+                        this.contactName && isValidPhone(this.phone)
+                            ? `${this.contactName} · ${this.phone}`
+                            : '请填写联系人姓名和有效手机号，方便平台尽快联系。',
+                    done: Boolean(this.contactName && isValidPhone(this.phone))
+                },
+                {
+                    label: '服务地址',
+                    desc: this.address || '建议补充小区、楼栋和门牌号，便于安排上门。',
+                    done: Boolean(this.address)
+                }
+            ];
+        },
+        submitHintText() {
+            const nextItem = this.readinessItems.find((item) => !item.done);
+            return nextItem ? `还需完善：${nextItem.label}` : '信息已经齐全，提交后平台会尽快联系您确认';
+        },
         minDate() {
             const today = new Date();
             return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(
@@ -175,6 +231,15 @@ export default {
             return `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(
                 endDate.getDate()
             ).padStart(2, '0')}`;
+        },
+        quickTimeOptions() {
+            return [
+                { label: '09:00', value: '09:00' },
+                { label: '10:30', value: '10:30' },
+                { label: '14:00', value: '14:00' },
+                { label: '16:00', value: '16:00' },
+                { label: '19:00', value: '19:00' }
+            ];
         }
     },
     onLoad(options) {
@@ -249,6 +314,9 @@ export default {
         },
         onTimeChange(event) {
             this.selectedTime = event.detail.value;
+        },
+        selectQuickTime(time) {
+            this.selectedTime = time;
         },
         formatDisplayDate(dateString) {
             const date = new Date(dateString);
@@ -336,6 +404,7 @@ export default {
 .hero-card,
 .service-card,
 .summary-card,
+.readiness-card,
 .form-card,
 .tips-card {
   padding: 16px;
@@ -479,8 +548,58 @@ export default {
 }
 
 .form-card,
+.readiness-card,
 .tips-card {
   margin-top: 14px;
+}
+
+.readiness-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.readiness-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  background: #f8faf8;
+}
+
+.readiness-badge {
+  min-width: 54px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #eef2f6;
+  font-size: 11px;
+  text-align: center;
+  color: #667085;
+}
+
+.readiness-badge.done {
+  background: #e7f8eb;
+  color: #1f8f44;
+}
+
+.readiness-copy {
+  flex: 1;
+}
+
+.readiness-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.readiness-desc {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #667085;
 }
 
 .section-head {
@@ -532,6 +651,26 @@ export default {
 
 .picker-value.placeholder {
   color: #98a2b3;
+}
+
+.quick-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.quick-slot {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #eef3f0;
+  font-size: 12px;
+  color: #344054;
+}
+
+.quick-slot.active {
+  background: #1aad19;
+  color: #ffffff;
 }
 
 .field-textarea {

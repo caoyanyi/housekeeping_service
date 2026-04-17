@@ -48,6 +48,11 @@
       </view>
     </view>
 
+    <view v-if="token" class="insight-card">
+      <text class="insight-title">{{ insightTitle }}</text>
+      <text class="insight-text">{{ insightText }}</text>
+    </view>
+
     <view v-if="!token" class="state-block">
       <image src="/static/images/avatar.svg" mode="aspectFit" class="state-image"></image>
       <text class="state-title">登录后查看预约记录</text>
@@ -124,7 +129,9 @@ export default {
                 { label: '待接单', value: 'pending' },
                 { label: '已接单', value: 'accepted' },
                 { label: '已完成', value: 'completed' },
-                { label: '已取消', value: 'cancelled' }
+                { label: '已取消', value: 'cancelled' },
+                { label: '已拒绝', value: 'rejected' },
+                { label: '未履约', value: 'no_show' }
             ],
             activeStatus: '',
             appointmentList: [],
@@ -137,36 +144,99 @@ export default {
         };
     },
     computed: {
-        summaryText() {
+        currentStatusLabel() {
             const currentTab = this.statusTabs.find((item) => item.value === this.activeStatus);
-            const label = currentTab?.label || '全部';
-            return `当前查看：${label}${this.total ? ` · 共 ${this.total} 条预约` : ''}`;
+            return currentTab?.label || '全部';
+        },
+        summaryText() {
+            return `当前查看：${this.currentStatusLabel}${this.total ? ` · 共 ${this.total} 条预约` : ''}`;
         },
         overviewCards() {
-            const statusCount = this.appointmentList.reduce((acc, item) => {
-                const key = item.status || 'pending';
-                acc[key] = (acc[key] || 0) + 1;
-                return acc;
-            }, {});
+            const loadedCount = this.appointmentList.length;
+            const followUpCount = this.appointmentList.filter((item) =>
+                ['pending', 'accepted'].includes(item.status)
+            ).length;
 
             return [
                 {
-                    label: '当前列表',
+                    label: '筛选结果',
                     value: this.total || 0
                 },
                 {
-                    label: '待接单',
-                    value: statusCount.pending || 0
+                    label: '已加载',
+                    value: this.total ? `${loadedCount}/${this.total}` : loadedCount
                 },
                 {
-                    label: '已接单',
-                    value: statusCount.accepted || 0
+                    label: '已加载待跟进',
+                    value: followUpCount
                 },
                 {
-                    label: '已完成',
-                    value: statusCount.completed || 0
+                    label: '当前视图',
+                    value: this.currentStatusLabel
                 }
             ];
+        },
+        insightTitle() {
+            if (!this.total) {
+                return '当前没有需要处理的预约';
+            }
+
+            if (this.activeStatus === 'pending') {
+                return '这批预约正等待平台确认';
+            }
+
+            if (this.activeStatus === 'accepted') {
+                return '这批预约已进入服务准备阶段';
+            }
+
+            if (this.activeStatus === 'completed') {
+                return '这些预约已经完成履约';
+            }
+
+            if (this.activeStatus === 'cancelled') {
+                return '这些预约已经结束或取消';
+            }
+
+            if (this.activeStatus === 'rejected') {
+                return '这些预约未被平台受理';
+            }
+
+            if (this.activeStatus === 'no_show') {
+                return '这些预约未能按预期完成履约';
+            }
+
+            return '建议优先关注待接单和已接单预约';
+        },
+        insightText() {
+            if (!this.total) {
+                return '可以回到服务列表继续预约，新的预约记录会自动同步到这里。';
+            }
+
+            if (this.activeStatus === 'pending') {
+                return '如果预约时间临近但仍未确认，建议留意平台联系，并提前确保联系电话畅通。';
+            }
+
+            if (this.activeStatus === 'accepted') {
+                return '已接单预约通常只差最终上门执行，建议再次确认地址、时间和备注信息是否准确。';
+            }
+
+            if (this.activeStatus === 'completed') {
+                return '如需再次预约同类服务，可以进入详情页快速查看原订单信息并重新下单。';
+            }
+
+            if (this.activeStatus === 'cancelled') {
+                return '取消后的订单不会继续处理，如果仍有需求，建议重新预约并补充更完整的时间和地址。';
+            }
+
+            if (this.activeStatus === 'rejected') {
+                return '如果预约被拒绝，通常需要重新确认需求、时间或地址信息后再提交。';
+            }
+
+            if (this.activeStatus === 'no_show') {
+                return '未履约通常意味着订单未按计划完成，建议进入详情页查看记录并决定是否重新预约。';
+            }
+
+            return '待接单表示平台正在确认安排，已接单表示服务准备中，进入详情页可以查看更完整的信息。';
         }
     },
     onShow() {
@@ -270,7 +340,8 @@ export default {
                 accepted: '服务已进入准备阶段',
                 completed: '服务已完成，可回看详情',
                 cancelled: '订单已取消，可重新预约',
-                rejected: '订单未受理，可重新提交需求'
+                rejected: '订单未受理，可重新提交需求',
+                no_show: '订单未按计划履约，可查看详情'
             };
 
             return noteMap[status] || '查看详细进度';
@@ -442,6 +513,29 @@ export default {
   color: #98a2b3;
 }
 
+.insight-card {
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+}
+
+.insight-title {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.insight-text {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #667085;
+}
+
 .appointment-list {
   display: flex;
   flex-direction: column;
@@ -492,6 +586,16 @@ export default {
 .status-cancelled {
   background: #f2f4f7;
   color: #667085;
+}
+
+.status-rejected {
+  background: #fff1f3;
+  color: #c01048;
+}
+
+.status-no_show {
+  background: #fff4eb;
+  color: #b54708;
 }
 
 .card-main {
