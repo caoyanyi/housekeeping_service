@@ -544,6 +544,11 @@ body {
     gap: 10px;
 }
 
+.search-bar.compact {
+    justify-content: flex-end;
+    margin-bottom: 16px;
+}
+
 .toolbar-note {
     margin-left: auto;
     font-size: 12px;

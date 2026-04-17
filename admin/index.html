@@ -297,29 +297,37 @@
     <script type="text/x-template" id="categories-template">
         <div class="categories-container">
             <div class="page-header">
-                <h2>分类管理</h2>
+                <div>
+                    <h2>分类管理</h2>
+                    <p class="page-subtitle">维护服务分类、排序和启用状态，影响前台的导航与筛选体验。</p>
+                </div>
                 <el-button type="primary" @click="showAddDialog">添加分类</el-button>
             </div>
-            <el-table :data="categoriesData" stripe v-loading="loading" empty-text="暂无分类数据" style="width: 100%">
-                <el-table-column prop="id" label="ID" width="80"></el-table-column>
-                <el-table-column prop="name" label="分类名称"></el-table-column>
-                <el-table-column prop="icon" label="图标" width="100"></el-table-column>
-                <el-table-column prop="sort_order" label="排序" width="80"></el-table-column>
-                <el-table-column prop="status" label="状态" width="80">
-                    <template slot-scope="scope">
-                        <el-tag :type="Number(scope.row.status) === 1 ? 'success' : 'info'" size="mini">
-                            {{ Number(scope.row.status) === 1 ? '启用' : '禁用' }}
-                        </el-tag>
-                    </template>
-                </el-table-column>
-                <el-table-column prop="created_at" label="创建时间" width="180"></el-table-column>
-                <el-table-column label="操作" width="150" fixed="right">
-                    <template slot-scope="scope">
-                        <el-button type="text" size="small" @click="showEditDialog(scope.row)">编辑</el-button>
-                        <el-button type="text" size="small" @click="deleteCategory(scope.row.id)" style="color: #f56c6c">删除</el-button>
-                    </template>
-                </el-table-column>
-            </el-table>
+            <div class="workspace-card">
+                <div class="search-bar compact">
+                    <span class="toolbar-note">当前共 {{ categoriesData.length }} 个分类</span>
+                </div>
+                <el-table :data="categoriesData" stripe v-loading="loading" empty-text="暂无分类数据" style="width: 100%">
+                    <el-table-column prop="id" label="ID" width="80"></el-table-column>
+                    <el-table-column prop="name" label="分类名称"></el-table-column>
+                    <el-table-column prop="icon" label="图标" width="100"></el-table-column>
+                    <el-table-column prop="sort_order" label="排序" width="80"></el-table-column>
+                    <el-table-column prop="status" label="状态" width="80">
+                        <template slot-scope="scope">
+                            <el-tag :type="Number(scope.row.status) === 1 ? 'success' : 'info'" size="mini">
+                                {{ Number(scope.row.status) === 1 ? '启用' : '禁用' }}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="created_at" label="创建时间" width="180"></el-table-column>
+                    <el-table-column label="操作" width="150" fixed="right">
+                        <template slot-scope="scope">
+                            <el-button type="text" size="small" @click="showEditDialog(scope.row)">编辑</el-button>
+                            <el-button type="text" size="small" @click="deleteCategory(scope.row.id)" style="color: #f56c6c">删除</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </div>
             
             <!-- 添加分类弹窗 -->
             <el-dialog title="添加分类" :visible.sync="addDialogVisible" width="500px">
@@ -624,34 +632,42 @@
     <script type="text/x-template" id="admins-template">
         <div class="admins-container">
             <div class="page-header">
-                <h2>管理员管理</h2>
+                <div>
+                    <h2>管理员管理</h2>
+                    <p class="page-subtitle">维护后台账号、权限角色和启用状态，保证运营分工清晰。</p>
+                </div>
                 <el-button type="primary" @click="showAddDialog">添加管理员</el-button>
             </div>
-            <el-table :data="adminsData" stripe v-loading="loading" empty-text="暂无管理员数据" style="width: 100%">
-                <el-table-column prop="id" label="ID" width="80"></el-table-column>
-                <el-table-column prop="username" label="用户名"></el-table-column>
-                <el-table-column prop="role" label="角色" width="100">
-                    <template slot-scope="scope">
-                        <el-tag :type="Number(scope.row.role) === 2 ? 'danger' : 'info'" size="mini">
-                            {{ Number(scope.row.role) === 2 ? '超级管理员' : '普通管理员' }}
-                        </el-tag>
-                    </template>
-                </el-table-column>
-                <el-table-column prop="status" label="状态" width="100">
-                    <template slot-scope="scope">
-                        <el-tag :type="Number(scope.row.status) === 1 ? 'success' : 'info'" size="mini">
-                            {{ Number(scope.row.status) === 1 ? '正常' : '禁用' }}
-                        </el-tag>
-                    </template>
-                </el-table-column>
-                <el-table-column prop="created_at" label="创建时间" width="180"></el-table-column>
-                <el-table-column label="操作" width="150" fixed="right">
-                    <template slot-scope="scope">
-                        <el-button type="text" size="small" @click="showEditDialog(scope.row)">编辑</el-button>
-                        <el-button type="text" size="small" @click="deleteAdmin(scope.row.id)" style="color: #f56c6c" v-if="scope.row.id !== currentAdminId">删除</el-button>
-                    </template>
-                </el-table-column>
-            </el-table>
+            <div class="workspace-card">
+                <div class="search-bar compact">
+                    <span class="toolbar-note">当前共 {{ adminsData.length }} 位管理员</span>
+                </div>
+                <el-table :data="adminsData" stripe v-loading="loading" empty-text="暂无管理员数据" style="width: 100%">
+                    <el-table-column prop="id" label="ID" width="80"></el-table-column>
+                    <el-table-column prop="username" label="用户名"></el-table-column>
+                    <el-table-column prop="role" label="角色" width="100">
+                        <template slot-scope="scope">
+                            <el-tag :type="Number(scope.row.role) === 2 ? 'danger' : 'info'" size="mini">
+                                {{ Number(scope.row.role) === 2 ? '超级管理员' : '普通管理员' }}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="status" label="状态" width="100">
+                        <template slot-scope="scope">
+                            <el-tag :type="Number(scope.row.status) === 1 ? 'success' : 'info'" size="mini">
+                                {{ Number(scope.row.status) === 1 ? '正常' : '禁用' }}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="created_at" label="创建时间" width="180"></el-table-column>
+                    <el-table-column label="操作" width="150" fixed="right">
+                        <template slot-scope="scope">
+                            <el-button type="text" size="small" @click="showEditDialog(scope.row)">编辑</el-button>
+                            <el-button type="text" size="small" @click="deleteAdmin(scope.row.id)" style="color: #f56c6c" v-if="scope.row.id !== currentAdminId">删除</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </div>
             
             <!-- 添加管理员弹窗 -->
             <el-dialog title="添加管理员" :visible.sync="addDialogVisible" width="500px">
@@ -714,21 +730,26 @@
     <!-- 求职管理模板 -->
     <script type="text/x-template" id="job-applications-template">
         <div class="job-applications-content">
-            <h2>求职管理</h2>
-            <div class="search-bar">
-                <el-input v-model="searchText" placeholder="搜索姓名或电话" style="width: 300px;" @keyup.enter.native="searchJobApplications"></el-input>
-                <el-select v-model="status" placeholder="状态" style="width: 150px; margin-left: 10px;">
-                    <el-option label="全部" value=""></el-option>
-                    <el-option label="待处理" value="pending"></el-option>
-                    <el-option label="已查看" value="reviewed"></el-option>
-                    <el-option label="已联系" value="contacted"></el-option>
-                    <el-option label="已拒绝" value="rejected"></el-option>
-                </el-select>
-                <el-button type="primary" @click="searchJobApplications" style="margin-left: 10px;">搜索</el-button>
-                <el-button @click="resetFilters" style="margin-left: 10px;">重置</el-button>
+            <div class="page-header">
+                <div>
+                    <h2>求职管理</h2>
+                    <p class="page-subtitle">查看服务人员报名信息，便于跟进供给侧联系与状态处理。</p>
+                </div>
             </div>
-            
-            <div class="table-container">
+            <div class="workspace-card">
+                <div class="search-bar">
+                    <el-input v-model="searchText" placeholder="搜索姓名或电话" style="width: 300px;" @keyup.enter.native="searchJobApplications"></el-input>
+                    <el-select v-model="status" placeholder="状态" style="width: 150px; margin-left: 10px;">
+                        <el-option label="全部" value=""></el-option>
+                        <el-option label="待处理" value="pending"></el-option>
+                        <el-option label="已查看" value="reviewed"></el-option>
+                        <el-option label="已联系" value="contacted"></el-option>
+                        <el-option label="已拒绝" value="rejected"></el-option>
+                    </el-select>
+                    <el-button type="primary" @click="searchJobApplications" style="margin-left: 10px;">搜索</el-button>
+                    <el-button @click="resetFilters" style="margin-left: 10px;">重置</el-button>
+                    <span class="toolbar-note">当前共 {{ total }} 条报名信息</span>
+                </div>
                 <el-table :data="jobApplicationsData" stripe v-loading="loading" empty-text="暂无求职申请数据" style="width: 100%">
                     <el-table-column prop="id" label="ID" width="80"></el-table-column>
                     <el-table-column prop="name" label="姓名" width="120"></el-table-column>
@@ -750,18 +771,17 @@
                         </template>
                     </el-table-column>
                 </el-table>
-            </div>
-            
-            <div class="pagination-container">
-                <el-pagination
-                    @size-change="handleSizeChange"
-                    @current-change="handleCurrentChange"
-                    :current-page="currentPage"
-                    :page-sizes="[10, 20, 50, 100]"
-                    :page-size="pageSize"
-                    layout="total, sizes, prev, pager, next, jumper"
-                    :total="total">
-                </el-pagination>
+                <div class="pagination">
+                    <el-pagination
+                        @size-change="handleSizeChange"
+                        @current-change="handleCurrentChange"
+                        :current-page="currentPage"
+                        :page-sizes="[10, 20, 50, 100]"
+                        :page-size="pageSize"
+                        layout="total, sizes, prev, pager, next, jumper"
+                        :total="total">
+                    </el-pagination>
+                </div>
             </div>
             
             <!-- 查看详情弹窗 -->
