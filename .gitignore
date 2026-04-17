@@ -46,3 +46,5 @@ php_errors.log
 # 编译后的代码
 /client/build/
 /client/dist/
+/client/node_modules/
+/client/unpackage/

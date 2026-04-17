@@ -49,8 +49,8 @@
 
 ### 用户端
 - 框架：uni-app
-- 入口文件：[client/main.js](/data/github/housekeeping_service/client/main.js)
-- 接口配置：[client/config/api.config.js](/data/github/housekeeping_service/client/config/api.config.js)
+- 入口文件：[client/src/main.js](/data/github/housekeeping_service/client/src/main.js)
+- 接口配置：[client/src/config/api.config.js](/data/github/housekeeping_service/client/src/config/api.config.js)
 
 ### 管理端
 - Vue 2 + Element UI
@@ -97,7 +97,31 @@ define('API_URL', 'https://your-domain.com/api');
 
 - 管理端：部署 `admin/` 目录到 Web 服务器
 - API：将请求转发到 `api/index.php`
-- 用户端：用 HBuilderX 打开 `client/` 进行编译运行
+- 用户端：可使用 HBuilderX，或直接进入 `client/` 使用 npm 命令运行
+
+### 5. 使用 npm 运行和打包用户端
+
+客户端已经补齐 `uni-app` CLI 所需的 `package.json` 和 `vite.config.js`，可直接在 [client/package.json](/data/github/housekeeping_service/client/package.json) 所在目录执行：
+
+```bash
+cd client
+npm install
+npm run dev:h5
+```
+
+打包 H5 版本：
+
+```bash
+cd client
+npm run build:h5
+```
+
+构建产物默认输出到 `client/dist/build/h5/`。
+
+说明：
+
+- 当前补齐的是 `npm` 下的 H5 运行和打包工作流。
+- 如果需要生成原生 App 安装包（如 APK / IPA），仍建议通过 HBuilderX 的发行流程处理。
 
 ## API 地址配置
 
