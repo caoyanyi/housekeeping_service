@@ -1,5 +1,25 @@
 <template>
   <view class="page">
+    <view class="hero-card">
+      <view class="hero-copy">
+        <text class="hero-eyebrow">预约中心</text>
+        <text class="hero-title">在这里跟进每一笔预约的处理进度</text>
+        <text class="hero-subtitle">
+          待接单、已接单、已完成和已取消状态都会同步展示，方便随时查看服务安排。
+        </text>
+      </view>
+      <view class="hero-actions">
+        <view class="hero-action primary" @click="goToServiceList">
+          <text class="hero-action-title">继续预约服务</text>
+          <text class="hero-action-desc">返回服务列表挑选项目</text>
+        </view>
+        <view class="hero-action" @click="goUserCenter">
+          <text class="hero-action-title">个人中心</text>
+          <text class="hero-action-desc">管理资料和账号设置</text>
+        </view>
+      </view>
+    </view>
+
     <scroll-view scroll-x class="tab-scroll" show-scrollbar="false">
       <view class="tab-row">
         <view
@@ -14,15 +34,25 @@
       </view>
     </scroll-view>
 
-    <view class="summary-row">
-      <text class="summary-text">{{ summaryText }}</text>
+    <view class="summary-card">
+      <view class="summary-copy">
+        <text class="summary-title">当前视图</text>
+        <text class="summary-text">{{ summaryText }}</text>
+      </view>
+    </view>
+
+    <view v-if="token" class="metric-grid">
+      <view v-for="item in overviewCards" :key="item.label" class="metric-card">
+        <text class="metric-value">{{ item.value }}</text>
+        <text class="metric-label">{{ item.label }}</text>
+      </view>
     </view>
 
     <view v-if="!token" class="state-block">
       <image src="/static/images/avatar.svg" mode="aspectFit" class="state-image"></image>
       <text class="state-title">登录后查看预约记录</text>
       <text class="state-text">预约进度、时间和地址都会在这里同步展示。</text>
-      <button class="state-button" @click="goLogin">去登录</button>
+      <button class="state-button primary" @click="goLogin">去登录</button>
     </view>
 
     <view v-else-if="appointmentList.length" class="appointment-list">
@@ -47,7 +77,10 @@
         </view>
 
         <view class="card-footer">
-          <text class="service-price">¥{{ formatCurrency(appointment.service_price) }}</text>
+          <view class="footer-copy">
+            <text class="service-price">¥{{ formatCurrency(appointment.service_price) }}</text>
+            <text class="footer-note">{{ footerNote(appointment.status) }}</text>
+          </view>
           <text class="detail-link">查看详情</text>
         </view>
       </view>
@@ -67,7 +100,10 @@
       <image src="/static/images/empty.svg" mode="aspectFit" class="state-image"></image>
       <text class="state-title">还没有预约记录</text>
       <text class="state-text">去看看合适的服务，预约后会在这里展示。</text>
-      <button class="state-button" @click="goToServiceList">立即预约</button>
+      <view class="state-actions">
+        <button class="state-button primary" @click="goToServiceList">立即预约</button>
+        <button class="state-button ghost" @click="goUserCenter">查看个人中心</button>
+      </view>
     </view>
   </view>
 </template>
@@ -105,6 +141,32 @@ export default {
             const currentTab = this.statusTabs.find((item) => item.value === this.activeStatus);
             const label = currentTab?.label || '全部';
             return `当前查看：${label}${this.total ? ` · 共 ${this.total} 条预约` : ''}`;
+        },
+        overviewCards() {
+            const statusCount = this.appointmentList.reduce((acc, item) => {
+                const key = item.status || 'pending';
+                acc[key] = (acc[key] || 0) + 1;
+                return acc;
+            }, {});
+
+            return [
+                {
+                    label: '当前列表',
+                    value: this.total || 0
+                },
+                {
+                    label: '待接单',
+                    value: statusCount.pending || 0
+                },
+                {
+                    label: '已接单',
+                    value: statusCount.accepted || 0
+                },
+                {
+                    label: '已完成',
+                    value: statusCount.completed || 0
+                }
+            ];
         }
     },
     onShow() {
@@ -202,11 +264,25 @@ export default {
             this.page += 1;
             this.fetchAppointments();
         },
+        footerNote(status) {
+            const noteMap = {
+                pending: '等待平台确认服务安排',
+                accepted: '服务已进入准备阶段',
+                completed: '服务已完成，可回看详情',
+                cancelled: '订单已取消，可重新预约',
+                rejected: '订单未受理，可重新提交需求'
+            };
+
+            return noteMap[status] || '查看详细进度';
+        },
         goToDetail(appointmentId) {
             ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.appointment.detail, { appointmentId });
         },
         goToServiceList() {
             ROUTER_CONFIG.navigate.switchTab(ROUTER_CONFIG.pages.service.list);
+        },
+        goUserCenter() {
+            ROUTER_CONFIG.navigate.switchTab(ROUTER_CONFIG.pages.user.profile);
         },
         goLogin() {
             ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.login);
@@ -220,10 +296,77 @@ export default {
   min-height: 100vh;
   padding: 16px;
   padding-bottom: 84px;
-  background: #f6f7f9;
+  background:
+    radial-gradient(circle at top left, rgba(47, 124, 194, 0.12), transparent 30%),
+    #f6f7f9;
+}
+
+.hero-card {
+  padding: 20px 18px;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.16), transparent 24%),
+    linear-gradient(135deg, #1d5f8b 0%, #2f7cc2 52%, #59a8d6 100%);
+  box-shadow: 0 18px 36px rgba(47, 124, 194, 0.2);
+  color: #ffffff;
+}
+
+.hero-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.hero-title {
+  display: block;
+  margin-top: 10px;
+  font-size: 23px;
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+.hero-subtitle {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.84);
+}
+
+.hero-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.hero-action {
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.hero-action.primary {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.hero-action-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.hero-action-desc {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.82);
 }
 
 .tab-scroll {
+  margin-top: 16px;
   white-space: nowrap;
 }
 
@@ -243,29 +386,72 @@ export default {
 }
 
 .tab-item.active {
-  background: #1aad19;
+  background: #1d79c2;
   color: #ffffff;
-  box-shadow: 0 10px 22px rgba(26, 173, 25, 0.2);
+  box-shadow: 0 10px 22px rgba(47, 124, 194, 0.22);
 }
 
-.summary-row {
-  margin: 14px 4px 12px;
+.summary-card {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+}
+
+.summary-title {
+  display: block;
+  font-size: 12px;
+  color: #98a2b3;
 }
 
 .summary-text {
+  display: block;
+  margin-top: 4px;
   font-size: 13px;
-  color: #6b7280;
+  line-height: 1.6;
+  color: #475467;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.metric-card {
+  padding: 14px 10px;
+  border-radius: 18px;
+  background: #ffffff;
+  text-align: center;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+}
+
+.metric-value {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.metric-label {
+  display: block;
+  margin-top: 5px;
+  font-size: 11px;
+  color: #98a2b3;
 }
 
 .appointment-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  margin-top: 14px;
 }
 
 .appointment-card {
   padding: 14px;
-  border-radius: 20px;
+  border-radius: 22px;
   background: #ffffff;
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
 }
@@ -327,7 +513,7 @@ export default {
 
 .service-title {
   display: block;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: #111827;
 }
@@ -338,67 +524,90 @@ export default {
   margin-top: 8px;
   font-size: 13px;
   line-height: 1.6;
-  color: #6b7280;
+  color: #667085;
 }
 
 .card-footer {
   margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid #f2f4f7;
+}
+
+.footer-copy {
+  display: flex;
+  flex-direction: column;
 }
 
 .service-price {
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 700;
-  color: #1aad19;
+  color: #1d79c2;
 }
 
-.detail-link {
-  font-size: 12px;
-  color: #1aad19;
-}
-
-.load-state {
-  padding: 18px 0 6px;
-  text-align: center;
+.footer-note {
+  margin-top: 5px;
   font-size: 12px;
   color: #98a2b3;
 }
 
-.state-block {
-  margin-top: 72px;
+.detail-link {
+  font-size: 13px;
+  color: #1d79c2;
+}
+
+.load-state {
+  padding: 18px 0 4px;
   text-align: center;
-  padding: 0 28px;
+  font-size: 13px;
+  color: #98a2b3;
+}
+
+.state-block {
+  padding: 56px 24px;
+  text-align: center;
 }
 
 .state-image {
-  width: 132px;
-  height: 132px;
+  width: 136px;
+  height: 136px;
 }
 
 .state-title {
   display: block;
-  margin-top: 14px;
-  font-size: 16px;
-  font-weight: 600;
+  margin-top: 12px;
+  font-size: 18px;
+  font-weight: 700;
   color: #111827;
 }
 
 .state-text {
   display: block;
-  margin-top: 8px;
+  margin-top: 10px;
   font-size: 13px;
   line-height: 1.7;
   color: #98a2b3;
 }
 
-.state-button {
-  width: 180px;
-  height: 42px;
+.state-actions {
+  display: flex;
+  gap: 10px;
   margin-top: 18px;
+}
+
+.state-button {
+  min-width: 120px;
+  height: 44px;
+  line-height: 44px;
   border-radius: 999px;
-  background: #1aad19;
+  font-size: 14px;
+}
+
+.state-button.primary {
+  background: linear-gradient(135deg, #1d79c2 0%, #48a7df 100%);
   color: #ffffff;
-  font-size: 15px;
+}
+
+.state-button.ghost {
+  background: #ffffff;
+  color: #1d79c2;
+  border: 1px solid rgba(47, 124, 194, 0.22);
 }
 </style>

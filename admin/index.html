@@ -207,19 +207,42 @@
         
         <!-- 登录页面 -->
         <div v-else class="login-container">
-            <div class="login-form">
-                <h2>管理员登录</h2>
-                <el-form :model="loginForm" :rules="loginRules" ref="loginForm">
-                    <el-form-item prop="username">
-                        <el-input v-model="loginForm.username" placeholder="请输入用户名" prefix-icon="el-icon-user"></el-input>
-                    </el-form-item>
-                    <el-form-item prop="password">
-                        <el-input type="password" v-model="loginForm.password" placeholder="请输入密码" prefix-icon="el-icon-lock"></el-input>
-                    </el-form-item>
-                    <el-form-item>
-                        <el-button type="primary" @click="submitLogin" :loading="loginLoading" style="width: 100%">登录</el-button>
-                    </el-form-item>
-                </el-form>
+            <div class="login-shell">
+                <div class="login-brand">
+                    <div class="login-brand-badge">运营后台</div>
+                    <h2>把预约、服务和供给管理收进一个工作台</h2>
+                    <p>适合日常查看待接单、维护服务上架状态、跟进求职申请和查看平台经营概况。</p>
+                    <div class="login-brand-points">
+                        <div class="brand-point">
+                            <span class="brand-point-title">预约处理</span>
+                            <span class="brand-point-desc">优先处理待接单和改期需求</span>
+                        </div>
+                        <div class="brand-point">
+                            <span class="brand-point-title">服务维护</span>
+                            <span class="brand-point-desc">更新价格、时长、图片和上架状态</span>
+                        </div>
+                        <div class="brand-point">
+                            <span class="brand-point-title">供给管理</span>
+                            <span class="brand-point-desc">统一查看用户、管理员和求职申请</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="login-form">
+                    <h2>管理员登录</h2>
+                    <p class="login-subtitle">登录后进入运营看板，查看最新预约和业务概况。</p>
+                    <el-form :model="loginForm" :rules="loginRules" ref="loginForm">
+                        <el-form-item prop="username">
+                            <el-input v-model="loginForm.username" placeholder="请输入用户名" prefix-icon="el-icon-user"></el-input>
+                        </el-form-item>
+                        <el-form-item prop="password">
+                            <el-input type="password" v-model="loginForm.password" placeholder="请输入密码" prefix-icon="el-icon-lock"></el-input>
+                        </el-form-item>
+                        <el-form-item>
+                            <el-button type="primary" @click="submitLogin" :loading="loginLoading" style="width: 100%">登录</el-button>
+                        </el-form-item>
+                    </el-form>
+                </div>
             </div>
         </div>
     </div>

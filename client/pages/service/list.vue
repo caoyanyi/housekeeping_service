@@ -1,5 +1,25 @@
 <template>
   <view class="page">
+    <view class="hero-card">
+      <view class="hero-copy">
+        <text class="hero-eyebrow">服务筛选</text>
+        <text class="hero-title">按家庭需求找到合适的上门服务</text>
+        <text class="hero-subtitle">
+          支持按分类和关键词筛选，确定服务后可直接进入详情页查看价格、保障和预约说明。
+        </text>
+      </view>
+      <view class="hero-actions">
+        <view class="hero-action primary" @click="goAppointmentList">
+          <text class="hero-action-title">查看我的预约</text>
+          <text class="hero-action-desc">随时跟进状态变化</text>
+        </view>
+        <view class="hero-action" @click="goUserCenter">
+          <text class="hero-action-title">个人中心</text>
+          <text class="hero-action-desc">管理资料和设置</text>
+        </view>
+      </view>
+    </view>
+
     <view class="toolbar">
       <view class="search-box">
         <image src="/static/images/search.svg" mode="aspectFit" class="search-icon"></image>
@@ -37,8 +57,11 @@
       </scroll-view>
     </view>
 
-    <view class="summary-row">
-      <text class="summary-text">{{ summaryText }}</text>
+    <view class="summary-card">
+      <view class="summary-copy">
+        <text class="summary-title">当前筛选结果</text>
+        <text class="summary-text">{{ summaryText }}</text>
+      </view>
       <text v-if="searchText || selectedCategory !== 0" class="summary-action" @click="resetFilters">
         重置筛选
       </text>
@@ -83,7 +106,10 @@
       <image src="/static/images/empty.svg" mode="aspectFit" class="state-image"></image>
       <text class="state-title">{{ emptyTitle }}</text>
       <text class="state-text">{{ emptyText }}</text>
-      <button class="state-button" @click="resetFilters">重新看看</button>
+      <view class="state-actions">
+        <button class="state-button primary" @click="resetFilters">重新看看</button>
+        <button class="state-button ghost" @click="goAppointmentList">查看预约</button>
+      </view>
     </view>
   </view>
 </template>
@@ -285,6 +311,12 @@ export default {
         },
         goServiceDetail(serviceId) {
             ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.service.detail, { serviceId });
+        },
+        goAppointmentList() {
+            ROUTER_CONFIG.navigate.switchTab(ROUTER_CONFIG.pages.appointment.list);
+        },
+        goUserCenter() {
+            ROUTER_CONFIG.navigate.switchTab(ROUTER_CONFIG.pages.user.profile);
         }
     }
 };
@@ -294,13 +326,85 @@ export default {
 .page {
   min-height: 100vh;
   padding: 14px 16px 88px;
-  background: #f6f7f9;
+  background:
+    radial-gradient(circle at top right, rgba(56, 161, 105, 0.12), transparent 28%),
+    #f6f7f9;
+}
+
+.hero-card {
+  padding: 20px 18px;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.14), transparent 24%),
+    linear-gradient(135deg, #1c6a49 0%, #2f8f62 55%, #51b574 100%);
+  box-shadow: 0 16px 34px rgba(34, 139, 74, 0.2);
+  color: #ffffff;
+}
+
+.hero-copy {
+  display: flex;
+  flex-direction: column;
+}
+
+.hero-eyebrow {
+  font-size: 11px;
+  letter-spacing: 1px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.hero-title {
+  display: block;
+  margin-top: 10px;
+  font-size: 23px;
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+.hero-subtitle {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.hero-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.hero-action {
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.hero-action.primary {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.hero-action-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.hero-action-desc {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.82);
 }
 
 .toolbar {
   position: sticky;
   top: 0;
   z-index: 5;
+  margin-top: 16px;
   padding: 14px 14px 10px;
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.96);
@@ -323,7 +427,6 @@ export default {
 
 .search-input {
   flex: 1;
-  height: 100%;
   margin-left: 10px;
   font-size: 14px;
   color: #111827;
@@ -341,40 +444,56 @@ export default {
 
 .category-row {
   display: inline-flex;
-  padding-right: 16px;
+  padding-right: 14px;
 }
 
 .category-pill {
   margin-right: 10px;
   padding: 8px 14px;
   border-radius: 999px;
-  background: #f3f4f6;
-  color: #6b7280;
+  background: #f4f6f8;
   font-size: 13px;
+  color: #667085;
 }
 
 .category-pill.active {
   background: #1aad19;
   color: #ffffff;
-  box-shadow: 0 8px 20px rgba(26, 173, 25, 0.22);
+  box-shadow: 0 10px 22px rgba(26, 173, 25, 0.18);
 }
 
-.summary-row {
+.summary-card {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 16px 2px 12px;
+  gap: 12px;
+  margin: 14px 2px 12px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+}
+
+.summary-copy {
+  flex: 1;
+}
+
+.summary-title {
+  display: block;
+  font-size: 12px;
+  color: #98a2b3;
 }
 
 .summary-text {
-  flex: 1;
+  display: block;
+  margin-top: 4px;
   font-size: 13px;
-  color: #6b7280;
-  line-height: 1.5;
+  line-height: 1.6;
+  color: #475467;
 }
 
 .summary-action {
-  margin-left: 12px;
+  flex-shrink: 0;
   font-size: 13px;
   color: #1aad19;
 }
@@ -382,32 +501,27 @@ export default {
 .service-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 .service-card {
-  display: flex;
-  padding: 12px;
-  border-radius: 18px;
+  overflow: hidden;
+  border-radius: 24px;
   background: #ffffff;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.05);
 }
 
 .service-image {
-  width: 112px;
-  height: 112px;
-  border-radius: 16px;
-  background: #eef2f7;
+  width: 100%;
+  height: 186px;
 }
 
 .service-body {
-  flex: 1;
-  margin-left: 12px;
-  display: flex;
-  flex-direction: column;
+  padding: 16px;
 }
 
-.service-head {
+.service-head,
+.service-footer {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -416,103 +530,112 @@ export default {
 
 .service-title {
   flex: 1;
-  font-size: 16px;
+  font-size: 17px;
+  line-height: 1.4;
   font-weight: 700;
   color: #111827;
-  line-height: 1.4;
 }
 
 .service-price {
-  font-size: 16px;
+  flex-shrink: 0;
+  font-size: 18px;
   font-weight: 700;
   color: #1aad19;
 }
 
 .service-desc {
-  margin-top: 8px;
+  display: block;
+  margin-top: 10px;
   font-size: 13px;
+  line-height: 1.7;
   color: #6b7280;
-  line-height: 1.6;
 }
 
 .service-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 10px;
+  margin-top: 12px;
 }
 
 .service-tag {
-  padding: 4px 10px;
+  padding: 6px 12px;
   border-radius: 999px;
-  background: #eef8ef;
-  font-size: 11px;
-  color: #26803d;
+  background: #f3f5f7;
+  font-size: 12px;
+  color: #475467;
 }
 
 .service-footer {
-  margin-top: auto;
-  display: flex;
-  justify-content: space-between;
+  margin-top: 14px;
   align-items: center;
-  padding-top: 12px;
 }
 
 .service-duration {
   font-size: 12px;
-  color: #9ca3af;
+  color: #98a2b3;
 }
 
 .service-link {
-  font-size: 12px;
+  font-size: 13px;
   color: #1aad19;
 }
 
-.load-state,
+.load-state {
+  padding: 18px 0 4px;
+  text-align: center;
+  font-size: 13px;
+  color: #98a2b3;
+}
+
 .state-block {
+  padding: 56px 24px;
   text-align: center;
 }
 
-.load-state {
-  padding: 18px 0 6px;
-  font-size: 12px;
-  color: #9ca3af;
-}
-
-.state-block {
-  margin-top: 70px;
-  padding: 0 24px;
-}
-
 .state-image {
-  width: 132px;
-  height: 132px;
-  opacity: 0.9;
+  width: 138px;
+  height: 138px;
 }
 
 .state-title {
   display: block;
   margin-top: 14px;
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
   color: #111827;
 }
 
 .state-text {
   display: block;
-  margin-top: 8px;
+  margin-top: 10px;
   font-size: 13px;
   line-height: 1.7;
-  color: #9ca3af;
+  color: #98a2b3;
+}
+
+.state-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
 }
 
 .state-button {
-  width: 180px;
-  height: 42px;
-  margin-top: 18px;
+  flex: 1;
+  height: 44px;
+  line-height: 44px;
   border-radius: 999px;
-  background: #1aad19;
+  font-size: 14px;
+}
+
+.state-button.primary {
+  background: linear-gradient(135deg, #1aad19 0%, #36c567 100%);
   color: #ffffff;
-  font-size: 15px;
+}
+
+.state-button.ghost {
+  background: #ffffff;
+  color: #1aad19;
+  border: 1px solid rgba(26, 173, 25, 0.24);
 }
 </style>

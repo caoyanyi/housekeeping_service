@@ -6,11 +6,26 @@
         <view class="hero-content">
           <text class="user-name">{{ displayName }}</text>
           <text class="user-phone">{{ userInfo.phone }}</text>
-          <text class="user-tip">预约信息会自动同步常用联系电话和地址</text>
+          <text class="user-tip">预约信息会自动同步常用联系电话和地址，方便后续下单。</text>
+        </view>
+      </view>
+
+      <view class="metric-grid">
+        <view class="metric-card accent" @click="goAppointmentList">
+          <text class="metric-value">预约管理</text>
+          <text class="metric-label">查看进度和详情</text>
+        </view>
+        <view class="metric-card" @click="goSettings">
+          <text class="metric-value">账户设置</text>
+          <text class="metric-label">修改资料和密码</text>
         </view>
       </view>
 
       <view class="info-card">
+        <view class="card-header">
+          <text class="card-title">账户信息</text>
+          <text class="card-subtitle">这些信息会影响预约联系效率</text>
+        </view>
         <view class="info-item">
           <text class="info-label">常用地址</text>
           <text class="info-value">{{ userInfo.address || '暂未填写' }}</text>
@@ -22,6 +37,11 @@
       </view>
 
       <view class="menu-card">
+        <view class="card-header">
+          <text class="card-title">常用入口</text>
+          <text class="card-subtitle">把高频操作收在一处，减少跳转成本</text>
+        </view>
+
         <view class="menu-item" @click="goAppointmentList">
           <image src="/static/images/appointment.svg" mode="aspectFit" class="menu-icon"></image>
           <text class="menu-text">我的预约</text>
@@ -39,6 +59,11 @@
           <text class="menu-text">关于平台</text>
           <image src="/static/images/arrow_right.svg" mode="aspectFit" class="arrow-icon"></image>
         </view>
+      </view>
+
+      <view class="notice-card">
+        <text class="notice-title">使用提醒</text>
+        <text class="notice-text">如果近期有较多上门服务需求，建议先把常用地址和联系人信息补充完整，这样平台确认预约时会更高效。</text>
       </view>
 
       <button class="logout-button" @click="logout">退出登录</button>
@@ -150,12 +175,15 @@ export default {
   min-height: 100vh;
   padding: 16px;
   padding-bottom: 84px;
-  background: linear-gradient(180deg, #f4fbf6 0%, #f6f7f9 220px, #f6f7f9 100%);
+  background:
+    radial-gradient(circle at top right, rgba(29, 121, 194, 0.1), transparent 28%),
+    linear-gradient(180deg, #f1f8fd 0%, #f6f7f9 220px, #f6f7f9 100%);
 }
 
 .hero-card,
 .info-card,
-.menu-card {
+.menu-card,
+.notice-card {
   border-radius: 22px;
   background: #ffffff;
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
@@ -201,10 +229,62 @@ export default {
   color: #98a2b3;
 }
 
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.metric-card {
+  padding: 16px;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.04);
+}
+
+.metric-card.accent {
+  background: linear-gradient(135deg, #edf6ff 0%, #dff0ff 100%);
+}
+
+.metric-value {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.metric-label {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #667085;
+}
+
 .info-card,
 .menu-card {
   margin-top: 14px;
-  padding: 4px 16px;
+  padding: 16px;
+}
+
+.card-header {
+  margin-bottom: 8px;
+}
+
+.card-title {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.card-subtitle {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #98a2b3;
 }
 
 .info-item,
@@ -239,13 +319,13 @@ export default {
 }
 
 .menu-icon {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
 }
 
 .menu-text {
   flex: 1;
-  margin-left: 14px;
+  margin-left: 12px;
   font-size: 15px;
   color: #111827;
 }
@@ -255,41 +335,59 @@ export default {
   height: 16px;
 }
 
+.notice-card {
+  margin-top: 14px;
+  padding: 16px;
+}
+
+.notice-title {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.notice-text {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #667085;
+}
+
 .logout-button,
 .login-button {
-  width: 100%;
+  margin-top: 20px;
   height: 46px;
-  margin-top: 18px;
+  line-height: 46px;
   border-radius: 999px;
-  font-size: 16px;
+  font-size: 15px;
 }
 
 .logout-button {
   background: #ffffff;
   color: #ef4444;
-  border: 1px solid #fecaca;
+  border: 1px solid rgba(239, 68, 68, 0.16);
 }
 
 .login-button {
-  background: #1aad19;
+  background: linear-gradient(135deg, #1d79c2 0%, #48a7df 100%);
   color: #ffffff;
 }
 
 .state-block {
-  margin-top: 92px;
+  padding: 72px 24px;
   text-align: center;
-  padding: 0 28px;
 }
 
 .state-image {
-  width: 120px;
-  height: 120px;
-  opacity: 0.92;
+  width: 138px;
+  height: 138px;
 }
 
 .state-title {
   display: block;
-  margin-top: 14px;
+  margin-top: 12px;
   font-size: 18px;
   font-weight: 700;
   color: #111827;
@@ -297,7 +395,7 @@ export default {
 
 .state-text {
   display: block;
-  margin-top: 8px;
+  margin-top: 10px;
   font-size: 13px;
   line-height: 1.7;
   color: #98a2b3;
