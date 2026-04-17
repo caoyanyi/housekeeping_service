@@ -41,6 +41,16 @@
             <text class="hero-stat-label">{{ item.label }}</text>
           </view>
         </view>
+
+        <view class="hero-journey">
+          <view v-for="item in heroJourney" :key="item.title" class="hero-journey-item">
+            <text class="hero-journey-step">{{ item.step }}</text>
+            <view class="hero-journey-copy">
+              <text class="hero-journey-title">{{ item.title }}</text>
+              <text class="hero-journey-desc">{{ item.desc }}</text>
+            </view>
+          </view>
+        </view>
       </view>
     </view>
 
@@ -67,6 +77,30 @@
         <view class="quick-item warm" @click="goJobApply">
           <text class="quick-title">家政求职</text>
           <text class="quick-desc">服务人员可直接提交报名信息</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="section-card">
+      <view class="section-header">
+        <view>
+          <text class="section-title">第一次预约怎么走更省时间</text>
+          <text class="section-subtitle">把“先看什么、再做什么”直接放到首页，减少决策犹豫</text>
+        </view>
+      </view>
+      <view class="route-list">
+        <view
+          v-for="item in decisionRoutes"
+          :key="item.title"
+          class="route-item"
+          @click="goDecisionRoute(item)"
+        >
+          <view class="route-top">
+            <text class="route-step">{{ item.step }}</text>
+            <text class="route-action">{{ item.actionText }}</text>
+          </view>
+          <text class="route-title">{{ item.title }}</text>
+          <text class="route-desc">{{ item.desc }}</text>
         </view>
       </view>
     </view>
@@ -183,6 +217,12 @@
           <text class="promise-desc">{{ item.desc }}</text>
         </view>
       </view>
+      <view class="confidence-strip">
+        <view v-for="item in bookingConfidence" :key="item.title" class="confidence-item">
+          <text class="confidence-title">{{ item.title }}</text>
+          <text class="confidence-desc">{{ item.desc }}</text>
+        </view>
+      </view>
     </view>
 
     <view class="section-card">
@@ -241,6 +281,23 @@ export default {
                 { value: '全程可查', label: '预约进度' },
                 { value: '严选服务', label: '人员审核' }
             ],
+            heroJourney: [
+                {
+                    step: '01',
+                    title: '先判断需求',
+                    desc: '从家庭场景、服务分类或主推项目里快速进入。'
+                },
+                {
+                    step: '02',
+                    title: '提交预约信息',
+                    desc: '把联系人、地址和时间一次填清，减少反复沟通。'
+                },
+                {
+                    step: '03',
+                    title: '等待平台确认',
+                    desc: '平台会主动回访确认细节，预约状态也会持续更新。'
+                }
+            ],
             servicePromises: [
                 {
                     title: '下单信息一次说清',
@@ -253,6 +310,20 @@ export default {
                 {
                     title: '适合高频家庭需求',
                     desc: '从日常保洁到母婴护理都能统一入口预约，减少分散咨询成本。'
+                }
+            ],
+            bookingConfidence: [
+                {
+                    title: '不会盲目下单',
+                    desc: '先看服务详情，再由平台人工复核需求，减少选错服务的担心。'
+                },
+                {
+                    title: '不怕流程断掉',
+                    desc: '登录、注册和预约都围绕同一条业务链路设计，进度可持续衔接。'
+                },
+                {
+                    title: '后续可复用',
+                    desc: '联系人、地址和预约记录会沉淀到账户里，二次下单更快。'
                 }
             ],
             bookingChecklist: [
@@ -305,6 +376,36 @@ export default {
         },
         secondaryServices() {
             return this.hotServices.slice(1, 4);
+        },
+        decisionRoutes() {
+            return [
+                {
+                    step: '路线 A',
+                    title: '我还没想清楚选哪项服务',
+                    desc: '先按常见家庭场景进入，再看同类服务的描述、时长和备注承接范围。',
+                    actionText: '先按场景找',
+                    type: 'scenario',
+                    payload: this.demandScenarios[0]
+                },
+                {
+                    step: '路线 B',
+                    title: '我已经知道大概需要什么',
+                    desc: '直接去服务列表，通过分类和关键词快速缩小范围，尽快进入详情页。',
+                    actionText: '直接去服务池',
+                    type: 'service-list',
+                    payload: {
+                        categoryId: 0,
+                        keyword: ''
+                    }
+                },
+                {
+                    step: '路线 C',
+                    title: '我更关心预约会不会麻烦',
+                    desc: '可以先看预约中心和流程说明，确认后续如何跟进、查看状态和再次下单。',
+                    actionText: '先看预约中心',
+                    type: 'appointment-list'
+                }
+            ];
         }
     },
     onLoad() {
@@ -362,6 +463,21 @@ export default {
                 source: 'index-scenario'
             });
             ROUTER_CONFIG.navigate.switchTab(ROUTER_CONFIG.pages.service.list);
+        },
+        goDecisionRoute(item) {
+            if (item.type === 'scenario' && item.payload) {
+                this.goScenario(item.payload);
+                return;
+            }
+
+            if (item.type === 'service-list') {
+                this.goServiceList(item.payload?.categoryId || 0);
+                return;
+            }
+
+            if (item.type === 'appointment-list') {
+                this.goAppointmentList();
+            }
         },
         goServiceDetail(serviceId) {
             ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.service.detail, { serviceId });
@@ -509,6 +625,52 @@ export default {
   color: #6b7280;
 }
 
+.hero-journey {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.hero-journey-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #f7fbf8 0%, #eff8f1 100%);
+}
+
+.hero-journey-step {
+  min-width: 38px;
+  height: 24px;
+  line-height: 24px;
+  border-radius: 999px;
+  background: rgba(31, 143, 68, 0.12);
+  font-size: 11px;
+  text-align: center;
+  color: #1f8f44;
+}
+
+.hero-journey-copy {
+  flex: 1;
+}
+
+.hero-journey-title {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #17212f;
+}
+
+.hero-journey-desc {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #5f6b76;
+}
+
 .section-card,
 .notice-card {
   margin-top: 16px;
@@ -591,6 +753,52 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.route-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.route-item {
+  padding: 16px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #ffffff 0%, #f6faf7 100%);
+  border: 1px solid rgba(31, 143, 68, 0.08);
+}
+
+.route-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.route-step {
+  font-size: 11px;
+  color: #1d8e47;
+}
+
+.route-action {
+  font-size: 12px;
+  color: #1d8e47;
+}
+
+.route-title {
+  display: block;
+  margin-top: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #173126;
+}
+
+.route-desc {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #5f6b76;
 }
 
 .category-item {
@@ -841,6 +1049,34 @@ export default {
   margin-top: 6px;
   font-size: 12px;
   line-height: 1.6;
+  color: #5f6b76;
+}
+
+.confidence-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.confidence-item {
+  padding: 14px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #f7fbf8 0%, #eff8f1 100%);
+}
+
+.confidence-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #173126;
+}
+
+.confidence-desc {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.7;
   color: #5f6b76;
 }
 

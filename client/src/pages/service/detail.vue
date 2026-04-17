@@ -60,6 +60,28 @@
             <text class="decision-item-value">{{ item.value }}</text>
           </view>
         </view>
+        <view class="decision-brief">
+          <text class="decision-brief-title">{{ decisionBrief.title }}</text>
+          <text class="decision-brief-desc">{{ decisionBrief.desc }}</text>
+        </view>
+      </view>
+
+      <view class="section-card">
+        <text class="section-title">下单前的匹配建议</text>
+        <view class="fit-section">
+          <view class="fit-card good">
+            <text class="fit-card-title">更适合这类情况</text>
+            <view class="fit-list">
+              <text v-for="item in fitScenarios" :key="item" class="fit-item">{{ item }}</text>
+            </view>
+          </view>
+          <view class="fit-card caution">
+            <text class="fit-card-title">建议先补充说明或再比较</text>
+            <view class="fit-list">
+              <text v-for="item in avoidScenarios" :key="item" class="fit-item">{{ item }}</text>
+            </view>
+          </view>
+        </view>
       </view>
 
       <view class="section-card">
@@ -101,6 +123,12 @@
           <view v-for="item in assuranceList" :key="item.title" class="assurance-item">
             <text class="assurance-title">{{ item.title }}</text>
             <text class="assurance-desc">{{ item.desc }}</text>
+          </view>
+        </view>
+        <view class="confidence-list">
+          <view v-for="item in confidenceSignals" :key="item.title" class="confidence-signal">
+            <text class="confidence-signal-title">{{ item.title }}</text>
+            <text class="confidence-signal-desc">{{ item.desc }}</text>
           </view>
         </view>
       </view>
@@ -147,9 +175,9 @@
     <view v-if="serviceInfo" class="bottom-bar">
       <view class="bottom-copy">
         <text class="bottom-price">¥{{ formatCurrency(service.price) }}</text>
-        <text class="bottom-tip">提交后平台将尽快联系您确认上门细节</text>
+        <text class="bottom-tip">{{ bottomBookingTip }}</text>
       </view>
-      <button class="appointment-button" @click="makeAppointment">立即预约</button>
+      <button class="appointment-button" @click="makeAppointment">{{ bookingButtonText }}</button>
     </view>
   </view>
 </template>
@@ -254,6 +282,101 @@ export default {
                     value: '平台人工复核'
                 }
             ];
+        },
+        decisionBrief() {
+            const title = this.service.title || this.service.category_name || '当前服务';
+            return {
+                title: `如果你想先解决“${title}”这类问题，这项服务已经具备直接进入预约的基础信息。`,
+                desc: '页面更适合帮助你先做判断和比较，真正的时间、地址和执行细节会在平台确认环节继续复核。'
+            };
+        },
+        fitScenarios() {
+            const keywordText = `${this.service.title} ${this.service.category_name}`.toLowerCase();
+
+            if (keywordText.includes('母婴')) {
+                return [
+                    '家里近期有产后照护、月嫂或母婴陪护需求',
+                    '希望提前沟通服务时间、照护重点和生活习惯',
+                    '更在意持续跟进，而不是只完成一次性事务'
+                ];
+            }
+
+            if (keywordText.includes('清洗')) {
+                return [
+                    '目标很明确，想一次处理空调、油烟机等设备清洗',
+                    '更希望先看项目范围、时长和是否需要现场准备',
+                    '愿意在备注里提前说明设备型号或现场情况'
+                ];
+            }
+
+            if (keywordText.includes('搬')) {
+                return [
+                    '有明确时间点，需要平台提前确认上门安排',
+                    '希望一次补充地址、楼层和物品说明，减少来回问询',
+                    '更关注执行流程和现场协调，而不只是基础报价'
+                ];
+            }
+
+            return [
+                '家里有明确的日常保洁、深度清洁或上门处理需求',
+                '希望线上先把时间、地址和备注集中提交，再等待平台确认',
+                '更看重流程清晰、进度可查，而不是临时电话沟通'
+            ];
+        },
+        avoidScenarios() {
+            const keywordText = `${this.service.title} ${this.service.category_name}`.toLowerCase();
+
+            if (keywordText.includes('母婴')) {
+                return [
+                    '如果照护范围、到岗周期还没有想清楚，建议先在备注里补充期待',
+                    '如果只想解决一次性的家务问题，建议先比较保洁或专项清洁服务',
+                    '如果家庭成员作息要求特殊，提交前最好写清时间限制'
+                ];
+            }
+
+            if (keywordText.includes('清洗')) {
+                return [
+                    '如果设备情况不明确，建议先补充品牌、数量或清洗重点',
+                    '如果你真正需要的是全屋保洁，建议同时比较日常保洁服务',
+                    '如果现场存在高空、拆装等特殊情况，提交前建议先备注说明'
+                ];
+            }
+
+            if (keywordText.includes('搬')) {
+                return [
+                    '如果只是局部整理或清洁，可能需要先比较更轻量的上门服务',
+                    '如果物品量、楼层或车辆要求还不明确，建议先备注清楚',
+                    '如果时间窗口非常紧，提交后要留意平台回访确认'
+                ];
+            }
+
+            return [
+                '如果你的需求更偏专项设备处理，建议先看清洗类服务是否更匹配',
+                '如果时间、地址或重点区域还没想好，建议先补齐信息再预约',
+                '如果你主要想比价格，最好回到同类服务里一起比较时长和保障'
+            ];
+        },
+        confidenceSignals() {
+            return [
+                {
+                    title: '先提交，再人工确认细节',
+                    desc: '不是用户自己单方面拍板，平台会继续帮你核对服务匹配度和预约信息。'
+                },
+                {
+                    title: '预约状态后续可追踪',
+                    desc: '提交后可以在“我的预约”里查看状态变化，减少对进度的不确定感。'
+                },
+                {
+                    title: '适合沉淀下一次复购资料',
+                    desc: '这次填写的联系人、地址和备注会帮助后续重复下单更省步骤。'
+                }
+            ];
+        },
+        bottomBookingTip() {
+            return `提交${this.service.title || '预约'}后，平台会尽快联系您确认时间和服务细节`;
+        },
+        bookingButtonText() {
+            return '填写需求，等待确认';
         }
     },
     onLoad(options) {
@@ -512,6 +635,29 @@ export default {
   color: #111827;
 }
 
+.decision-brief {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #f7fbf8 0%, #eef8f0 100%);
+}
+
+.decision-brief-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.6;
+  color: #173126;
+}
+
+.decision-brief-desc {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #5f6b76;
+}
+
 .section-title {
   display: block;
   margin-bottom: 12px;
@@ -532,7 +678,9 @@ export default {
 .notice-list,
 .assurance-list,
 .faq-list,
-.decision-help-list {
+.decision-help-list,
+.confidence-list,
+.fit-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -547,6 +695,52 @@ export default {
   padding: 14px;
   border-radius: 18px;
   background: #f8faf8;
+}
+
+.fit-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fit-card {
+  padding: 16px;
+  border-radius: 18px;
+}
+
+.fit-card.good {
+  background: linear-gradient(180deg, #f6fcf7 0%, #edf8f0 100%);
+}
+
+.fit-card.caution {
+  background: linear-gradient(180deg, #fffaf2 0%, #fdf2df 100%);
+}
+
+.fit-card-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #17212f;
+}
+
+.fit-item {
+  display: block;
+  padding-left: 14px;
+  position: relative;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #5f6b76;
+}
+
+.fit-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #1aad19;
 }
 
 .journey-index,
@@ -578,6 +772,31 @@ export default {
 .assurance-desc {
   display: block;
   margin-top: 5px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #5f6b76;
+}
+
+.confidence-list {
+  margin-top: 14px;
+}
+
+.confidence-signal {
+  padding: 14px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #f7fbf8 0%, #eef8f0 100%);
+}
+
+.confidence-signal-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #17212f;
+}
+
+.confidence-signal-desc {
+  display: block;
+  margin-top: 6px;
   font-size: 13px;
   line-height: 1.7;
   color: #5f6b76;

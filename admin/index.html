@@ -117,6 +117,48 @@
                                 </div>
                             </div>
 
+                            <div class="dashboard-insights">
+                                <section class="dashboard-panel">
+                                    <div class="panel-header">
+                                        <div>
+                                            <h3>经营脉搏</h3>
+                                            <p>把今天更值得关注的承接、供给和流入状态压缩成一屏经营信号。</p>
+                                        </div>
+                                    </div>
+                                    <div class="momentum-grid">
+                                        <div
+                                            v-for="item in dashboardMomentumCards"
+                                            :key="item.title"
+                                            class="momentum-card"
+                                            :class="`momentum-card-${item.type}`"
+                                        >
+                                            <span class="momentum-title">{{ item.title }}</span>
+                                            <span class="momentum-value">{{ item.value }}</span>
+                                            <span class="momentum-desc">{{ item.desc }}</span>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <section class="dashboard-panel">
+                                    <div class="panel-header">
+                                        <div>
+                                            <h3>今日优先级</h3>
+                                            <p>不是所有模块都要同时看，先做最影响预约转化和履约体验的动作。</p>
+                                        </div>
+                                    </div>
+                                    <div class="priority-list">
+                                        <div v-for="item in dashboardActionChecklist" :key="item.title" class="priority-item">
+                                            <span class="priority-step">{{ item.step }}</span>
+                                            <div class="priority-copy">
+                                                <span class="priority-title">{{ item.title }}</span>
+                                                <span class="priority-desc">{{ item.desc }}</span>
+                                            </div>
+                                            <el-button type="text" @click="jumpToMenu(item.menu)">{{ item.actionText }}</el-button>
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
+
                             <div class="dashboard-grid">
                                 <section class="dashboard-panel">
                                     <div class="panel-header">

@@ -205,6 +205,102 @@ const app = new Vue({
             ];
         },
 
+        dashboardMomentumCards() {
+            const pendingCount = this.pendingAppointmentsCount;
+            const acceptedCount = this.acceptedAppointmentsCount;
+            const servicesPerCategory = this.statistics.categories
+                ? (this.statistics.services / this.statistics.categories).toFixed(1)
+                : '0.0';
+            const todayFlowValue = this.statistics.todayAppointments || this.recentAppointments.length;
+
+            return [
+                {
+                    title: '预约承接压力',
+                    value: pendingCount ? `${pendingCount} 笔待处理` : '当前平稳',
+                    desc: pendingCount
+                        ? '说明仍有预约等待首轮确认，建议优先推进待接单。'
+                        : '待接单压力不高，可以把精力放到供给和转化优化。',
+                    type: pendingCount ? 'warning' : 'success'
+                },
+                {
+                    title: '服务供给密度',
+                    value: `${servicesPerCategory} 项/分类`,
+                    desc: this.statistics.services >= this.statistics.categories * 2
+                        ? '分类下可选服务相对充足，适合继续优化展示和排序。'
+                        : '部分分类可能仍偏薄，建议持续补充服务项目和差异化卖点。',
+                    type: this.statistics.services >= this.statistics.categories * 2 ? 'success' : 'info'
+                },
+                {
+                    title: '今日订单流入',
+                    value: todayFlowValue ? `${todayFlowValue} 笔` : '暂未起量',
+                    desc: todayFlowValue
+                        ? `最近流入中已有 ${acceptedCount} 笔进入服务准备阶段，可继续跟踪履约。`
+                        : '建议检查首页推荐、服务上架状态与用户端预约入口是否顺畅。',
+                    type: todayFlowValue ? 'info' : 'danger'
+                }
+            ];
+        },
+
+        dashboardActionChecklist() {
+            const items = [];
+
+            items.push(
+                this.pendingAppointmentsCount
+                    ? {
+                        step: '01',
+                        title: '先清理待接单预约',
+                        desc: `当前还有 ${this.pendingAppointmentsCount} 笔待处理预约，优先减少用户等待感。`,
+                        menu: 'appointments',
+                        actionText: '去处理'
+                    }
+                    : {
+                        step: '01',
+                        title: '预约承接当前较稳定',
+                        desc: '待接单压力不大，可以转去检查服务页和首页转化入口。',
+                        menu: 'services',
+                        actionText: '看服务'
+                    }
+            );
+
+            items.push(
+                this.statistics.todayAppointments
+                    ? {
+                        step: '02',
+                        title: '复查今天有流入的服务承接情况',
+                        desc: '看看高频服务的价格、图片和描述是否足够支撑当前订单转化。',
+                        menu: 'services',
+                        actionText: '去维护'
+                    }
+                    : {
+                        step: '02',
+                        title: '补看用户端入口是否影响转化',
+                        desc: '今日预约为空时，优先检查首页推荐、分类展示和热门服务排序。',
+                        menu: 'services',
+                        actionText: '去排查'
+                    }
+            );
+
+            items.push(
+                this.statistics.services < this.statistics.categories
+                    ? {
+                        step: '03',
+                        title: '补足服务供给覆盖',
+                        desc: '当前服务数量偏少，建议优先补上分类下的基础项目。',
+                        menu: 'services',
+                        actionText: '去补充'
+                    }
+                    : {
+                        step: '03',
+                        title: '同步看供给端是否跟得上',
+                        desc: '服务池已经具备一定规模，建议继续跟进求职报名，保证履约弹性。',
+                        menu: 'job_applications',
+                        actionText: '看报名'
+                    }
+            );
+
+            return items;
+        },
+
         dashboardFocusItems() {
             const actionable = this.recentAppointments
                 .filter(item => ['pending', 'accepted'].includes(item.status))
