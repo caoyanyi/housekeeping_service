@@ -1,5 +1,29 @@
 <template>
   <view class="page">
+    <view v-if="serviceInfo" class="hero-card">
+      <view class="hero-copy">
+        <text class="hero-eyebrow">预约确认</text>
+        <text class="hero-title">确认时间、地址和联系人后即可提交需求</text>
+        <text class="hero-subtitle">
+          提交成功后平台会主动联系您确认服务安排，建议填写准确的联系电话和详细地址。
+        </text>
+      </view>
+      <view class="hero-metrics">
+        <view class="hero-metric">
+          <text class="hero-metric-value">¥{{ formatCurrency(service.price) }}</text>
+          <text class="hero-metric-label">参考价格</text>
+        </view>
+        <view class="hero-metric">
+          <text class="hero-metric-value">{{ service.duration || 60 }}分钟</text>
+          <text class="hero-metric-label">预计时长</text>
+        </view>
+        <view class="hero-metric">
+          <text class="hero-metric-value">人工确认</text>
+          <text class="hero-metric-label">预约方式</text>
+        </view>
+      </view>
+    </view>
+
     <view v-if="serviceInfo" class="service-card">
       <image :src="service.image" mode="aspectFill" class="service-image"></image>
       <view class="service-content">
@@ -12,8 +36,26 @@
       </view>
     </view>
 
+    <view class="summary-card">
+      <view class="summary-item">
+        <text class="summary-label">预约日期</text>
+        <text class="summary-value">{{ selectedDate ? formatDisplayDate(selectedDate) : '待选择' }}</text>
+      </view>
+      <view class="summary-item">
+        <text class="summary-label">预约时间</text>
+        <text class="summary-value">{{ selectedTime || '待选择' }}</text>
+      </view>
+      <view class="summary-item">
+        <text class="summary-label">联系人</text>
+        <text class="summary-value">{{ contactName || '待填写' }}</text>
+      </view>
+    </view>
+
     <view class="form-card">
-      <text class="section-title">预约信息</text>
+      <view class="section-head">
+        <text class="section-title">预约信息</text>
+        <text class="section-subtitle">尽量填写完整，平台确认时会更顺畅</text>
+      </view>
 
       <view class="field">
         <text class="field-label">预约日期</text>
@@ -65,8 +107,15 @@
     </view>
 
     <view class="tips-card">
-      <text class="section-title">下单提醒</text>
-      <text class="tips-text">提交后平台将尽快与您确认时间与服务细节，请保持电话畅通。</text>
+      <view class="section-head">
+        <text class="section-title">下单提醒</text>
+        <text class="section-subtitle">提交前看一眼，可以减少后续沟通成本</text>
+      </view>
+      <view class="tips-list">
+        <text class="tips-item">预约时间需要晚于当前时间，平台确认后会尽快联系您。</text>
+        <text class="tips-item">地址尽量包含小区、楼栋和门牌号，便于安排上门。</text>
+        <text class="tips-item">如有特殊需求，可在备注中提前说明，避免重复沟通。</text>
+      </view>
     </view>
 
     <button class="submit-button" :disabled="!canSubmit || submitting" :loading="submitting" @click="submitAppointment">
@@ -279,21 +328,82 @@ export default {
   min-height: 100vh;
   padding: 16px;
   padding-bottom: 96px;
-  background: #f6f7f9;
+  background:
+    radial-gradient(circle at top right, rgba(56, 161, 105, 0.12), transparent 28%),
+    #f6f7f9;
 }
 
+.hero-card,
 .service-card,
+.summary-card,
 .form-card,
 .tips-card {
   padding: 16px;
-  border-radius: 20px;
+  border-radius: 22px;
   background: #ffffff;
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
 }
 
+.hero-card {
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.16), transparent 24%),
+    linear-gradient(135deg, #1f8f44 0%, #2ea95a 56%, #59bf78 100%);
+  color: #ffffff;
+}
+
+.hero-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.hero-title {
+  display: block;
+  margin-top: 10px;
+  font-size: 23px;
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+.hero-subtitle {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.84);
+}
+
+.hero-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.hero-metric {
+  padding: 12px 10px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.14);
+  text-align: center;
+}
+
+.hero-metric-value {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.hero-metric-label {
+  display: block;
+  margin-top: 5px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
 .service-card {
   display: flex;
-  margin-bottom: 14px;
+  margin-top: 14px;
 }
 
 .service-image {
@@ -341,12 +451,55 @@ export default {
   color: #9ca3af;
 }
 
+.summary-card {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.summary-item {
+  padding: 12px 10px;
+  border-radius: 18px;
+  background: #f8faf8;
+}
+
+.summary-label {
+  display: block;
+  font-size: 11px;
+  color: #98a2b3;
+}
+
+.summary-value {
+  display: block;
+  margin-top: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.form-card,
+.tips-card {
+  margin-top: 14px;
+}
+
+.section-head {
+  margin-bottom: 14px;
+}
+
 .section-title {
   display: block;
-  margin-bottom: 14px;
   font-size: 17px;
   font-weight: 700;
   color: #111827;
+}
+
+.section-subtitle {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #98a2b3;
 }
 
 .field {
@@ -362,45 +515,39 @@ export default {
 .field-label {
   display: block;
   margin-bottom: 10px;
-  font-size: 13px;
-  color: #667085;
+  font-size: 14px;
+  color: #344054;
 }
 
 .picker-value,
 .field-input,
 .field-textarea {
   width: 100%;
-  font-size: 15px;
-  color: #111827;
-  background: #f7f8fa;
-  border-radius: 14px;
-}
-
-.picker-value,
-.field-input {
-  height: 44px;
-  line-height: 44px;
-  padding: 0 14px;
-}
-
-.field-textarea {
-  min-height: 96px;
   padding: 12px 14px;
-  line-height: 1.6;
+  border-radius: 16px;
+  background: #f7f8fa;
+  font-size: 14px;
+  color: #111827;
 }
 
-.placeholder {
+.picker-value.placeholder {
   color: #98a2b3;
 }
 
-.tips-card {
-  margin-top: 14px;
+.field-textarea {
+  min-height: 88px;
 }
 
-.tips-text {
-  font-size: 14px;
-  line-height: 1.8;
-  color: #4b5563;
+.tips-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tips-item {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #667085;
 }
 
 .submit-button {
@@ -408,17 +555,17 @@ export default {
   left: 16px;
   right: 16px;
   bottom: 18px;
-  height: 46px;
+  height: 48px;
+  line-height: 48px;
   border-radius: 999px;
-  background: linear-gradient(135deg, #1aad19 0%, #38c172 100%);
+  background: linear-gradient(135deg, #1aad19 0%, #36c567 100%);
   color: #ffffff;
   font-size: 16px;
   font-weight: 600;
-  box-shadow: 0 16px 30px rgba(26, 173, 25, 0.24);
+  box-shadow: 0 16px 34px rgba(26, 173, 25, 0.22);
 }
 
 .submit-button[disabled] {
-  background: #c9d1d9;
-  box-shadow: none;
+  opacity: 0.65;
 }
 </style>

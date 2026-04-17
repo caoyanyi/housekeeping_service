@@ -522,12 +522,32 @@ body {
     margin: 0;
 }
 
+.page-subtitle {
+    margin-top: 6px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #7b8794;
+}
+
+.workspace-card {
+    padding: 18px;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+}
+
 .search-bar {
     margin-bottom: 20px;
     display: flex;
     align-items: center;
     flex-wrap: wrap;
     gap: 10px;
+}
+
+.toolbar-note {
+    margin-left: auto;
+    font-size: 12px;
+    color: #7b8794;
 }
 
 .pagination {
@@ -570,6 +590,11 @@ body {
 
     .dashboard-grid {
         grid-template-columns: 1fr;
+    }
+
+    .toolbar-note {
+        width: 100%;
+        margin-left: 0;
     }
 }
 
