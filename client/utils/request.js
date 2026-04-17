@@ -39,6 +39,29 @@ function looksLikeOptions(payload) {
   );
 }
 
+function isAuthRoute(route = '') {
+  return [ROUTER_CONFIG.pages.login, ROUTER_CONFIG.pages.register].includes(route);
+}
+
+function buildCurrentPageRedirect() {
+  if (typeof getCurrentPages !== 'function') {
+    return '';
+  }
+
+  const pages = getCurrentPages();
+  const currentPage = pages[pages.length - 1];
+  if (!currentPage || !currentPage.route) {
+    return '';
+  }
+
+  const route = currentPage.route.startsWith('/') ? currentPage.route : `/${currentPage.route}`;
+  if (isAuthRoute(route)) {
+    return '';
+  }
+
+  return ROUTER_CONFIG.navigate.buildUrl(route, currentPage.options || {});
+}
+
 // 创建全局request对象
 const request = {
   // 创建http请求实例
@@ -97,7 +120,13 @@ const request = {
               });
             }
             if (redirectOn401) {
+              const redirect = buildCurrentPageRedirect();
               setTimeout(() => {
+                if (redirect) {
+                  ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.login, { redirect });
+                  return;
+                }
+
                 ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.login);
               }, 1500);
             }

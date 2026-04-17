@@ -51,6 +51,22 @@
       </view>
     </view>
 
+    <view class="profile-card">
+      <view class="section-head">
+        <text class="section-title">资料准备情况</text>
+        <text class="section-subtitle">{{ profileAssistHint }}</text>
+      </view>
+      <view class="profile-assist-list">
+        <view v-for="item in profileAssistItems" :key="item.label" class="profile-assist-item">
+          <text class="profile-assist-badge" :class="{ done: item.done }">{{ item.done ? '已补齐' : '建议完善' }}</text>
+          <view class="profile-assist-copy">
+            <text class="profile-assist-title">{{ item.label }}</text>
+            <text class="profile-assist-desc">{{ item.desc }}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
     <view class="readiness-card">
       <view class="section-head">
         <text class="section-title">提交前检查</text>
@@ -145,8 +161,24 @@
       </view>
     </view>
 
+    <view class="timeline-card">
+      <view class="section-head">
+        <text class="section-title">提交后会发生什么</text>
+        <text class="section-subtitle">让首次预约更有预期，避免提交后不知道下一步</text>
+      </view>
+      <view class="timeline-list">
+        <view v-for="item in postSubmitSteps" :key="item.step" class="timeline-item">
+          <text class="timeline-badge">{{ item.step }}</text>
+          <view class="timeline-copy">
+            <text class="timeline-title">{{ item.title }}</text>
+            <text class="timeline-desc">{{ item.desc }}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
     <button class="submit-button" :disabled="!canSubmit || submitting" :loading="submitting" @click="submitAppointment">
-      确认预约
+      {{ submitButtonText }}
     </button>
   </view>
 </template>
@@ -215,9 +247,67 @@ export default {
                 }
             ];
         },
+        profileAssistItems() {
+            return [
+                {
+                    label: '联系人姓名',
+                    desc: this.contactName || '建议填写真实联系人姓名，平台确认时更容易快速核对。',
+                    done: Boolean(this.contactName)
+                },
+                {
+                    label: '联系电话',
+                    desc: isValidPhone(this.phone) ? this.phone : '建议填写可接听手机号，避免平台多次联系不上。',
+                    done: Boolean(isValidPhone(this.phone))
+                },
+                {
+                    label: '服务地址',
+                    desc: this.address || '首次预约建议一次写清小区、楼栋和门牌号，减少沟通来回。',
+                    done: Boolean(this.address)
+                }
+            ];
+        },
+        profileAssistHint() {
+            const completedCount = this.profileAssistItems.filter((item) => item.done).length;
+
+            if (completedCount === this.profileAssistItems.length) {
+                return '常用资料已经比较完整，本次预约会更顺畅。';
+            }
+
+            if (completedCount === 0) {
+                return '看起来是首次预约，建议先把常用资料补齐，后续会省下很多重复输入。';
+            }
+
+            return `已补齐 ${completedCount}/${this.profileAssistItems.length} 项，再完善一下会更利于平台快速确认。`;
+        },
         submitHintText() {
             const nextItem = this.readinessItems.find((item) => !item.done);
             return nextItem ? `还需完善：${nextItem.label}` : '信息已经齐全，提交后平台会尽快联系您确认';
+        },
+        postSubmitSteps() {
+            return [
+                {
+                    step: '01',
+                    title: '平台确认需求',
+                    desc: '客服会根据您填写的时间、地址和备注核对服务安排。'
+                },
+                {
+                    step: '02',
+                    title: '同步预约状态',
+                    desc: '预约中心会展示待确认、已接单或已完成等状态变化。'
+                },
+                {
+                    step: '03',
+                    title: '沉淀常用资料',
+                    desc: '这次填写的联系人和地址会帮助您下次预约更省步骤。'
+                }
+            ];
+        },
+        submitButtonText() {
+            if (this.submitting) {
+                return '正在提交...';
+            }
+
+            return this.canSubmit ? '提交需求，等待确认' : '请先完善预约信息';
         },
         minDate() {
             const today = new Date();
@@ -404,9 +494,11 @@ export default {
 .hero-card,
 .service-card,
 .summary-card,
+.profile-card,
 .readiness-card,
 .form-card,
-.tips-card {
+.tips-card,
+.timeline-card {
   padding: 16px;
   border-radius: 22px;
   background: #ffffff;
@@ -547,18 +639,22 @@ export default {
   color: #111827;
 }
 
+.profile-card,
 .form-card,
 .readiness-card,
-.tips-card {
+.tips-card,
+.timeline-card {
   margin-top: 14px;
 }
 
+.profile-assist-list,
 .readiness-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
+.profile-assist-item,
 .readiness-item {
   display: flex;
   align-items: flex-start;
@@ -568,6 +664,7 @@ export default {
   background: #f8faf8;
 }
 
+.profile-assist-badge,
 .readiness-badge {
   min-width: 54px;
   padding: 5px 8px;
@@ -578,15 +675,18 @@ export default {
   color: #667085;
 }
 
+.profile-assist-badge.done,
 .readiness-badge.done {
   background: #e7f8eb;
   color: #1f8f44;
 }
 
+.profile-assist-copy,
 .readiness-copy {
   flex: 1;
 }
 
+.profile-assist-title,
 .readiness-title {
   display: block;
   font-size: 14px;
@@ -594,6 +694,7 @@ export default {
   color: #111827;
 }
 
+.profile-assist-desc,
 .readiness-desc {
   display: block;
   margin-top: 6px;
@@ -684,6 +785,48 @@ export default {
 }
 
 .tips-item {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #667085;
+}
+
+.timeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.timeline-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.timeline-badge {
+  min-width: 34px;
+  height: 22px;
+  line-height: 22px;
+  border-radius: 999px;
+  background: rgba(31, 143, 68, 0.12);
+  font-size: 11px;
+  text-align: center;
+  color: #1f8f44;
+}
+
+.timeline-copy {
+  flex: 1;
+}
+
+.timeline-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.timeline-desc {
+  display: block;
+  margin-top: 6px;
   font-size: 13px;
   line-height: 1.7;
   color: #667085;
