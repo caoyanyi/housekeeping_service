@@ -133,7 +133,9 @@ npm run build:h5
 
 1. `window.__API_BASE_URL__`
 2. `localStorage.adminApiBaseURL`
-3. `当前域名 + /api`
+3. `https://api.jz.okrcn.com`
+
+当前线上管理端地址：`http://admin.jz.okrcn.com`
 
 ### 用户端
 
@@ -141,8 +143,9 @@ npm run build:h5
 
 1. `window.__API_BASE_URL__`
 2. `uni.getStorageSync('apiBaseURL')`
-3. H5 环境下 `当前域名 + /api`
-4. 最后的线上兜底地址
+3. `https://api.jz.okrcn.com`
+
+当前线上用户端地址：`http://jz.okrcn.com`
 
 ## 主要接口
 

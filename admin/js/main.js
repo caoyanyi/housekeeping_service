@@ -9,7 +9,7 @@ const ADMIN_API_BASE_URL = (() => {
         return savedBaseURL;
     }
 
-    return `${window.location.origin}/api`;
+    return 'https://api.jz.okrcn.com';
 })();
 
 axios.defaults.baseURL = ADMIN_API_BASE_URL;

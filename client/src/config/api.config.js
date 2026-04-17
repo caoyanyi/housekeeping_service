@@ -12,11 +12,7 @@ function resolveBaseURL() {
     // Ignore storage lookup failures and continue with fallback resolution.
   }
 
-  if (typeof window !== 'undefined' && window.location?.origin) {
-    return `${window.location.origin}/api`;
-  }
-
-  return 'https://api.jz.okrcn.com/api';
+  return 'https://api.jz.okrcn.com';
 }
 
 // API配置文件
