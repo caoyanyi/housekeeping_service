@@ -106,6 +106,20 @@
       </view>
 
       <view class="section-card">
+        <text class="section-title">如果你还在比较</text>
+        <view class="decision-help-list">
+          <view v-for="item in decisionHelps" :key="item.title" class="decision-help-item">
+            <text class="decision-help-title">{{ item.title }}</text>
+            <text class="decision-help-desc">{{ item.desc }}</text>
+          </view>
+        </view>
+        <view class="secondary-actions">
+          <button class="secondary-action ghost" @click="viewSimilarServices">看同类服务</button>
+          <button class="secondary-action" @click="goAppointmentList">查看我的预约</button>
+        </view>
+      </view>
+
+      <view class="section-card">
         <text class="section-title">下单前常见问题</text>
         <view class="faq-list">
           <view v-for="item in serviceFaqs" :key="item.question" class="faq-item">
@@ -146,7 +160,8 @@ import ROUTER_CONFIG from '../../config/router.config';
 import {
     formatCurrency,
     hasRichText,
-    normalizeService
+    normalizeService,
+    SERVICE_LIST_FILTERS_KEY
 } from '../../utils/view-models';
 
 export default {
@@ -195,6 +210,20 @@ export default {
                 {
                     title: '上门服务',
                     desc: '确认完成后按预约时间安排服务，结果可在订单中查看。'
+                }
+            ],
+            decisionHelps: [
+                {
+                    title: '如果你更在意效率',
+                    desc: '建议优先看服务时长、备注承接范围，以及是否需要提前准备现场条件。'
+                },
+                {
+                    title: '如果你还在比价格',
+                    desc: '可以回到同类服务列表，对比简介、时长和保障信息，而不只看单个价格。'
+                },
+                {
+                    title: '如果需求还不够确定',
+                    desc: '先提交最接近的服务需求也可以，平台会在确认环节帮你补充细节。'
                 }
             ]
         };
@@ -280,6 +309,18 @@ export default {
             ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.appointment.create, {
                 serviceId: this.serviceId
             });
+        },
+        viewSimilarServices() {
+            uni.setStorageSync(SERVICE_LIST_FILTERS_KEY, {
+                categoryId: Number(this.service.category_id || 0) || 0,
+                keyword: this.service.category_name || this.service.title || '',
+                resetSearch: true,
+                source: 'service-detail'
+            });
+            ROUTER_CONFIG.navigate.switchTab(ROUTER_CONFIG.pages.service.list);
+        },
+        goAppointmentList() {
+            ROUTER_CONFIG.navigate.switchTab(ROUTER_CONFIG.pages.appointment.list);
         }
     }
 };
@@ -490,7 +531,8 @@ export default {
 .process-list,
 .notice-list,
 .assurance-list,
-.faq-list {
+.faq-list,
+.decision-help-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -498,7 +540,8 @@ export default {
 
 .journey-item,
 .assurance-item,
-.faq-item {
+.faq-item,
+.decision-help-item {
   display: flex;
   align-items: flex-start;
   padding: 14px;
@@ -557,6 +600,47 @@ export default {
   font-size: 13px;
   line-height: 1.7;
   color: #5f6b76;
+}
+
+.decision-help-item {
+  display: block;
+}
+
+.decision-help-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #17212f;
+}
+
+.decision-help-desc {
+  display: block;
+  margin-top: 7px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #5f6b76;
+}
+
+.secondary-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.secondary-action {
+  flex: 1;
+  height: 42px;
+  line-height: 42px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1aad19 0%, #36c567 100%);
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.secondary-action.ghost {
+  background: #ffffff;
+  color: #1aad19;
+  border: 1px solid rgba(26, 173, 25, 0.22);
 }
 
 .process-item {

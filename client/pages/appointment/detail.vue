@@ -55,6 +55,20 @@
         </view>
       </view>
 
+      <view class="section-card">
+        <text class="section-title">下一次预约可以更快</text>
+        <view class="followup-list">
+          <view v-for="item in followupTips" :key="item.title" class="followup-item">
+            <text class="followup-title">{{ item.title }}</text>
+            <text class="followup-desc">{{ item.desc }}</text>
+          </view>
+        </view>
+        <view class="followup-actions">
+          <button class="followup-button ghost" @click="viewSimilarServices">看同类服务</button>
+          <button class="followup-button" @click="goAppointmentList">回到预约列表</button>
+        </view>
+      </view>
+
       <view v-if="appointment.notes" class="section-card">
         <text class="section-title">备注信息</text>
         <text class="remark-text">{{ appointment.notes }}</text>
@@ -78,7 +92,8 @@ import API_CONFIG from '../../config/api.config';
 import ROUTER_CONFIG from '../../config/router.config';
 import {
     formatCurrency,
-    normalizeAppointment
+    normalizeAppointment,
+    SERVICE_LIST_FILTERS_KEY
 } from '../../utils/view-models';
 
 export default {
@@ -107,6 +122,22 @@ export default {
         },
         primaryActionText() {
             return this.hasServiceLink ? '再约一次' : '返回预约列表';
+        },
+        followupTips() {
+            return [
+                {
+                    title: '复用这次的时间偏好',
+                    desc: '如果本次预约时间合适，下次可直接选择同类时段，减少确认成本。'
+                },
+                {
+                    title: '保留地址和备注经验',
+                    desc: '常见服务地址、重点区域和特殊需求越明确，平台确认越高效。'
+                },
+                {
+                    title: '从同类服务继续比较',
+                    desc: '如果本次需求没有完全匹配，可以回到同类服务列表继续挑选更合适的项目。'
+                }
+            ];
         },
         statusDescription() {
             const map = {
@@ -278,6 +309,18 @@ export default {
             ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.appointment.create, {
                 serviceId: this.appointment.service_id || this.appointment.service?.id
             });
+        },
+        viewSimilarServices() {
+            uni.setStorageSync(SERVICE_LIST_FILTERS_KEY, {
+                categoryId: Number(this.appointment.service?.category_id || 0) || 0,
+                keyword: this.appointment.service?.category_name || this.appointment.service_title || '',
+                resetSearch: true,
+                source: 'appointment-detail'
+            });
+            ROUTER_CONFIG.navigate.switchTab(ROUTER_CONFIG.pages.service.list);
+        },
+        goAppointmentList() {
+            ROUTER_CONFIG.navigate.switchTab(ROUTER_CONFIG.pages.appointment.list);
         }
     }
 };
@@ -487,6 +530,55 @@ export default {
   font-size: 14px;
   line-height: 1.8;
   color: #4b5563;
+}
+
+.followup-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.followup-item {
+  padding: 14px;
+  border-radius: 18px;
+  background: #f8fafc;
+}
+
+.followup-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.followup-desc {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #667085;
+}
+
+.followup-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.followup-button {
+  flex: 1;
+  height: 42px;
+  line-height: 42px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1d79c2 0%, #48a7df 100%);
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.followup-button.ghost {
+  background: #ffffff;
+  color: #1d79c2;
+  border: 1px solid rgba(29, 121, 194, 0.22);
 }
 
 .state-block {

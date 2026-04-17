@@ -91,6 +91,27 @@
       </view>
     </view>
 
+    <view class="section-card">
+      <view class="section-header">
+        <view>
+          <text class="section-title">不知道怎么选时</text>
+          <text class="section-subtitle">先从最常见的家庭场景开始，缩短决策时间</text>
+        </view>
+      </view>
+      <view class="scenario-list">
+        <view
+          v-for="item in demandScenarios"
+          :key="item.title"
+          class="scenario-item"
+          @click="goScenario(item)"
+        >
+          <text class="scenario-title">{{ item.title }}</text>
+          <text class="scenario-desc">{{ item.desc }}</text>
+          <text class="scenario-action">{{ item.actionText }}</text>
+        </view>
+      </view>
+    </view>
+
     <view class="job-entry" @click="goJobApply">
       <view class="job-content">
         <text class="job-title">家政从业者入口</text>
@@ -248,6 +269,29 @@ export default {
                     desc: '如果有重点清洁区域、宠物或时间限制，建议在备注里一次说明。'
                 }
             ],
+            demandScenarios: [
+                {
+                    title: '想先解决日常家务堆积',
+                    desc: '更适合先看保洁、深度清洁这类高频服务。',
+                    categoryId: 0,
+                    keyword: '保洁',
+                    actionText: '去看保洁服务'
+                },
+                {
+                    title: '家里有母婴或陪护需求',
+                    desc: '建议优先筛母婴护理，再看服务说明和备注承接范围。',
+                    categoryId: 0,
+                    keyword: '母婴',
+                    actionText: '去看母婴服务'
+                },
+                {
+                    title: '需要一次性处理设备或重点区域',
+                    desc: '家电清洗、专项清洁通常更适合这种明确需求。',
+                    categoryId: 0,
+                    keyword: '清洗',
+                    actionText: '去看专项服务'
+                }
+            ],
             serviceFlow: [
                 '选择服务并提交预约需求',
                 '平台联系确认上门时间和服务细节',
@@ -304,8 +348,18 @@ export default {
         goServiceList(categoryId = 0) {
             uni.setStorageSync(SERVICE_LIST_FILTERS_KEY, {
                 categoryId,
+                keyword: '',
                 resetSearch: true,
                 source: 'index'
+            });
+            ROUTER_CONFIG.navigate.switchTab(ROUTER_CONFIG.pages.service.list);
+        },
+        goScenario(item) {
+            uni.setStorageSync(SERVICE_LIST_FILTERS_KEY, {
+                categoryId: item.categoryId || 0,
+                keyword: item.keyword || '',
+                resetSearch: true,
+                source: 'index-scenario'
             });
             ROUTER_CONFIG.navigate.switchTab(ROUTER_CONFIG.pages.service.list);
         },
@@ -533,6 +587,12 @@ export default {
   flex-wrap: wrap;
 }
 
+.scenario-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .category-item {
   width: 25%;
   padding: 10px 0 6px;
@@ -554,6 +614,35 @@ export default {
   font-size: 12px;
   color: #374151;
   text-align: center;
+}
+
+.scenario-item {
+  padding: 16px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #ffffff 0%, #f4faf5 100%);
+  border: 1px solid rgba(38, 122, 76, 0.08);
+}
+
+.scenario-title {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  color: #173126;
+}
+
+.scenario-desc {
+  display: block;
+  margin-top: 7px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #5f6b76;
+}
+
+.scenario-action {
+  display: block;
+  margin-top: 10px;
+  font-size: 12px;
+  color: #1d8e47;
 }
 
 .job-entry {

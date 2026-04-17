@@ -280,17 +280,18 @@ export default {
 
             const nextCategory = Number(stored.categoryId || 0) || 0;
             const resetSearch = Boolean(stored.resetSearch);
+            const nextKeyword = String(stored.keyword || '').trim();
             const shouldRefresh =
-                nextCategory !== this.selectedCategory || (resetSearch && this.searchText);
+                nextCategory !== this.selectedCategory ||
+                this.searchText !== nextKeyword ||
+                (resetSearch && this.searchText);
 
             if (!shouldRefresh) {
                 return;
             }
 
             this.selectedCategory = nextCategory;
-            if (resetSearch) {
-                this.searchText = '';
-            }
+            this.searchText = resetSearch ? nextKeyword : (nextKeyword || this.searchText);
             this.resetAndFetch();
         },
         fetchServices(stopRefresh = false) {
