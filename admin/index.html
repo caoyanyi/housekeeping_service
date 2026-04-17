@@ -407,7 +407,27 @@
                     <el-button @click="resetFilters">重置</el-button>
                     <span class="toolbar-note">当前共 {{ total }} 项服务</span>
                 </div>
-                <el-table :data="servicesData" stripe v-loading="loading" empty-text="暂无服务数据" style="width: 100%">
+                <div class="service-ops-grid">
+                    <button
+                        v-for="item in serviceOverviewCards"
+                        :key="item.title"
+                        class="service-ops-card"
+                        :class="{ active: quickStatusFilter === item.filterValue }"
+                        @click="applyQuickStatusFilter(item.filterValue)"
+                    >
+                        <span class="service-ops-title">{{ item.title }}</span>
+                        <span class="service-ops-value">{{ item.value }}</span>
+                        <span class="service-ops-desc">{{ item.desc }}</span>
+                    </button>
+                </div>
+                <div class="service-focus-card">
+                    <div>
+                        <h3>{{ serviceFocusTitle }}</h3>
+                        <p>{{ serviceFocusText }}</p>
+                    </div>
+                    <el-button type="primary" size="mini" @click="applyQuickStatusFilter(serviceFocusFilter)">立即查看</el-button>
+                </div>
+                <el-table :data="visibleServicesData" stripe v-loading="loading" empty-text="暂无服务数据" style="width: 100%">
                     <el-table-column prop="id" label="ID" width="80"></el-table-column>
                     <el-table-column prop="title" label="服务标题"></el-table-column>
                     <el-table-column prop="category_name" label="分类" width="120"></el-table-column>
@@ -424,9 +444,19 @@
                             </el-tag>
                         </template>
                     </el-table-column>
-                    <el-table-column prop="created_at" label="创建时间" width="180"></el-table-column>
-                    <el-table-column label="操作" width="150" fixed="right">
+                    <el-table-column label="内容状态" width="150">
                         <template slot-scope="scope">
+                            <el-tag :type="getServiceHealthType(scope.row)" size="mini">{{ getServiceHealth(scope.row) }}</el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="created_at" label="创建时间" width="180"></el-table-column>
+                    <el-table-column label="操作" width="220" fixed="right">
+                        <template slot-scope="scope">
+                            <el-button
+                                type="text"
+                                size="small"
+                                @click="toggleServiceStatus(scope.row, Number(scope.row.status) === 1 ? 0 : 1)"
+                            >{{ Number(scope.row.status) === 1 ? '下架' : '上架' }}</el-button>
                             <el-button type="text" size="small" @click="showEditDialog(scope.row)">编辑</el-button>
                             <el-button type="text" size="small" @click="deleteService(scope.row.id)" style="color: #f56c6c">删除</el-button>
                         </template>

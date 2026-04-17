@@ -528,6 +528,7 @@ Vue.component('services', {
             categories: [],
             searchText: '',
             categoryId: '',
+            quickStatusFilter: '',
             loading: false,
             submitting: false,
             addDialogVisible: false,
@@ -575,6 +576,90 @@ Vue.component('services', {
     mounted() {
         this.getServices();
         this.getCategories();
+    },
+    computed: {
+        visibleServicesData() {
+            if (this.quickStatusFilter === '') {
+                return this.servicesData;
+            }
+
+            return this.servicesData.filter(item => String(item.status) === String(this.quickStatusFilter));
+        },
+        serviceOverviewCards() {
+            const pageCounts = this.servicesData.reduce((result, item) => {
+                const statusKey = Number(item.status) === 1 ? 'online' : 'offline';
+                const imageCount = this.getServiceImageCount(item);
+                const hasDescription = Boolean(String(item.description || '').trim());
+
+                result[statusKey] += 1;
+                if (imageCount === 0 || !hasDescription) {
+                    result.incomplete += 1;
+                }
+
+                return result;
+            }, {
+                online: 0,
+                offline: 0,
+                incomplete: 0
+            });
+
+            return [
+                {
+                    title: '当前分页',
+                    value: this.servicesData.length,
+                    desc: '本页已加载服务数',
+                    filterValue: ''
+                },
+                {
+                    title: '已上架',
+                    value: pageCounts.online,
+                    desc: '可直接在前台展示',
+                    filterValue: 1
+                },
+                {
+                    title: '已下架',
+                    value: pageCounts.offline,
+                    desc: '待人工确认后再上架',
+                    filterValue: 0
+                },
+                {
+                    title: '待补内容',
+                    value: pageCounts.incomplete,
+                    desc: '缺图片或缺简介',
+                    filterValue: ''
+                }
+            ];
+        },
+        serviceFocusTitle() {
+            const incompleteCount = this.servicesData.filter(item => this.getServiceHealth(item) !== '可直接投放').length;
+            if (this.quickStatusFilter === 0) {
+                return '当前正在查看下架服务';
+            }
+
+            if (this.quickStatusFilter === 1) {
+                return '当前正在查看已上架服务';
+            }
+
+            if (incompleteCount > 0) {
+                return `本页有 ${incompleteCount} 项服务建议补充内容`;
+            }
+
+            return '本页服务内容完整度表现稳定';
+        },
+        serviceFocusText() {
+            if (this.quickStatusFilter === 0) {
+                return '建议优先检查价格、简介和图片是否齐全，再决定是否恢复上架。';
+            }
+
+            if (this.quickStatusFilter === 1) {
+                return '可以重点巡检已上架服务的图片和简介，避免前台展示信息不足。';
+            }
+
+            return '先处理缺图、缺简介的服务，再回看下架服务，能更快改善前台转化体验。';
+        },
+        serviceFocusFilter() {
+            return this.quickStatusFilter === 0 ? '' : 0;
+        }
     },
     methods: {
         // 获取服务列表
@@ -624,8 +709,13 @@ Vue.component('services', {
         resetFilters() {
             this.searchText = '';
             this.categoryId = '';
+            this.quickStatusFilter = '';
             this.currentPage = 1;
             this.getServices();
+        },
+
+        applyQuickStatusFilter(status = '') {
+            this.quickStatusFilter = status;
         },
         
         // 显示添加弹窗
@@ -690,6 +780,70 @@ Vue.component('services', {
                 status: Number(row.status) || 0
             };
             this.editDialogVisible = true;
+        },
+
+        getServiceImageCount(row) {
+            return parseImageUrlText(stringifyImageUrls(row.image_urls)).length;
+        },
+
+        getServiceHealth(row) {
+            const imageCount = this.getServiceImageCount(row);
+            const hasDescription = Boolean(String(row.description || '').trim());
+
+            if (!hasDescription && imageCount === 0) {
+                return '待补图文';
+            }
+
+            if (!hasDescription) {
+                return '待补简介';
+            }
+
+            if (imageCount === 0) {
+                return '待补图片';
+            }
+
+            return '可直接投放';
+        },
+
+        getServiceHealthType(row) {
+            const healthText = this.getServiceHealth(row);
+            const typeMap = {
+                '待补图文': 'danger',
+                '待补简介': 'warning',
+                '待补图片': 'warning',
+                '可直接投放': 'success'
+            };
+
+            return typeMap[healthText] || 'info';
+        },
+
+        toggleServiceStatus(row, nextStatus) {
+            const payload = {
+                title: row.title,
+                category_id: row.category_id,
+                price: row.price,
+                duration: row.duration,
+                description: row.description,
+                status: nextStatus,
+                image_urls: parseImageUrlText(stringifyImageUrls(row.image_urls))
+            };
+
+            this.submitting = true;
+            axios.put(`/admin/service/services/${row.id}`, payload)
+                .then(response => {
+                    if (response.data.code === 200) {
+                        row.status = nextStatus;
+                        showActionSuccess(this, `服务已${nextStatus === 1 ? '上架' : '下架'}`);
+                    } else {
+                        this.$message.error(response.data.message || '服务状态更新失败');
+                    }
+                })
+                .catch(error => {
+                    showActionError(this, error, '服务状态更新失败，请稍后重试');
+                })
+                .finally(() => {
+                    this.submitting = false;
+                });
         },
         
         // 更新服务
