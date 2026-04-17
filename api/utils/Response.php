@@ -40,11 +40,11 @@ class Response {
         if ($method == 'GET') {
             $params = $_GET;
         } else if ($method == 'POST' || $method == 'PUT' || $method == 'DELETE') {
+            $rawData = isset($GLOBALS['__RAW_REQUEST_BODY__']) ? $GLOBALS['__RAW_REQUEST_BODY__'] : file_get_contents('php://input');
             if (isset($_SERVER['CONTENT_TYPE']) && strpos($_SERVER['CONTENT_TYPE'], 'application/json') !== false) {
-                $rawData = file_get_contents('php://input');
                 $params = json_decode($rawData, true);
             } else {
-                parse_str(file_get_contents('php://input'), $params);
+                parse_str($rawData, $params);
             }
         }
 
@@ -61,35 +61,60 @@ class Response {
         return $params;
     }
 
-    // 获取用户ID或管理员ID（从token中解析）
-    public static function getUserId() {
-        // 获取所有请求头信息
-        $headers = getallheaders();
+    // 获取规范化后的请求头
+    public static function getRequestHeaders() {
+        $headers = function_exists('getallheaders') ? getallheaders() : [];
+        $normalized = [];
 
-        // 检查Authorization头是否存在
-        if (!isset($headers['Authorization'])) {
+        foreach ($headers as $key => $value) {
+            $normalized[strtolower($key)] = $value;
+        }
+
+        return $normalized;
+    }
+
+    // 获取Authorization头
+    public static function getAuthorizationHeader() {
+        $headers = self::getRequestHeaders();
+
+        return $headers['authorization'] ?? '';
+    }
+
+    // 获取认证载荷
+    public static function getAuthPayload($requiredType = null) {
+        $token = self::getAuthorizationHeader();
+
+        if (empty($token)) {
             Debug::log('JWT token not found in request headers');
             return null;
         }
 
-        $token = $headers['Authorization'];
+        if (strpos($token, 'Bearer ') === 0) {
+            $token = substr($token, 7);
+        }
 
-        if (empty($token)) {
-            Debug::log('Authorization header is empty');
+        $payload = JWT::decode($token);
+        if (!$payload) {
+            Debug::log('Failed to decode JWT token');
             return null;
         }
 
-        // 去除Bearer前缀
-        if (strpos($token, 'Bearer ') === 0) {
-            $token = substr($token, 7);
-        } else {
-            Debug::log('Authorization header does not contain Bearer prefix');
+        if ($requiredType === 'user' && !isset($payload['user_id'])) {
+            Debug::log('JWT payload does not contain user_id');
+            return null;
         }
 
-        // 记录尝试解析的token（部分内容）
-        Debug::log('Attempting to decode token: ' . substr($token, 0, 20) . '...');
+        if ($requiredType === 'admin' && !isset($payload['admin_id'])) {
+            Debug::log('JWT payload does not contain admin_id');
+            return null;
+        }
 
-        $payload = JWT::decode($token);
+        return $payload;
+    }
+
+    // 获取用户ID或管理员ID（从token中解析）
+    public static function getUserId() {
+        $payload = self::getAuthPayload();
 
         // 优先检查user_id字段（普通用户）
         if ($payload && isset($payload['user_id'])) {
@@ -122,5 +147,25 @@ class Response {
             self::error('请先登录', 401);
         }
         return $userId;
+    }
+
+    // 验证普通用户Token
+    public static function verifyUserToken() {
+        $payload = self::getAuthPayload('user');
+        if (!$payload || !isset($payload['user_id'])) {
+            self::error('请先登录', 401);
+        }
+
+        return intval($payload['user_id']);
+    }
+
+    // 验证管理员Token
+    public static function verifyAdminToken() {
+        $payload = self::getAuthPayload('admin');
+        if (!$payload || !isset($payload['admin_id'])) {
+            self::error('请先登录', 401);
+        }
+
+        return intval($payload['admin_id']);
     }
 }

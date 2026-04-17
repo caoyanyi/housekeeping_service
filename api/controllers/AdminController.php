@@ -47,27 +47,11 @@ class AdminController {
     
     // 获取管理员信息
     public function getAdminInfo($id = null) {
-        $headers = getallheaders();
-        $token = isset($headers['Authorization']) ? $headers['Authorization'] : '';
-        
-        if (empty($token)) {
-            Response::error('请先登录', 401);
-        }
-        
-        // 去除Bearer前缀
-        if (strpos($token, 'Bearer ') === 0) {
-            $token = substr($token, 7);
-        }
-        
-        $payload = JWT::decode($token);
-        
-        if (!$payload || !isset($payload['admin_id'])) {
-            Response::error('无效的token', 401);
-        }
+        $adminId = Response::verifyAdminToken();
         
         // 如果没有传入id，则使用token中的admin_id
         if (empty($id)) {
-            $id = $payload['admin_id'];
+            $id = $adminId;
         }
         
         $adminInfo = $this->adminModel->getAdminInfo($id);
@@ -81,27 +65,11 @@ class AdminController {
     
     // 更新管理员信息
     public function updateAdminInfo($id = null) {
-        $headers = getallheaders();
-        $token = isset($headers['Authorization']) ? $headers['Authorization'] : '';
-        
-        if (empty($token)) {
-            Response::error('请先登录', 401);
-        }
-        
-        // 去除Bearer前缀
-        if (strpos($token, 'Bearer ') === 0) {
-            $token = substr($token, 7);
-        }
-        
-        $payload = JWT::decode($token);
-        
-        if (!$payload || !isset($payload['admin_id'])) {
-            Response::error('无效的token', 401);
-        }
+        $adminId = Response::verifyAdminToken();
         
         // 如果没有传入id，则使用token中的admin_id
         if (empty($id)) {
-            $id = $payload['admin_id'];
+            $id = $adminId;
         }
         
         $params = Response::getRequestParams();
@@ -125,25 +93,7 @@ class AdminController {
     
     // 修改密码
     public function changePassword() {
-        $headers = getallheaders();
-        $token = isset($headers['Authorization']) ? $headers['Authorization'] : '';
-        
-        if (empty($token)) {
-            Response::error('请先登录', 401);
-        }
-        
-        // 去除Bearer前缀
-        if (strpos($token, 'Bearer ') === 0) {
-            $token = substr($token, 7);
-        }
-        
-        $payload = JWT::decode($token);
-        
-        if (!$payload || !isset($payload['admin_id'])) {
-            Response::error('无效的token', 401);
-        }
-        
-        $adminId = $payload['admin_id'];
+        $adminId = Response::verifyAdminToken();
         $params = Response::getRequestParams();
         
         // 验证参数
@@ -160,30 +110,14 @@ class AdminController {
     
     // 获取管理员列表
     public function getAdminList() {
-        $headers = getallheaders();
-        $token = isset($headers['Authorization']) ? $headers['Authorization'] : '';
-        
-        if (empty($token)) {
-            Response::error('请先登录', 402);
-        }
-        
-        // 去除Bearer前缀
-        if (strpos($token, 'Bearer ') === 0) {
-            $token = substr($token, 7);
-        }
-        
-        $payload = JWT::decode($token);
-        
-        if (!$payload || !isset($payload['admin_id'])) {
-            Response::error('无效的token', 401);
-        }
+        Response::verifyAdminToken();
         
         $params = Response::getRequestParams();
         
         $role = isset($params['role']) ? $params['role'] : null;
         $status = isset($params['status']) ? $params['status'] : null;
         $page = isset($params['page']) ? intval($params['page']) : 1;
-        $pageSize = isset($params['page_size']) ? intval($params['page_size']) : 10;
+        $pageSize = isset($params['page_size']) ? intval($params['page_size']) : (isset($params['pageSize']) ? intval($params['pageSize']) : 10);
         
         $admins = $this->adminModel->getAllAdmins($role, $status, $page, $pageSize);
         
@@ -192,23 +126,7 @@ class AdminController {
     
     // 添加管理员
     public function addAdmin() {
-        $headers = getallheaders();
-        $token = isset($headers['Authorization']) ? $headers['Authorization'] : '';
-        
-        if (empty($token)) {
-            Response::error('请先登录', 401);
-        }
-        
-        // 去除Bearer前缀
-        if (strpos($token, 'Bearer ') === 0) {
-            $token = substr($token, 7);
-        }
-        
-        $payload = JWT::decode($token);
-        
-        if (!$payload || !isset($payload['admin_id'])) {
-            Response::error('无效的token', 401);
-        }
+        Response::verifyAdminToken();
         
         $params = Response::getRequestParams();
         
@@ -235,23 +153,7 @@ class AdminController {
     
     // 删除管理员
     public function deleteAdmin($id = null) {
-        $headers = getallheaders();
-        $token = isset($headers['Authorization']) ? $headers['Authorization'] : '';
-        
-        if (empty($token)) {
-            Response::error('请先登录', 401);
-        }
-        
-        // 去除Bearer前缀
-        if (strpos($token, 'Bearer ') === 0) {
-            $token = substr($token, 7);
-        }
-        
-        $payload = JWT::decode($token);
-        
-        if (!$payload || !isset($payload['admin_id'])) {
-            Response::error('无效的token', 401);
-        }
+        Response::verifyAdminToken();
         
         if (empty($id)) {
             // 兼容旧的调用方式
@@ -272,23 +174,7 @@ class AdminController {
     
     // 获取仪表盘数据
     public function getDashboardData() {
-        $headers = getallheaders();
-        $token = isset($headers['Authorization']) ? $headers['Authorization'] : '';
-        
-        if (empty($token)) {
-            Response::error('请先登录', 401);
-        }
-        
-        // 去除Bearer前缀
-        if (strpos($token, 'Bearer ') === 0) {
-            $token = substr($token, 7);
-        }
-        
-        $payload = JWT::decode($token);
-        
-        if (!$payload || !isset($payload['admin_id'])) {
-            Response::error('无效的token', 401);
-        }
+        Response::verifyAdminToken();
         
         // 加载所需模型
         require_once PROJECT_ROOT . '/models/User.php';
@@ -311,29 +197,6 @@ class AdminController {
         
         // 获取最近预约记录
         $recentAppointments = $appointmentModel->getRecentAppointments(10);
-        
-        // 格式化状态显示
-        foreach ($recentAppointments as &$appointment) {
-            switch ($appointment['status']) {
-                case 1:
-                    $appointment['status'] = '待确认';
-                    break;
-                case 2:
-                    $appointment['status'] = '已接受';
-                    break;
-                case 3:
-                    $appointment['status'] = '已完成';
-                    break;
-                case 4:
-                    $appointment['status'] = '已取消';
-                    break;
-                case 5:
-                    $appointment['status'] = '已拒绝';
-                    break;
-                default:
-                    $appointment['status'] = '未知';
-            }
-        }
         
         Response::success([
             'statistics' => $statistics,

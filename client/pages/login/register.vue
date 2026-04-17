@@ -24,6 +24,7 @@
 import API_CONFIG from '../../config/api.config';
 // 引入路由配置
 import ROUTER_CONFIG from '../../config/router.config';
+import { isValidPhone } from '../../utils/view-models';
 
 export default {
     name: 'user-register',
@@ -37,7 +38,7 @@ export default {
     methods: {
         register() {
             // 验证手机号码
-            if(!this.phone || !/^1[3-9]\d{9}$/.test(this.phone)) {
+            if(!isValidPhone(this.phone)) {
                 uni.showToast({
                     title: '请输入正确的手机号码',
                     icon: 'none'
@@ -76,10 +77,10 @@ export default {
                         icon: 'success'
                     });
 
-                    // 跳转到首页
+                    // 注册后直接进入首页
                     setTimeout(() => {
-                        ROUTER_CONFIG.navigate.switchTab(ROUTER_CONFIG.pages.login);
-                    }, 1500);
+                        ROUTER_CONFIG.navigate.switchTab(ROUTER_CONFIG.pages.index);
+                    }, 600);
                 } else {
                     uni.showToast({
                         title: res.message || '注册失败',

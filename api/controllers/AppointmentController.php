@@ -1,24 +1,41 @@
 <?php
 // 预约控制器
 require_once PROJECT_ROOT . '/models/Appointment.php';
+require_once PROJECT_ROOT . '/models/Service.php';
 require_once PROJECT_ROOT . '/utils/Response.php';
 require_once PROJECT_ROOT . '/utils/Mailer.php';
 
 class AppointmentController {
     private $appointmentModel;
+    private $serviceModel;
     
     public function __construct() {
         $this->appointmentModel = new Appointment();
+        $this->serviceModel = new Service();
     }
     
     // 创建预约
     public function createAppointment() {
-        $userId = Response::verifyToken();
+        $userId = Response::verifyUserToken();
         $params = Response::getRequestParams();
         
         // 验证参数
         if (empty($params['service_id']) || empty($params['appointment_date']) || empty($params['appointment_time']) || empty($params['contact_name']) || empty($params['contact_phone']) || empty($params['address'])) {
             Response::error('服务、预约日期、时间、联系人、电话和地址不能为空');
+        }
+
+        if (!preg_match('/^1[3-9]\d{9}$/', $params['contact_phone'])) {
+            Response::error('联系电话格式不正确');
+        }
+
+        $service = $this->serviceModel->getServiceById($params['service_id']);
+        if (!$service || intval($service['status']) !== 1) {
+            Response::error('当前服务暂不可预约');
+        }
+
+        $appointmentDateTime = strtotime($params['appointment_date'] . ' ' . $params['appointment_time']);
+        if (!$appointmentDateTime || $appointmentDateTime < time()) {
+            Response::error('预约时间不能早于当前时间');
         }
         
         $appointmentId = $this->appointmentModel->createAppointment(
@@ -65,12 +82,12 @@ class AppointmentController {
     
     // 获取用户预约列表
     public function getUserAppointments() {
-        $userId = Response::verifyToken();
+        $userId = Response::verifyUserToken();
         $params = Response::getRequestParams();
         
         $status = isset($params['status']) ? $params['status'] : null;
         $page = isset($params['page']) ? intval($params['page']) : 1;
-        $pageSize = isset($params['page_size']) ? intval($params['page_size']) : 10;
+        $pageSize = isset($params['page_size']) ? intval($params['page_size']) : (isset($params['pageSize']) ? intval($params['pageSize']) : 10);
         
         $appointments = $this->appointmentModel->getUserAppointments($userId, $status, $page, $pageSize);
         $total = $this->appointmentModel->getTotalCount($userId, null, $status);
@@ -88,7 +105,10 @@ class AppointmentController {
     
     // 获取单个预约详情
     public function getAppointmentDetail($id = null) {
-        $userId = Response::verifyToken();
+        $payload = Response::getAuthPayload();
+        if (!$payload) {
+            Response::error('请先登录', 401);
+        }
         
         if (empty($id)) {
             // 兼容旧的调用方式
@@ -102,16 +122,23 @@ class AppointmentController {
         
         $appointment = $this->appointmentModel->getAppointmentById($id);
         
-        if ($appointment) {
-            Response::success($appointment);
-        } else {
+        if (!$appointment) {
             Response::error('预约不存在');
         }
+
+        $isAdmin = isset($payload['admin_id']);
+        $currentUserId = isset($payload['user_id']) ? intval($payload['user_id']) : 0;
+
+        if (!$isAdmin && intval($appointment['user_id']) !== $currentUserId) {
+            Response::error('无权查看该预约', 403);
+        }
+
+        Response::success($appointment);
     }
     
     // 用户取消预约
     public function cancelAppointment($id = null) {
-        $userId = Response::verifyToken();
+        $userId = Response::verifyUserToken();
         
         if (empty($id)) {
             // 兼容旧的调用方式
@@ -144,7 +171,7 @@ class AppointmentController {
     
     // 管理端：获取所有预约
     public function getAllAppointments() {
-        $userId = Response::verifyToken();
+        Response::verifyAdminToken();
         $params = Response::getRequestParams();
         
         $userIdFilter = isset($params['user_id']) ? $params['user_id'] : null;
@@ -153,7 +180,7 @@ class AppointmentController {
         $startDate = isset($params['start_date']) ? $params['start_date'] : null;
         $endDate = isset($params['end_date']) ? $params['end_date'] : null;
         $page = isset($params['page']) ? intval($params['page']) : 1;
-        $pageSize = isset($params['page_size']) ? intval($params['page_size']) : 10;
+        $pageSize = isset($params['page_size']) ? intval($params['page_size']) : (isset($params['pageSize']) ? intval($params['pageSize']) : 10);
         
         $appointments = $this->appointmentModel->getAllAppointments($userIdFilter, $search, $statusFilter, $startDate, $endDate, $page, $pageSize);
         $total = $this->appointmentModel->getTotalCount($userIdFilter, $search, $statusFilter, $startDate, $endDate);
@@ -171,7 +198,7 @@ class AppointmentController {
     
     // 管理端：更新预约状态
     public function updateAppointmentStatus($id = null) {
-        $userId = Response::verifyToken();
+        Response::verifyAdminToken();
         $params = Response::getRequestParams();
         
         if (empty($id)) {
@@ -181,6 +208,11 @@ class AppointmentController {
         
         if (empty($id) || empty($params['status'])) {
             Response::error('预约ID和状态不能为空');
+        }
+
+        $allowedStatus = ['pending', 'accepted', 'completed', 'cancelled', 'rejected'];
+        if (!in_array($params['status'], $allowedStatus, true)) {
+            Response::error('预约状态不合法');
         }
         
         if ($this->appointmentModel->updateAppointmentStatus($id, $params['status'])) {

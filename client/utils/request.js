@@ -29,7 +29,9 @@ function looksLikeOptions(payload) {
       !Array.isArray(payload) &&
       (Object.prototype.hasOwnProperty.call(payload, 'headers') ||
         Object.prototype.hasOwnProperty.call(payload, 'header') ||
-        Object.prototype.hasOwnProperty.call(payload, 'timeout'))
+        Object.prototype.hasOwnProperty.call(payload, 'timeout') ||
+        Object.prototype.hasOwnProperty.call(payload, 'showError') ||
+        Object.prototype.hasOwnProperty.call(payload, 'redirectOn401'))
   );
 }
 
@@ -39,64 +41,81 @@ const request = {
   http(options) {
     return new Promise((resolve, reject) => {
       const token = uni.getStorageSync('token');
+      const showError = options.showError !== false;
+      const redirectOn401 = options.redirectOn401 !== false;
+      const requestOptions = { ...options };
 
       // 构建完整URL
-      let { url } = options;
+      let { url } = requestOptions;
       if (url.indexOf('http') !== 0 && API_CONFIG.baseURL) {
         url = API_CONFIG.baseURL + url;
       }
 
       // 合并headers
-      const optionHeaders = normalizeHeaders(options);
+      const optionHeaders = normalizeHeaders(requestOptions);
       const headers = {
         'content-type': 'application/json',
-        Authorization: token ? `Bearer ${token}` : '',
         ...optionHeaders
       };
 
+      if (!headers.Authorization && token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      delete requestOptions.header;
+      delete requestOptions.headers;
+      delete requestOptions.showError;
+      delete requestOptions.redirectOn401;
+
       uni.request({
         url,
-        method: options.method || 'GET',
-        data: cleanData(options.data || {}),
+        method: requestOptions.method || 'GET',
+        data: cleanData(requestOptions.data || {}),
         header: headers,
-        timeout: 60000, // 设置超时时间为60秒
+        timeout: requestOptions.timeout || 60000,
         success: (res) => {
-          if (res.statusCode === 200) {
-            if (res.data.code === 200) {
+          const responseCode = Number(res.data?.code || res.statusCode);
+          const responseMessage = res.data?.message || '请求失败';
+
+          if (res.statusCode === 200 && responseCode === 200) {
               resolve(res.data);
-            } else {
-              // 统一错误处理
-              uni.showToast({
-                title: res.data.message || '请求失败',
-                icon: 'none'
-              });
-              reject(new Error(res.data.message || '请求失败'));
-            }
-          } else if (res.statusCode === 401) {
+              return;
+          }
+
+          if (res.statusCode === 401 || responseCode === 401) {
             // token过期或无效，跳转到登录页
             uni.removeStorageSync('token');
             uni.removeStorageSync('userInfo');
-            uni.showToast({
-              title: '请重新登录',
-              icon: 'none'
-            });
-            setTimeout(() => {
-              ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.login);
-            }, 1500);
+            if (showError) {
+              uni.showToast({
+                title: '请重新登录',
+                icon: 'none'
+              });
+            }
+            if (redirectOn401) {
+              setTimeout(() => {
+                ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.login);
+              }, 1500);
+            }
             reject(new Error('请重新登录'));
-          } else {
+            return;
+          }
+
+          if (showError) {
             uni.showToast({
-              title: res.data.message || '网络错误',
+              title: responseMessage || '网络错误',
               icon: 'none'
             });
-            reject(new Error(res.data.message || '网络错误'));
           }
+          reject(new Error(responseMessage || '网络错误'));
         },
         fail: (err) => {
-          uni.showToast({
-            title: '请求失败',
-            icon: 'none'
-          });
+          if (showError) {
+            uni.showToast({
+              title: '请求失败',
+              icon: 'none'
+            });
+          }
           reject(err);
         }
       });

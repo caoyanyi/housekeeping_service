@@ -13,12 +13,16 @@ class ServiceController {
     // 获取服务列表
     public function getServices() {
         $params = Response::getRequestParams();
+        $isAdminRequest = strpos($_SERVER['REQUEST_URI'], '/admin/') !== false;
+        if ($isAdminRequest) {
+            Response::verifyAdminToken();
+        }
         
         $categoryId = isset($params['category_id']) ? $params['category_id'] : null;
         $search = isset($params['search']) ? $params['search'] : '';
-        $status = isset($params['status']) ? $params['status'] : 1;
+        $status = isset($params['status']) ? $params['status'] : ($isAdminRequest ? null : 1);
         $page = isset($params['page']) ? intval($params['page']) : 1;
-        $pageSize = isset($params['page_size']) ? intval($params['page_size']) : 10;
+        $pageSize = isset($params['page_size']) ? intval($params['page_size']) : (isset($params['pageSize']) ? intval($params['pageSize']) : 10);
         
         $services = $this->serviceModel->getServices($categoryId, $search, $status, $page, $pageSize);
         $total = $this->serviceModel->getTotalCount($categoryId, $search, $status);
@@ -36,6 +40,11 @@ class ServiceController {
     
     // 获取服务详情
     public function getServiceDetail($id = null) {
+        $isAdminRequest = strpos($_SERVER['REQUEST_URI'], '/admin/') !== false;
+        if ($isAdminRequest) {
+            Response::verifyAdminToken();
+        }
+
         if (empty($id)) {
             // 兼容旧的调用方式
             $params = Response::getRequestParams();
@@ -48,16 +57,21 @@ class ServiceController {
         
         $service = $this->serviceModel->getServiceById($id);
         
-        if ($service) {
-            Response::success($service);
-        } else {
+        if (!$service) {
             Response::error('服务不存在');
         }
+
+        $isAdmin = $isAdminRequest || Response::getAuthPayload('admin');
+        if (!$isAdmin && intval($service['status']) !== 1) {
+            Response::error('服务不存在');
+        }
+
+        Response::success($service);
     }
     
     // 管理端：添加服务
     public function addService() {
-        $userId = Response::verifyToken();
+        Response::verifyAdminToken();
         $params = Response::getRequestParams();
         
         // 验证参数
@@ -84,7 +98,7 @@ class ServiceController {
     
     // 管理端：更新服务
     public function updateService($id = null) {
-        $userId = Response::verifyToken();
+        Response::verifyAdminToken();
         $params = Response::getRequestParams();
         
         if (empty($id)) {
@@ -115,7 +129,7 @@ class ServiceController {
     
     // 管理端：删除服务
     public function deleteService($id = null) {
-        $userId = Response::verifyToken();
+        Response::verifyAdminToken();
         
         if (empty($id)) {
             // 兼容旧的调用方式

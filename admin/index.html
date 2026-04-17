@@ -86,57 +86,103 @@
                     <div class="content">
                         <!-- 仪表盘 -->
                         <div v-if="activeMenu === 'dashboard'" class="dashboard">
-                        <div class="dashboard-cards">
-                            <div class="card">
-                                <div class="card-icon bg-blue">
-                                    <i class="fa fa-users"></i>
+                            <section class="dashboard-hero">
+                                <div class="dashboard-hero-main">
+                                    <div class="dashboard-eyebrow">{{ dashboardGreeting }}，{{ adminInfo.nickname || adminInfo.username || '管理员' }}</div>
+                                    <h2 class="dashboard-title">{{ dashboardHeadline }}</h2>
+                                    <p class="dashboard-subtitle">{{ dashboardSubtext }}</p>
+                                    <div class="dashboard-hero-meta">
+                                        <span class="hero-meta-pill">待接单 {{ pendingAppointmentsCount }}</span>
+                                        <span class="hero-meta-pill">已接单 {{ acceptedAppointmentsCount }}</span>
+                                        <span class="hero-meta-pill">已完成 {{ completedAppointmentsCount }}</span>
+                                    </div>
                                 </div>
-                                <div class="card-content">
-                                    <div class="card-title">用户总数</div>
-                                    <div class="card-value">{{ statistics.users }}</div>
+                                <div class="dashboard-hero-actions">
+                                    <el-button type="primary" size="small" @click="refreshDashboard">刷新数据</el-button>
+                                    <el-button size="small" @click="jumpToMenu('appointments')">处理预约</el-button>
+                                    <el-button size="small" @click="jumpToMenu('services')">维护服务</el-button>
+                                </div>
+                            </section>
+
+                            <div class="dashboard-cards">
+                                <div v-for="card in dashboardCards" :key="card.title" class="card">
+                                    <div class="card-icon" :class="card.iconClass">
+                                        <i :class="card.icon"></i>
+                                    </div>
+                                    <div class="card-content">
+                                        <div class="card-title">{{ card.title }}</div>
+                                        <div class="card-value">{{ card.value }}</div>
+                                        <div class="card-note">{{ card.note }}</div>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="card">
-                                <div class="card-icon bg-green">
-                                    <i class="fa fa-cogs"></i>
-                                </div>
-                                <div class="card-content">
-                                    <div class="card-title">服务总数</div>
-                                    <div class="card-value">{{ statistics.services }}</div>
-                                </div>
+
+                            <div class="dashboard-grid">
+                                <section class="dashboard-panel">
+                                    <div class="panel-header">
+                                        <div>
+                                            <h3>待处理重点</h3>
+                                            <p>把最近有动作的预约优先拉到眼前，减少漏处理。</p>
+                                        </div>
+                                    </div>
+                                    <div class="focus-list">
+                                        <div v-for="item in dashboardFocusItems" :key="item.id" class="focus-item">
+                                            <div class="focus-main">
+                                                <div class="focus-title-row">
+                                                    <span class="focus-title">{{ item.title }}</span>
+                                                    <el-tag :type="item.statusType" size="mini">{{ item.status }}</el-tag>
+                                                </div>
+                                                <div class="focus-desc">{{ item.desc }}</div>
+                                            </div>
+                                            <el-button type="text" @click="jumpToMenu(item.menu)">{{ item.actionText }}</el-button>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <section class="dashboard-panel">
+                                    <div class="panel-header">
+                                        <div>
+                                            <h3>快捷入口</h3>
+                                            <p>把高频管理动作收在首屏，方便快速切换模块。</p>
+                                        </div>
+                                    </div>
+                                    <div class="quick-link-list">
+                                        <button
+                                            v-for="item in dashboardQuickLinks"
+                                            :key="item.menu"
+                                            class="quick-link-card"
+                                            @click="jumpToMenu(item.menu)"
+                                        >
+                                            <span class="quick-link-title">{{ item.title }}</span>
+                                            <span class="quick-link-desc">{{ item.desc }}</span>
+                                            <span class="quick-link-note">{{ item.note }}</span>
+                                        </button>
+                                    </div>
+                                </section>
                             </div>
-                            <div class="card">
-                                <div class="card-icon bg-purple">
-                                    <i class="fa fa-th-list"></i>
+
+                            <div class="recent-appointments">
+                                <div class="panel-header">
+                                    <div>
+                                        <h3>最近预约</h3>
+                                        <p>帮助运营快速扫描最新订单和状态变化。</p>
+                                    </div>
+                                    <el-button type="text" @click="jumpToMenu('appointments')">进入预约管理</el-button>
                                 </div>
-                                <div class="card-content">
-                                    <div class="card-title">分类总数</div>
-                                    <div class="card-value">{{ statistics.categories }}</div>
-                                </div>
-                            </div>
-                            <div class="card">
-                                <div class="card-icon bg-orange">
-                                    <i class="fa fa-calendar"></i>
-                                </div>
-                                <div class="card-content">
-                                    <div class="card-title">今日预约</div>
-                                    <div class="card-value">{{ statistics.todayAppointments }}</div>
-                                </div>
+                                <el-table :data="recentAppointments" style="width: 100%" empty-text="暂无最近预约">
+                                    <el-table-column prop="order_no" label="预约单号" width="100"></el-table-column>
+                                    <el-table-column prop="user_name" label="用户" width="120"></el-table-column>
+                                    <el-table-column prop="service_title" label="服务"></el-table-column>
+                                    <el-table-column prop="appointment_date" label="预约日期" width="120"></el-table-column>
+                                    <el-table-column prop="appointment_time" label="预约时间" width="110"></el-table-column>
+                                    <el-table-column prop="status" label="状态" width="110">
+                                        <template slot-scope="scope">
+                                            <el-tag :type="getStatusTagType(scope.row.status)" size="mini">{{ formatStatus(scope.row) }}</el-tag>
+                                        </template>
+                                    </el-table-column>
+                                </el-table>
                             </div>
                         </div>
-                        
-                        <div class="recent-appointments">
-                            <h2>最近预约</h2>
-                            <el-table :data="recentAppointments" style="width: 100%">
-                                <el-table-column prop="order_no" label="预约单号"></el-table-column>
-                                <el-table-column prop="user_name" label="用户"></el-table-column>
-                                <el-table-column prop="service_title" label="服务"></el-table-column>
-                                <el-table-column prop="appointment_date" label="预约日期"></el-table-column>
-                                <el-table-column prop="appointment_time" label="预约时间"></el-table-column>
-                                <el-table-column prop="status" label="状态" :formatter="formatStatus"></el-table-column>
-                            </el-table>
-                        </div>
-                    </div>
                         
                         <!-- 用户管理 -->
                         <users v-if="activeMenu === 'users'"></users>
@@ -185,10 +231,11 @@
                 <h2>用户管理</h2>
             </div>
             <div class="search-bar">
-                <el-input placeholder="请输入用户名或手机号搜索" v-model="searchText" style="width: 300px; margin-right: 10px"></el-input>
+                <el-input placeholder="请输入用户名或手机号搜索" v-model="searchText" clearable style="width: 300px; margin-right: 10px" @keyup.enter.native="searchUsers"></el-input>
                 <el-button type="primary" @click="searchUsers">搜索</el-button>
+                <el-button @click="resetSearch">重置</el-button>
             </div>
-            <el-table :data="usersData" style="width: 100%">
+            <el-table :data="usersData" stripe v-loading="loading" empty-text="暂无用户数据" style="width: 100%">
                 <el-table-column prop="id" label="ID" width="80"></el-table-column>
                 <el-table-column prop="nickname" label="用户名"></el-table-column>
                 <el-table-column prop="phone" label="手机号"></el-table-column>
@@ -224,15 +271,16 @@
                 <h2>分类管理</h2>
                 <el-button type="primary" @click="showAddDialog">添加分类</el-button>
             </div>
-            <el-table :data="categoriesData" style="width: 100%">
+            <el-table :data="categoriesData" stripe v-loading="loading" empty-text="暂无分类数据" style="width: 100%">
                 <el-table-column prop="id" label="ID" width="80"></el-table-column>
                 <el-table-column prop="name" label="分类名称"></el-table-column>
                 <el-table-column prop="icon" label="图标" width="100"></el-table-column>
                 <el-table-column prop="sort_order" label="排序" width="80"></el-table-column>
                 <el-table-column prop="status" label="状态" width="80">
                     <template slot-scope="scope">
-                        <span v-if="scope.row.status === 1" style="color: green">启用</span>
-                        <span v-else style="color: gray">禁用</span>
+                        <el-tag :type="Number(scope.row.status) === 1 ? 'success' : 'info'" size="mini">
+                            {{ Number(scope.row.status) === 1 ? '启用' : '禁用' }}
+                        </el-tag>
                     </template>
                 </el-table-column>
                 <el-table-column prop="created_at" label="创建时间" width="180"></el-table-column>
@@ -291,14 +339,15 @@
                 <el-button type="primary" @click="showAddDialog">添加服务</el-button>
             </div>
             <div class="search-bar">
-                <el-input placeholder="请输入服务名称搜索" v-model="searchText" style="width: 300px; margin-right: 10px"></el-input>
+                <el-input placeholder="请输入服务名称搜索" v-model="searchText" clearable style="width: 300px; margin-right: 10px" @keyup.enter.native="searchServices"></el-input>
                 <el-select v-model="categoryId" placeholder="选择分类" style="width: 150px; margin-right: 10px">
                     <el-option label="全部" value=""></el-option>
                     <el-option v-for="category in categories" :key="category.id" :label="category.name" :value="category.id"></el-option>
                 </el-select>
                 <el-button type="primary" @click="searchServices">搜索</el-button>
+                <el-button @click="resetFilters">重置</el-button>
             </div>
-            <el-table :data="servicesData" style="width: 100%">
+            <el-table :data="servicesData" stripe v-loading="loading" empty-text="暂无服务数据" style="width: 100%">
                 <el-table-column prop="id" label="ID" width="80"></el-table-column>
                 <el-table-column prop="title" label="服务标题"></el-table-column>
                 <el-table-column prop="category_name" label="分类" width="120"></el-table-column>
@@ -307,6 +356,13 @@
                 </el-table-column>
                 <el-table-column prop="duration" label="时长" width="100">
                     <template slot-scope="scope">{{ scope.row.duration }}分钟</template>
+                </el-table-column>
+                <el-table-column prop="status" label="状态" width="100">
+                    <template slot-scope="scope">
+                        <el-tag :type="Number(scope.row.status) === 1 ? 'success' : 'info'" size="mini">
+                            {{ Number(scope.row.status) === 1 ? '上架' : '下架' }}
+                        </el-tag>
+                    </template>
                 </el-table-column>
                 <el-table-column prop="created_at" label="创建时间" width="180"></el-table-column>
                 <el-table-column label="操作" width="150" fixed="right">
@@ -330,79 +386,73 @@
             
             <!-- 添加服务弹窗 -->
             <el-dialog title="添加服务" :visible.sync="addDialogVisible" width="800px">
-                <el-form :model="serviceForm" :rules="serviceRules" ref="serviceForm">
-                    <el-form-item prop="title">
+                <el-form :model="serviceForm" :rules="serviceRules" ref="serviceForm" label-width="90px">
+                    <el-form-item prop="title" label="服务标题">
                         <el-input v-model="serviceForm.title" placeholder="请输入服务标题"></el-input>
                     </el-form-item>
-                    <el-form-item prop="category_id">
+                    <el-form-item prop="category_id" label="分类">
                         <el-select v-model="serviceForm.category_id" placeholder="选择分类">
                             <el-option v-for="category in categories" :key="category.id" :label="category.name" :value="category.id"></el-option>
                         </el-select>
                     </el-form-item>
-                    <el-form-item prop="price">
-                        <el-input type="number" v-model="serviceForm.price" placeholder="请输入服务价格"></el-input>
+                    <el-form-item prop="price" label="价格">
+                        <el-input type="number" v-model.number="serviceForm.price" placeholder="请输入服务价格"></el-input>
                     </el-form-item>
-                    <el-form-item prop="duration">
-                        <el-input type="number" v-model="serviceForm.duration" placeholder="请输入服务时长（分钟）"></el-input>
+                    <el-form-item prop="duration" label="时长">
+                        <el-input type="number" v-model.number="serviceForm.duration" placeholder="请输入服务时长（分钟）"></el-input>
                     </el-form-item>
-                    <el-form-item prop="description">
+                    <el-form-item prop="description" label="服务简介">
                         <el-input type="textarea" v-model="serviceForm.description" placeholder="请输入服务简介"></el-input>
                     </el-form-item>
-                    <el-form-item prop="content">
-                        <el-input type="textarea" v-model="serviceForm.content" placeholder="请输入服务详情"></el-input>
+                    <el-form-item prop="image_urls_text" label="图片地址">
+                        <el-input type="textarea" :rows="3" v-model="serviceForm.image_urls_text" placeholder="请输入图片 URL，支持换行或英文逗号分隔"></el-input>
                     </el-form-item>
-                    <el-form-item prop="provider">
-                        <el-input v-model="serviceForm.provider" placeholder="请输入服务人员"></el-input>
-                    </el-form-item>
-                    <el-form-item prop="image_urls">
-                        <el-upload
-                            class="upload-demo"
-                            action=""
-                            :on-change="handleImageChange"
-                            :on-remove="handleImageRemove"
-                            multiple
-                            :auto-upload="false">
-                            <el-button slot="trigger" type="primary">选择图片</el-button>
-                            <div slot="tip" class="el-upload__tip">支持多图片上传</div>
-                        </el-upload>
+                    <el-form-item prop="status" label="状态">
+                        <el-radio-group v-model="serviceForm.status">
+                            <el-radio :label="1">上架</el-radio>
+                            <el-radio :label="0">下架</el-radio>
+                        </el-radio-group>
                     </el-form-item>
                 </el-form>
                 <div slot="footer" class="dialog-footer">
                     <el-button @click="addDialogVisible = false">取消</el-button>
-                    <el-button type="primary" @click="addService">确定</el-button>
+                    <el-button type="primary" :loading="submitting" @click="addService">确定</el-button>
                 </div>
             </el-dialog>
             
             <!-- 编辑服务弹窗 -->
             <el-dialog title="编辑服务" :visible.sync="editDialogVisible" width="800px">
-                <el-form :model="editForm" :rules="serviceRules" ref="editForm">
-                    <el-form-item prop="title">
+                <el-form :model="editForm" :rules="serviceRules" ref="editForm" label-width="90px">
+                    <el-form-item prop="title" label="服务标题">
                         <el-input v-model="editForm.title" placeholder="请输入服务标题"></el-input>
                     </el-form-item>
-                    <el-form-item prop="category_id">
+                    <el-form-item prop="category_id" label="分类">
                         <el-select v-model="editForm.category_id" placeholder="选择分类">
                             <el-option v-for="category in categories" :key="category.id" :label="category.name" :value="category.id"></el-option>
                         </el-select>
                     </el-form-item>
-                    <el-form-item prop="price">
-                        <el-input type="number" v-model="editForm.price" placeholder="请输入服务价格"></el-input>
+                    <el-form-item prop="price" label="价格">
+                        <el-input type="number" v-model.number="editForm.price" placeholder="请输入服务价格"></el-input>
                     </el-form-item>
-                    <el-form-item prop="duration">
-                        <el-input type="number" v-model="editForm.duration" placeholder="请输入服务时长（分钟）"></el-input>
+                    <el-form-item prop="duration" label="时长">
+                        <el-input type="number" v-model.number="editForm.duration" placeholder="请输入服务时长（分钟）"></el-input>
                     </el-form-item>
-                    <el-form-item prop="description">
+                    <el-form-item prop="description" label="服务简介">
                         <el-input type="textarea" v-model="editForm.description" placeholder="请输入服务简介"></el-input>
                     </el-form-item>
-                    <el-form-item prop="content">
-                        <el-input type="textarea" v-model="editForm.content" placeholder="请输入服务详情"></el-input>
+                    <el-form-item prop="image_urls_text" label="图片地址">
+                        <el-input type="textarea" :rows="3" v-model="editForm.image_urls_text" placeholder="请输入图片 URL，支持换行或英文逗号分隔"></el-input>
                     </el-form-item>
-                    <el-form-item prop="provider">
-                        <el-input v-model="editForm.provider" placeholder="请输入服务人员"></el-input>
+                    <el-form-item prop="status" label="状态">
+                        <el-radio-group v-model="editForm.status">
+                            <el-radio :label="1">上架</el-radio>
+                            <el-radio :label="0">下架</el-radio>
+                        </el-radio-group>
                     </el-form-item>
                 </el-form>
                 <div slot="footer" class="dialog-footer">
                     <el-button @click="editDialogVisible = false">取消</el-button>
-                    <el-button type="primary" @click="updateService">确定</el-button>
+                    <el-button type="primary" :loading="submitting" @click="updateService">确定</el-button>
                 </div>
             </el-dialog>
         </div>
@@ -422,15 +472,20 @@
                 <el-date-picker v-model="appointmentStartDate" type="date" placeholder="选择预约开始日期" format="yyyy-MM-dd" value-format="yyyy-MM-dd" style="width: 150px; margin-right: 10px"></el-date-picker>
                 <el-date-picker v-model="appointmentEndDate" type="date" placeholder="选择预约结束日期" format="yyyy-MM-dd" value-format="yyyy-MM-dd" style="width: 150px; margin-right: 10px"></el-date-picker>
                 <el-button type="primary" @click="searchAppointments">搜索</el-button>
+                <el-button @click="resetFilters">重置</el-button>
             </div>
-            <el-table :data="appointmentsData" style="width: 100%">
+            <el-table :data="appointmentsData" stripe v-loading="loading" empty-text="暂无预约数据" style="width: 100%">
                 <el-table-column prop="id" label="ID" width="80"></el-table-column>
                 <el-table-column prop="user_name" label="用户" width="120"></el-table-column>
                 <el-table-column prop="user_phone" label="用户电话" width="120"></el-table-column>
                 <el-table-column prop="service_title" label="服务" width="150"></el-table-column>
                 <el-table-column prop="appointment_date" label="预约日期" width="120"></el-table-column>
                 <el-table-column prop="appointment_time" label="预约时间" width="100"></el-table-column>
-                <el-table-column prop="status" label="状态" width="100" :formatter="formatStatus"></el-table-column>
+                <el-table-column prop="status" label="状态" width="110">
+                    <template slot-scope="scope">
+                        <el-tag :type="getStatusTagType(scope.row.status)" size="mini">{{ formatStatus(scope.row) }}</el-tag>
+                    </template>
+                </el-table-column>
                 <el-table-column prop="created_at" label="创建时间" width="180"></el-table-column>
                 <el-table-column label="操作" width="150" fixed="right">
                     <template slot-scope="scope">
@@ -459,16 +514,13 @@
                     </el-form-item>
                     <el-form-item label="更新为" prop="status">
                         <el-select v-model="statusForm.status">
-                            <el-option label="已接单" value="accepted"></el-option>
-                            <el-option label="已取消" value="cancelled"></el-option>
-                            <el-option label="已完成" value="completed"></el-option>
-                            <el-option label="已拒绝" value="rejected"></el-option>
+                            <el-option v-for="item in availableStatusOptions" :key="item.value" :label="item.label" :value="item.value"></el-option>
                         </el-select>
                     </el-form-item>
                 </el-form>
                 <div slot="footer" class="dialog-footer">
                     <el-button @click="statusDialogVisible = false">取消</el-button>
-                    <el-button type="primary" @click="confirmUpdateStatus">确定</el-button>
+                    <el-button type="primary" :loading="submitting" @click="confirmUpdateStatus">确定</el-button>
                 </div>
             </el-dialog>
             
@@ -477,7 +529,7 @@
                 <div v-if="currentAppointment">
                     <div class="detail-item">
                         <span class="detail-label">订单号：</span>
-                        <span class="detail-value">{{ currentAppointment.order_no }}</span>
+                        <span class="detail-value">{{ currentAppointment.id }}</span>
                     </div>
                     <div class="detail-item">
                         <span class="detail-label">用户：</span>
@@ -500,12 +552,16 @@
                         <span class="detail-value">{{ currentAppointment.address }}</span>
                     </div>
                     <div class="detail-item">
-                        <span class="detail-label">联系电话：</span>
-                        <span class="detail-value">{{ currentAppointment.phone }}</span>
+                        <span class="detail-label">联系人：</span>
+                        <span class="detail-value">{{ currentAppointment.contact_name }}</span>
                     </div>
-                    <div class="detail-item" v-if="currentAppointment.note">
+                    <div class="detail-item">
+                        <span class="detail-label">联系电话：</span>
+                        <span class="detail-value">{{ currentAppointment.contact_phone }}</span>
+                    </div>
+                    <div class="detail-item" v-if="currentAppointment.notes">
                         <span class="detail-label">备注信息：</span>
-                        <span class="detail-value">{{ currentAppointment.note }}</span>
+                        <span class="detail-value">{{ currentAppointment.notes }}</span>
                     </div>
                     <div class="detail-item">
                         <span class="detail-label">状态：</span>
@@ -530,9 +586,23 @@
                 <h2>管理员管理</h2>
                 <el-button type="primary" @click="showAddDialog">添加管理员</el-button>
             </div>
-            <el-table :data="adminsData" style="width: 100%">
+            <el-table :data="adminsData" stripe v-loading="loading" empty-text="暂无管理员数据" style="width: 100%">
                 <el-table-column prop="id" label="ID" width="80"></el-table-column>
                 <el-table-column prop="username" label="用户名"></el-table-column>
+                <el-table-column prop="role" label="角色" width="100">
+                    <template slot-scope="scope">
+                        <el-tag :type="Number(scope.row.role) === 2 ? 'danger' : 'info'" size="mini">
+                            {{ Number(scope.row.role) === 2 ? '超级管理员' : '普通管理员' }}
+                        </el-tag>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="status" label="状态" width="100">
+                    <template slot-scope="scope">
+                        <el-tag :type="Number(scope.row.status) === 1 ? 'success' : 'info'" size="mini">
+                            {{ Number(scope.row.status) === 1 ? '正常' : '禁用' }}
+                        </el-tag>
+                    </template>
+                </el-table-column>
                 <el-table-column prop="created_at" label="创建时间" width="180"></el-table-column>
                 <el-table-column label="操作" width="150" fixed="right">
                     <template slot-scope="scope">
@@ -544,33 +614,57 @@
             
             <!-- 添加管理员弹窗 -->
             <el-dialog title="添加管理员" :visible.sync="addDialogVisible" width="500px">
-                <el-form :model="adminForm" :rules="adminRules" ref="adminForm">
-                    <el-form-item prop="username">
+                <el-form :model="adminForm" :rules="adminRules" ref="adminForm" label-width="90px">
+                    <el-form-item prop="username" label="用户名">
                         <el-input v-model="adminForm.username" placeholder="请输入用户名"></el-input>
                     </el-form-item>
-                    <el-form-item prop="password">
+                    <el-form-item prop="password" label="密码">
                         <el-input type="password" v-model="adminForm.password" placeholder="请输入密码"></el-input>
+                    </el-form-item>
+                    <el-form-item prop="role" label="角色">
+                        <el-radio-group v-model="adminForm.role">
+                            <el-radio :label="1">普通管理员</el-radio>
+                            <el-radio :label="2">超级管理员</el-radio>
+                        </el-radio-group>
+                    </el-form-item>
+                    <el-form-item prop="status" label="状态">
+                        <el-radio-group v-model="adminForm.status">
+                            <el-radio :label="1">正常</el-radio>
+                            <el-radio :label="0">禁用</el-radio>
+                        </el-radio-group>
                     </el-form-item>
                 </el-form>
                 <div slot="footer" class="dialog-footer">
                     <el-button @click="addDialogVisible = false">取消</el-button>
-                    <el-button type="primary" @click="addAdmin">确定</el-button>
+                    <el-button type="primary" :loading="submitting" @click="addAdmin">确定</el-button>
                 </div>
             </el-dialog>
             
             <!-- 编辑管理员弹窗 -->
             <el-dialog title="编辑管理员" :visible.sync="editDialogVisible" width="500px">
-                <el-form :model="editForm" :rules="editRules" ref="editForm">
-                    <el-form-item prop="username">
-                        <el-input v-model="editForm.username" placeholder="请输入用户名"></el-input>
+                <el-form :model="editForm" :rules="editRules" ref="editForm" label-width="90px">
+                    <el-form-item prop="username" label="用户名">
+                        <el-input v-model="editForm.username" disabled placeholder="用户名不可修改"></el-input>
                     </el-form-item>
-                    <el-form-item prop="password">
+                    <el-form-item prop="password" label="密码">
                         <el-input type="password" v-model="editForm.password" placeholder="请输入新密码（不修改请留空）"></el-input>
+                    </el-form-item>
+                    <el-form-item prop="role" label="角色">
+                        <el-radio-group v-model="editForm.role">
+                            <el-radio :label="1">普通管理员</el-radio>
+                            <el-radio :label="2">超级管理员</el-radio>
+                        </el-radio-group>
+                    </el-form-item>
+                    <el-form-item prop="status" label="状态">
+                        <el-radio-group v-model="editForm.status">
+                            <el-radio :label="1">正常</el-radio>
+                            <el-radio :label="0">禁用</el-radio>
+                        </el-radio-group>
                     </el-form-item>
                 </el-form>
                 <div slot="footer" class="dialog-footer">
                     <el-button @click="editDialogVisible = false">取消</el-button>
-                    <el-button type="primary" @click="updateAdmin">确定</el-button>
+                    <el-button type="primary" :loading="submitting" @click="updateAdmin">确定</el-button>
                 </div>
             </el-dialog>
         </div>
@@ -590,10 +684,11 @@
                     <el-option label="已拒绝" value="rejected"></el-option>
                 </el-select>
                 <el-button type="primary" @click="searchJobApplications" style="margin-left: 10px;">搜索</el-button>
+                <el-button @click="resetFilters" style="margin-left: 10px;">重置</el-button>
             </div>
             
             <div class="table-container">
-                <el-table :data="jobApplicationsData" stripe style="width: 100%">
+                <el-table :data="jobApplicationsData" stripe v-loading="loading" empty-text="暂无求职申请数据" style="width: 100%">
                     <el-table-column prop="id" label="ID" width="80"></el-table-column>
                     <el-table-column prop="name" label="姓名" width="120"></el-table-column>
                     <el-table-column prop="phone" label="电话" width="150"></el-table-column>
@@ -719,7 +814,7 @@
                 </el-form>
                 <div slot="footer" class="dialog-footer">
                     <el-button @click="editDialogVisible = false">取消</el-button>
-                    <el-button type="primary" @click="updateJobApplication">确定</el-button>
+                    <el-button type="primary" :loading="submitting" @click="updateJobApplication">确定</el-button>
                 </div>
             </el-dialog>
         </div>

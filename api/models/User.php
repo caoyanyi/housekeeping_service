@@ -68,13 +68,21 @@ class User {
     // 更新用户信息
     public function updateUserInfo($userId, $data) {
         $fields = [];
-        $params = [$userId];
+        $params = [];
+        $allowedFields = ['nickname', 'avatar', 'gender', 'address'];
+
         foreach ($data as $key => $value) {
-            if ($key != 'id' && $key != 'password') {
+            if (in_array($key, $allowedFields, true)) {
                 $fields[] = "$key = ?";
                 $params[] = $value;
             }
         }
+
+        if (empty($fields)) {
+            return false;
+        }
+
+        $params[] = $userId;
         
         $query = "UPDATE " . $this->table_name . " SET " . implode(', ', $fields) . " WHERE id = ?";
         
@@ -131,7 +139,7 @@ class User {
             $params[] = $searchParam;
             $params[] = $searchParam;
         }
-        if ($status) {
+        if ($status !== null && $status !== '') {
             $whereClause[] = "status = ?";
             $params[] = $status;
         }
@@ -163,7 +171,7 @@ class User {
             $params[] = $searchParam;
             $params[] = $searchParam;
         }
-        if ($status) {
+        if ($status !== null && $status !== '') {
             $whereClause[] = "status = ?";
             $params[] = $status;
         }

@@ -13,8 +13,12 @@ class CategoryController {
     // 获取分类列表
     public function getCategories() {
         $params = Response::getRequestParams();
-        
-        $status = isset($params['status']) ? $params['status'] : 1;
+
+        $isAdminRequest = strpos($_SERVER['REQUEST_URI'], '/admin/') !== false;
+        if ($isAdminRequest) {
+            Response::verifyAdminToken();
+        }
+        $status = isset($params['status']) ? $params['status'] : ($isAdminRequest ? null : 1);
         
         $categories = $this->categoryModel->getAllCategories($status);
         
@@ -23,6 +27,11 @@ class CategoryController {
     
     // 获取单个分类
     public function getCategoryDetail($id = null) {
+        $isAdminRequest = strpos($_SERVER['REQUEST_URI'], '/admin/') !== false;
+        if ($isAdminRequest) {
+            Response::verifyAdminToken();
+        }
+
         if (empty($id)) {
             // 兼容旧的调用方式
             $params = Response::getRequestParams();
@@ -44,7 +53,7 @@ class CategoryController {
     
     // 管理端：添加分类
     public function addCategory() {
-        $userId = Response::verifyToken();
+        Response::verifyAdminToken();
         $params = Response::getRequestParams();
         
         // 验证参数
@@ -68,7 +77,7 @@ class CategoryController {
     
     // 管理端：更新分类
     public function updateCategory($id = null) {
-        $userId = Response::verifyToken();
+        Response::verifyAdminToken();
         $params = Response::getRequestParams();
         
         if (empty($id)) {
@@ -95,7 +104,7 @@ class CategoryController {
     
     // 管理端：删除分类
     public function deleteCategory($id = null) {
-        $userId = Response::verifyToken();
+        Response::verifyAdminToken();
         
         if (empty($id)) {
             // 兼容旧的调用方式

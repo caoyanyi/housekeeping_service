@@ -32,7 +32,7 @@ class Service {
             $params[] = $searchValue;
         }
         
-        if ($status) {
+        if ($status !== null && $status !== '') {
             $where[] = "s.status = ?";
             $params[] = $status;
         }
@@ -146,7 +146,7 @@ class Service {
             $params[] = $searchValue;
         }
         
-        if ($status) {
+        if ($status !== null && $status !== '') {
             $where[] = "status = ?";
             $params[] = $status;
         }

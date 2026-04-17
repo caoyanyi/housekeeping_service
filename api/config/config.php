@@ -2,6 +2,13 @@
 // 项目根目录
 if(!defined('PROJECT_ROOT')) define('PROJECT_ROOT', dirname(__DIR__));
 
+if (!function_exists('config_env')) {
+    function config_env($key, $default = '') {
+        $value = getenv($key);
+        return ($value === false || $value === '') ? $default : $value;
+    }
+}
+
 // 调试模式配置
 define('DEBUG_MODE', true); // 设置为false关闭调试模式
 
@@ -12,17 +19,18 @@ define('DEBUG_DISPLAY_ERRORS', true); // 是否在浏览器显示错误信息
 define('DEBUG_LOG_ERRORS', true); // 是否将错误信息记录到日志文件
 
 // 数据库配置
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'housekeeping_service');
-define('DB_USER', 'root');
-define('DB_PASS', '123456');
+define('DB_HOST', config_env('DB_HOST', '10.6.0.1'));
+define('DB_PORT', intval(config_env('DB_PORT', '3306')));
+define('DB_NAME', config_env('DB_NAME', 'housekeeping_service'));
+define('DB_USER', config_env('DB_USER', 'root'));
+define('DB_PASS', config_env('DB_PASS', 'xiaoyi'));
 
 // JWT配置
 define('JWT_SECRET', 'your_jwt_secret_key_here');
 define('JWT_EXPIRE', 3600 * 24); // token有效期24小时
 
 // API基础URL
-define('API_URL', 'http://127.0.0.1:8080');
+define('API_URL', rtrim(config_env('API_URL', 'http://127.0.0.1:8080'), '/'));
 
 // 上传文件配置
 define('UPLOAD_PATH', PROJECT_ROOT . '/uploads/');

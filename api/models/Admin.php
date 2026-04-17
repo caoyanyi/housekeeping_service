@@ -55,13 +55,31 @@ class Admin {
     // 更新管理员信息
     public function updateAdminInfo($adminId, $data) {
         $fields = [];
-        $params = [$adminId];
+        $params = [];
+        $allowedFields = ['nickname', 'avatar', 'role', 'status', 'password'];
+
         foreach ($data as $key => $value) {
-            if ($key != 'id' && $key != 'password') {
+            if (!in_array($key, $allowedFields, true)) {
+                continue;
+            }
+
+            if ($key === 'password') {
+                if ($value === '') {
+                    continue;
+                }
+                $fields[] = "password = ?";
+                $params[] = password_hash($value, PASSWORD_DEFAULT);
+            } else {
                 $fields[] = "$key = ?";
                 $params[] = $value;
             }
         }
+
+        if (empty($fields)) {
+            return false;
+        }
+
+        $params[] = $adminId;
         
         $query = "UPDATE " . $this->table_name . " SET " . implode(', ', $fields) . " WHERE id = ?";
         
@@ -101,12 +119,12 @@ class Admin {
         $where = [];
         $params = [];
         
-        if ($role) {
+        if ($role !== null && $role !== '') {
             $where[] = "role = ?";
             $params[] = $role;
         }
         
-        if ($status) {
+        if ($status !== null && $status !== '') {
             $where[] = "status = ?";
             $params[] = $status;
         }

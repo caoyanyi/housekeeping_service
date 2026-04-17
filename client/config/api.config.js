@@ -1,7 +1,28 @@
+function resolveBaseURL() {
+  if (typeof window !== 'undefined' && window.__API_BASE_URL__) {
+    return window.__API_BASE_URL__;
+  }
+
+  try {
+    const storedBaseURL = uni.getStorageSync('apiBaseURL');
+    if (storedBaseURL) {
+      return storedBaseURL;
+    }
+  } catch (error) {
+    // Ignore storage lookup failures and continue with fallback resolution.
+  }
+
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return `${window.location.origin}/api`;
+  }
+
+  return 'https://api.jz.okrcn.com/api';
+}
+
 // API配置文件
 const API_CONFIG = {
   // API基础URL
-  baseURL: 'https://api.jz.okrcn.com/api',
+  baseURL: resolveBaseURL(),
 
   // 接口路径配置
   endpoints: {

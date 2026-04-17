@@ -15,7 +15,7 @@ class Category {
     public function getAllCategories($status = 1) {
         $query = "SELECT id, name, icon, sort_order, status, created_at, updated_at FROM " . $this->table_name;
         
-        if ($status) {
+        if ($status !== null && $status !== '') {
             $query .= " WHERE status = ?";
         }
         
@@ -23,7 +23,7 @@ class Category {
         
         $stmt = $this->conn->prepare($query);
         
-        if ($status) {
+        if ($status !== null && $status !== '') {
             $stmt->execute([$status]);
         } else {
             $stmt->execute();
@@ -81,13 +81,13 @@ class Category {
     public function getTotalCount($status = 1) {
         $query = "SELECT COUNT(*) as total FROM " . $this->table_name;
         
-        if ($status) {
+        if ($status !== null && $status !== '') {
             $query .= " WHERE status = ?";
         }
         
         $stmt = $this->conn->prepare($query);
         
-        if ($status) {
+        if ($status !== null && $status !== '') {
             $stmt->execute([$status]);
         } else {
             $stmt->execute();

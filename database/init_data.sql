@@ -2,9 +2,9 @@
 
 USE housekeeping_service;
 
--- 插入管理员数据（密码：admin123）
+-- 插入管理员数据（密码：123456）
 INSERT INTO admin (username, password, nickname, avatar, role, status)
-VALUES ('admin', '$2y$10$Qmz49Uc4eS5p3h7cUv9W0e8zL2B3t4y5u6i7o8p9a0s1d2f3g4h5j6k7l', '超级管理员', '', 2, 1);
+VALUES ('admin', '$2y$10$lT0/7/be4kn8ehyySakC5ONFkJieZbB2kDZ3TsICeTOUUpHXUXH4S', '超级管理员', '', 2, 1);
 
 -- 插入分类数据
 INSERT INTO categories (name, icon, sort_order, status)
@@ -27,8 +27,8 @@ VALUES
 -- 插入测试用户数据（密码：123456）
 INSERT INTO users (phone, password, nickname, avatar, gender, address, status)
 VALUES 
-('13800138001', '$2y$10$Qmz49Uc4eS5p3h7cUv9W0e8zL2B3t4y5u6i7o8p9a0s1d2f3g4h5j6k7l', '张三', '', 1, '北京市朝阳区建国路88号', 1),
-('13800138002', '$2y$10$Qmz49Uc4eS5p3h7cUv9W0e8zL2B3t4y5u6i7o8p9a0s1d2f3g4h5j6k7l', '李四', '', 2, '上海市浦东新区陆家嘴环路1000号', 1);
+('13800138001', '$2y$10$lT0/7/be4kn8ehyySakC5ONFkJieZbB2kDZ3TsICeTOUUpHXUXH4S', '张三', '', 1, '北京市朝阳区建国路88号', 1),
+('13800138002', '$2y$10$lT0/7/be4kn8ehyySakC5ONFkJieZbB2kDZ3TsICeTOUUpHXUXH4S', '李四', '', 2, '上海市浦东新区陆家嘴环路1000号', 1);
 
 -- 插入预约数据
 INSERT INTO appointments (user_id, service_id, appointment_date, appointment_time, contact_name, contact_phone, address, notes, status)

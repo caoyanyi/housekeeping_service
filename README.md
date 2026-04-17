@@ -1,181 +1,174 @@
 # 家政服务系统
 
-## 项目介绍
-这是一个完整的家政服务系统，包含用户端（基于uni-app）、管理端（基于Vue.js+Element UI）和后端API（基于PHP）。系统实现了用户注册登录、服务浏览、在线预约、个人中心管理等功能，以及管理员对用户、服务、分类、预约和系统管理员的全面管理。
+一个包含用户端、管理端和 PHP API 的家政服务项目，覆盖服务浏览、在线预约、个人资料维护、后台管理和求职报名等核心场景。
 
-## 系统架构
+## 项目结构
 
-### 目录结构
-```
-├── admin/             # 管理端应用
-│   ├── css/           # 样式文件
-│   ├── index.html     # 入口文件
-│   └── js/            # JavaScript文件
-├── api/               # 后端API
-│   ├── config/        # 配置文件
-│   ├── controllers/   # 控制器
-│   ├── index.php      # API入口
-│   ├── models/        # 数据模型
-│   ├── routes/        # 路由配置
-│   └── utils/         # 工具类
-├── client/            # 用户端应用（uni-app）
-│   ├── App.vue        # 应用根组件
-│   ├── common/        # 公共资源
-│   ├── pages/         # 页面组件
-│   └── pages.json     # 页面配置
-└── database/          # 数据库脚本
+```text
+.
+├── admin/      管理端，基于 Vue 2 + Element UI + Axios
+├── api/        后端接口，基于原生 PHP + PDO
+├── client/     用户端，基于 uni-app
+├── database/   数据结构和初始化脚本
+└── *.md        部署、邮件配置等说明文档
 ```
 
-## 环境要求
+## 当前能力
 
-### 服务器环境
-- PHP 7.0+（推荐7.4或更高版本）
-- MySQL 5.6+（推荐8.0）
-- Apache/Nginx 服务器
-- 支持SSL（可选，建议生产环境使用）
+### 用户端
+- 手机号注册、登录
+- 首页服务推荐与分类导航
+- 服务列表筛选与搜索
+- 服务详情查看与预约下单
+- 我的预约列表、详情、取消预约
+- 个人中心与账户设置
+- 家政从业者求职报名
 
-### 客户端环境
-- 微信开发者工具（用于小程序开发）
-- HBuilderX（用于uni-app开发）
-- 现代浏览器（Chrome/Firefox/Edge，用于管理端访问）
+### 管理端
+- 管理员登录与仪表盘
+- 用户管理
+- 分类管理
+- 服务管理
+- 预约管理
+- 求职申请管理
+- 管理员管理
 
-## 部署步骤
+### API
+- 用户、管理员 JWT 鉴权
+- 服务、分类、预约 REST 风格接口
+- 求职申请提交与后台管理
+- 可选邮件通知
 
-### 1. 准备数据库
+## 技术说明
 
-1. 创建数据库：
-```sql
-CREATE DATABASE `jiazheng` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
+### 后端
+- 语言：PHP 7.4+
+- 数据库：MySQL 5.7+ / 8.0
+- 依赖：`phpmailer/phpmailer`
+- 入口文件：[api/index.php](/data/github/housekeeping_service/api/index.php)
 
-2. 导入数据库结构：
+### 用户端
+- 框架：uni-app
+- 入口文件：[client/main.js](/data/github/housekeeping_service/client/main.js)
+- 接口配置：[client/config/api.config.js](/data/github/housekeeping_service/client/config/api.config.js)
+
+### 管理端
+- Vue 2 + Element UI
+- 入口文件：[admin/index.html](/data/github/housekeeping_service/admin/index.html)
+- 主逻辑：[admin/js/main.js](/data/github/housekeeping_service/admin/js/main.js)
+
+## 快速启动
+
+### 1. 安装 PHP 依赖
+
 ```bash
-mysql -u root -p jiazheng < database/structure.sql
-mysql -u root -p jiazheng < database/init_data.sql
+composer install
 ```
 
-### 2. 配置API服务
+### 2. 初始化数据库
 
-1. 编辑`api/config/config.php`文件，根据您的环境配置数据库连接信息和JWT密钥：
+```bash
+mysql -u root -p housekeeping_service < database/structure.sql
+mysql -u root -p housekeeping_service < database/init_data.sql
+```
+
+### 3. 修改后端配置
+
+编辑 [api/config/config.php](/data/github/housekeeping_service/api/config/config.php)：
+
 ```php
-// 数据库配置
-'db' => [
-    'host' => 'localhost',
-    'port' => 3306,
-    'username' => 'root',
-    'password' => 'your_password',
-    'database' => 'jiazheng',
-    'charset' => 'utf8mb4'
-],
+define('DB_HOST', '127.0.0.1');
+define('DB_PORT', 3306);
+define('DB_NAME', 'housekeeping_service');
+define('DB_USER', 'your_user');
+define('DB_PASS', 'your_password');
 
-// JWT配置
-'jwt' => [
-    'secret' => 'your_secret_key', // 建议使用随机生成的32位字符串
-    'expire' => 86400 // 令牌有效期（秒）
-]
+define('JWT_SECRET', 'replace_with_a_strong_secret');
+define('API_URL', 'https://your-domain.com/api');
 ```
 
-2. 配置Web服务器：
-   - Apache：确保启用了mod_rewrite模块，并设置了正确的DocumentRoot指向api目录
-   - Nginx：配置正确的root路径和rewrite规则
+生产环境建议同时调整：
 
-### 3. 部署管理端
+- `DEBUG_MODE` 改为 `false`
+- `DEBUG_DISPLAY_ERRORS` 改为 `false`
+- 配置真实邮件服务参数
 
-1. 将`admin`目录部署到Web服务器上
-2. 编辑`admin/js/main.js`中的API基础URL：
-```javascript
-// 设置API基础URL
-axios.defaults.baseURL = 'https://your-api-domain.com/api';
-```
+### 4. 启动访问
 
-### 4. 部署用户端（uni-app）
+- 管理端：部署 `admin/` 目录到 Web 服务器
+- API：将请求转发到 `api/index.php`
+- 用户端：用 HBuilderX 打开 `client/` 进行编译运行
 
-1. 使用HBuilderX打开`client`目录
-2. 在App.vue或全局配置文件中设置API基础URL
-3. 编译打包为微信小程序、H5或其他平台应用
+## API 地址配置
 
-## 配置文件说明
+为了减少部署时改代码的成本，用户端和管理端都支持动态 API 地址：
 
-### 后端API配置（api/config/config.php）
-包含数据库连接信息、JWT密钥、上传设置等系统核心配置。请根据您的实际环境进行修改，特别是数据库连接信息和JWT密钥。
+### 管理端
 
-### 管理端配置（admin/js/main.js）
-设置API请求的基础URL、请求拦截器和响应拦截器，用于处理身份验证和错误处理。
+默认取值顺序：
 
-### 用户端配置（client/config/api.config.js）
-配置API基础URL，必要时同步调整全局样式和路由配置。
+1. `window.__API_BASE_URL__`
+2. `localStorage.adminApiBaseURL`
+3. `当前域名 + /api`
 
-## 管理员账号
+### 用户端
 
-系统初始管理员账号：
-- 用户名：admin
-- 密码：123456
+默认取值顺序：
 
-**注意：首次登录后请立即修改密码！**
+1. `window.__API_BASE_URL__`
+2. `uni.getStorageSync('apiBaseURL')`
+3. H5 环境下 `当前域名 + /api`
+4. 最后的线上兜底地址
 
-## 系统功能
+## 主要接口
 
-### 用户端功能
-1. 用户注册/登录
-2. 浏览首页服务推荐
-3. 查看服务分类和服务列表
-4. 查看服务详情并预约
-5. 查看和管理我的预约
-6. 个人信息管理
+### 用户
+- `POST /api/user/register`
+- `POST /api/user/login`
+- `GET /api/user/profile`
+- `PUT /api/user/profile`
+- `PUT /api/user/change-password`
 
-### 管理端功能
-1. 用户管理（查看、搜索、禁用/启用）
-2. 分类管理（增删改查）
-3. 服务管理（增删改查、上下架）
-4. 预约管理（查看、搜索、处理状态）
-5. 管理员管理（增删改查、权限管理）
+### 服务与分类
+- `GET /api/category/categories`
+- `GET /api/service/services`
+- `GET /api/service/services/{id}`
 
-## API接口文档
+### 预约
+- `GET /api/appointment/appointments`
+- `POST /api/appointment/appointments`
+- `GET /api/appointment/appointments/{id}`
+- `DELETE /api/appointment/appointments/{id}`
 
-### 用户相关接口
-- POST /api/user/register - 用户注册
-- POST /api/user/login - 用户登录
-- GET /api/user/profile - 获取用户信息
-- PUT /api/user/profile - 更新用户信息
-- PUT /api/user/password - 修改密码
+### 管理端
+- `POST /api/admin/admin/login`
+- `GET /api/admin/admin/profile`
+- `GET /api/admin/admin/dashboard`
+- `GET /api/admin/user/users`
+- `GET /api/admin/category/categories`
+- `GET /api/admin/service/services`
+- `GET /api/admin/appointment/appointments`
+- `GET /api/admin/job/application/applications`
 
-### 服务相关接口
-- GET /api/service - 获取服务列表
-- GET /api/service/{id} - 获取服务详情
-- GET /api/category - 获取分类列表
+## 默认账号
 
-### 预约相关接口
-- POST /api/appointment - 创建预约
-- GET /api/appointment - 获取预约列表
-- GET /api/appointment/{id} - 获取预约详情
-- PUT /api/appointment/{id}/cancel - 取消预约
+初始化数据中通常包含管理员账号：
 
-### 管理员相关接口
-- POST /api/admin/login - 管理员登录
-- GET /api/admin - 获取管理员列表
-- POST /api/admin - 添加管理员
-- PUT /api/admin/{id} - 更新管理员
-- DELETE /api/admin/{id} - 删除管理员
+- 用户名：`admin`
+- 密码：`123456`
 
-## 使用说明
+首次部署后请立即修改密码。
 
-### 用户端使用
-1. 打开应用，注册或登录账号
-2. 在首页浏览推荐服务或通过分类查找服务
-3. 选择服务查看详情，点击预约按钮进行预约
-4. 在个人中心查看预约记录和管理个人信息
+## 最近已完成的优化
 
-### 管理端使用
-1. 打开管理端网址
-2. 使用管理员账号登录
-3. 在左侧菜单选择相应功能模块进行管理
-4. 根据页面提示进行操作
+- 补齐用户端、管理端的接口地址动态配置
+- 修正管理员和普通用户鉴权边界
+- 修复用户资料更新参数顺序错误
+- 增加预约详情越权校验和预约时间合法性校验
+- 优化用户端登录回跳、设置页和预约提交流程
+- 修复管理端获取管理员资料的错误接口调用
 
-## 注意事项
+## 说明
 
-1. 请确保数据库配置正确，否则系统无法正常连接数据库
-2. 生产环境请修改JWT密钥为强密钥，定期更换
-3. 建议使用HTTPS协议部署，保障数据传输安全
-4. 定期备份数据库，防止数据丢失
-5. 管理员账号请妥善保管，避免泄露
-6. 如遇问题，请检查服务器日志和API请求日志进行排查
+- 当前仓库不是基于完整前端工程化脚手架搭建的管理端项目，管理端以静态页面方式运行。
+- 如果继续扩展，优先建议补自动化测试、统一接口文档和上传能力。

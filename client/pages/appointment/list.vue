@@ -116,6 +116,11 @@ export default {
             return;
         }
 
+        const needRefresh = uni.getStorageSync('appointmentListNeedRefresh');
+        if (needRefresh) {
+            uni.removeStorageSync('appointmentListNeedRefresh');
+        }
+
         this.resetAndFetch();
     },
     onPullDownRefresh() {

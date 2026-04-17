@@ -110,7 +110,8 @@ export default {
                     this.selectedTime &&
                     this.contactName &&
                     this.phone &&
-                    this.address
+                    this.address &&
+                    !this.loading
             );
         },
         minDate() {
@@ -132,12 +133,16 @@ export default {
         this.token = uni.getStorageSync('token');
 
         if (!this.token) {
+            const redirect = ROUTER_CONFIG.navigate.buildUrl(
+                ROUTER_CONFIG.pages.appointment.create,
+                { serviceId: this.serviceId }
+            );
             uni.showModal({
                 title: '请先登录',
                 content: '登录后才能提交预约需求，是否现在去登录？',
                 success: ({ confirm }) => {
                     if (confirm) {
-                        ROUTER_CONFIG.navigate.replace(ROUTER_CONFIG.pages.login);
+                        ROUTER_CONFIG.navigate.replace(ROUTER_CONFIG.pages.login, { redirect });
                     } else {
                         ROUTER_CONFIG.navigate.back();
                     }
@@ -186,6 +191,7 @@ export default {
                     this.phone = user.phone || '';
                     this.contactName = user.nickname || '';
                     this.address = user.address || '';
+                    uni.setStorageSync('userInfo', user);
                 })
                 .catch(() => {});
         },
@@ -215,6 +221,15 @@ export default {
             if (!isValidPhone(this.phone)) {
                 uni.showToast({
                     title: '请输入正确的手机号',
+                    icon: 'none'
+                });
+                return;
+            }
+
+            const appointmentTimestamp = new Date(`${this.selectedDate} ${this.selectedTime}`).getTime();
+            if (!appointmentTimestamp || appointmentTimestamp <= Date.now()) {
+                uni.showToast({
+                    title: '请选择晚于当前时间的预约时段',
                     icon: 'none'
                 });
                 return;

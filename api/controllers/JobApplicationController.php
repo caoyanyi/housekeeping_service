@@ -76,18 +76,14 @@ class JobApplicationController {
     
     // 管理端获取求职申请列表
     public function getJobApplications() {
-        // 验证管理员身份
-        $adminId = Response::getUserId();
-        if (!$adminId) {
-            Response::error('未授权访问', 401);
-        }
+        Response::verifyAdminToken();
         
         $params = Response::getRequestParams();
         
         $search = isset($params['search']) ? $params['search'] : null;
         $status = isset($params['status']) ? $params['status'] : null;
         $page = isset($params['page']) ? intval($params['page']) : 1;
-        $pageSize = isset($params['pageSize']) ? intval($params['pageSize']) : 10;
+        $pageSize = isset($params['pageSize']) ? intval($params['pageSize']) : (isset($params['page_size']) ? intval($params['page_size']) : 10);
         
         $applications = $this->jobApplicationModel->getJobApplications($search, $status, $page, $pageSize);
         $total = $this->jobApplicationModel->getTotalCount($search, $status);
@@ -105,11 +101,7 @@ class JobApplicationController {
     
     // 管理端获取单个求职申请详情
     public function getJobApplicationDetail($id) {
-        // 验证管理员身份
-        $adminId = Response::getUserId();
-        if (!$adminId) {
-            Response::error('未授权访问', 401);
-        }
+        Response::verifyAdminToken();
         
         if (empty($id)) {
             Response::error('申请ID不能为空');
@@ -126,11 +118,7 @@ class JobApplicationController {
     
     // 管理端更新求职申请状态
     public function updateJobApplicationStatus($id) {
-        // 验证管理员身份
-        $adminId = Response::getUserId();
-        if (!$adminId) {
-            Response::error('未授权访问', 401);
-        }
+        Response::verifyAdminToken();
         
         $params = Response::getRequestParams();
         
@@ -156,11 +144,7 @@ class JobApplicationController {
     
     // 管理端更新求职申请信息
     public function updateJobApplication($id) {
-        // 验证管理员身份
-        $adminId = Response::getUserId();
-        if (!$adminId) {
-            Response::error('未授权访问', 401);
-        }
+        Response::verifyAdminToken();
         
         $params = Response::getRequestParams();
         
@@ -181,11 +165,7 @@ class JobApplicationController {
     
     // 管理端删除求职申请
     public function deleteJobApplication($id) {
-        // 验证管理员身份
-        $adminId = Response::getUserId();
-        if (!$adminId) {
-            Response::error('未授权访问', 401);
-        }
+        Response::verifyAdminToken();
         
         if (empty($id)) {
             Response::error('申请ID不能为空');

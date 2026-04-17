@@ -1,3 +1,29 @@
+function parseImageUrlText(text = '') {
+    return String(text)
+        .split(/\n|,/)
+        .map(item => item.trim())
+        .filter(Boolean);
+}
+
+function stringifyImageUrls(imageUrls) {
+    if (Array.isArray(imageUrls)) {
+        return imageUrls.filter(Boolean).join('\n');
+    }
+
+    if (typeof imageUrls === 'string') {
+        try {
+            const parsed = JSON.parse(imageUrls);
+            if (Array.isArray(parsed)) {
+                return parsed.filter(Boolean).join('\n');
+            }
+        } catch (error) {
+            return imageUrls;
+        }
+    }
+
+    return '';
+}
+
 // 注册求职管理组件
 Vue.component('job-applications', {
     template: '#job-applications-template',
@@ -9,6 +35,8 @@ Vue.component('job-applications', {
             currentPage: 1,
             pageSize: 10,
             total: 0,
+            loading: false,
+            submitting: false,
             viewDialogVisible: false,
             editDialogVisible: false,
             viewForm: {
@@ -57,6 +85,7 @@ Vue.component('job-applications', {
     methods: {
         // 获取求职申请列表
         getJobApplications() {
+            this.loading = true;
             axios.get('/admin/job/application/applications', {
                 params: {
                     page: this.currentPage,
@@ -74,11 +103,21 @@ Vue.component('job-applications', {
                 .catch(error => {
                     console.error('获取求职申请列表失败:', error);
                     this.$message.error('获取求职申请列表失败');
+                })
+                .finally(() => {
+                    this.loading = false;
                 });
         },
         
         // 搜索求职申请
         searchJobApplications() {
+            this.currentPage = 1;
+            this.getJobApplications();
+        },
+
+        resetFilters() {
+            this.searchText = '';
+            this.status = '';
             this.currentPage = 1;
             this.getJobApplications();
         },
@@ -121,6 +160,7 @@ Vue.component('job-applications', {
         updateJobApplication() {
             this.$refs.editForm.validate((valid) => {
                 if (valid) {
+                    this.submitting = true;
                     axios.put(`/admin/job/application/applications/${this.editForm.id}`, this.editForm)
                         .then(response => {
                             if (response.data.code === 200) {
@@ -134,6 +174,9 @@ Vue.component('job-applications', {
                         .catch(error => {
                             console.error('更新求职申请失败:', error);
                             this.$message.error('求职申请更新失败');
+                        })
+                        .finally(() => {
+                            this.submitting = false;
                         });
                 }
             });
@@ -167,6 +210,7 @@ Vue.component('job-applications', {
         // 处理分页大小变化
         handleSizeChange(size) {
             this.pageSize = size;
+            this.currentPage = 1;
             this.getJobApplications();
         },
         
@@ -217,7 +261,8 @@ Vue.component('users', {
             searchText: '',
             currentPage: 1,
             pageSize: 10,
-            total: 0
+            total: 0,
+            loading: false
         };
     },
     mounted() {
@@ -226,6 +271,7 @@ Vue.component('users', {
     methods: {
         // 获取用户列表
         getUsers() {
+            this.loading = true;
             axios.get('/admin/user/users', {
                 params: {
                     page: this.currentPage,
@@ -242,6 +288,9 @@ Vue.component('users', {
                 .catch(error => {
                     console.error('获取用户列表失败:', error);
                     this.$message.error('获取用户列表失败');
+                })
+                .finally(() => {
+                    this.loading = false;
                 });
         },
         
@@ -250,9 +299,16 @@ Vue.component('users', {
             this.currentPage = 1;
             this.getUsers();
         },
+
+        resetSearch() {
+            this.searchText = '';
+            this.currentPage = 1;
+            this.getUsers();
+        },
         
         // 切换用户状态
         toggleUserStatus(row) {
+            const previousStatus = row.status;
             // 根据router.php配置，更新用户状态应该直接使用资源ID路由
             axios.put(`/admin/user/users/${row.id}`, {
                 status: row.status ? 1 : 0
@@ -262,14 +318,14 @@ Vue.component('users', {
                         this.$message.success('状态更新成功');
                     } else {
                         // 恢复原状态
-                        row.status = !row.status;
+                        row.status = previousStatus;
                         this.$message.error(response.data.message || '状态更新失败');
                     }
                 })
                 .catch(error => {
                     console.error('更新用户状态失败:', error);
                     // 恢复原状态
-                    row.status = !row.status;
+                    row.status = previousStatus;
                     this.$message.error('状态更新失败');
                 });
         },
@@ -284,6 +340,7 @@ Vue.component('users', {
         // 处理分页大小变化
         handleSizeChange(size) {
             this.pageSize = size;
+            this.currentPage = 1;
             this.getUsers();
         },
         
@@ -301,6 +358,7 @@ Vue.component('categories', {
     data() {
                 return {
                     categoriesData: [],
+                    loading: false,
                     addDialogVisible: false,
                     editDialogVisible: false,
                     categoryForm: {
@@ -327,6 +385,7 @@ Vue.component('categories', {
     methods: {
         // 获取分类列表
         getCategories() {
+            this.loading = true;
             axios.get('/admin/category/categories')
                 .then(response => {
                     if (response.data.code === 200) {
@@ -341,6 +400,9 @@ Vue.component('categories', {
                     this.$message.error('获取分类列表失败');
                     // 出错时也确保categoriesData是一个数组
                     this.categoriesData = [];
+                })
+                .finally(() => {
+                    this.loading = false;
                 });
         },
         
@@ -348,7 +410,8 @@ Vue.component('categories', {
         showAddDialog() {
             this.categoryForm = {
                 name: '',
-                description: ''
+                icon: '',
+                sort_order: 0
             };
             this.addDialogVisible = true;
         },
@@ -396,7 +459,6 @@ Vue.component('categories', {
         // 更新分类
         updateCategory() {
             this.$refs.editForm.validate((valid) => {
-                console.log('editForm:', this.editForm);
                 if (valid) {
                     // 根据router.php配置，使用RESTful风格的PUT请求
                     axios.put(`/admin/category/categories/${this.editForm.id}`, this.editForm)
@@ -454,6 +516,8 @@ Vue.component('services', {
             categories: [],
             searchText: '',
             categoryId: '',
+            loading: false,
+            submitting: false,
             addDialogVisible: false,
             editDialogVisible: false,
             currentPage: 1,
@@ -465,9 +529,8 @@ Vue.component('services', {
                 price: '',
                 duration: '',
                 description: '',
-                content: '',
-                provider: '',
-                image_urls: []
+                image_urls_text: '',
+                status: 1
             },
             editForm: {
                 id: '',
@@ -476,8 +539,8 @@ Vue.component('services', {
                 price: '',
                 duration: '',
                 description: '',
-                content: '',
-                provider: ''
+                image_urls_text: '',
+                status: 1
             },
             serviceRules: {
                 title: [
@@ -504,6 +567,7 @@ Vue.component('services', {
     methods: {
         // 获取服务列表
         getServices() {
+            this.loading = true;
             axios.get('/admin/service/services', {
                 params: {
                     page: this.currentPage,
@@ -521,6 +585,9 @@ Vue.component('services', {
                 .catch(error => {
                     console.error('获取服务列表失败:', error);
                     this.$message.error('获取服务列表失败');
+                })
+                .finally(() => {
+                    this.loading = false;
                 });
         },
         
@@ -542,6 +609,13 @@ Vue.component('services', {
             this.currentPage = 1;
             this.getServices();
         },
+
+        resetFilters() {
+            this.searchText = '';
+            this.categoryId = '';
+            this.currentPage = 1;
+            this.getServices();
+        },
         
         // 显示添加弹窗
         showAddDialog() {
@@ -549,44 +623,30 @@ Vue.component('services', {
                 title: '',
                 category_id: '',
                 price: '',
-                duration: '',
+                duration: 60,
                 description: '',
-                content: '',
-                provider: '',
-                image_urls: []
+                image_urls_text: '',
+                status: 1
             };
             this.addDialogVisible = true;
-        },
-        
-        // 处理图片变化
-        handleImageChange(file, fileList) {
-            this.serviceForm.image_urls = fileList;
-        },
-        
-        // 处理图片移除
-        handleImageRemove(file, fileList) {
-            this.serviceForm.image_urls = fileList;
         },
         
         // 添加服务
         addService() {
             this.$refs.serviceForm.validate((valid) => {
                 if (valid) {
-                    // 模拟图片上传，实际项目中应该上传图片到服务器
-                    const formData = new FormData();
-                    Object.keys(this.serviceForm).forEach(key => {
-                        if (key === 'image_urls') {
-                            // 处理图片
-                            this.serviceForm.image_urls.forEach(file => {
-                                formData.append('image_urls[]', file.raw);
-                            });
-                        } else {
-                            formData.append(key, this.serviceForm[key]);
-                        }
-                    });
-                    
-                    // 由于是模拟环境，这里使用简化的请求
-                    axios.post('/admin/service/services', this.serviceForm)
+                    const payload = {
+                        title: this.serviceForm.title,
+                        category_id: this.serviceForm.category_id,
+                        price: this.serviceForm.price,
+                        duration: this.serviceForm.duration,
+                        description: this.serviceForm.description,
+                        status: this.serviceForm.status,
+                        image_urls: parseImageUrlText(this.serviceForm.image_urls_text)
+                    };
+
+                    this.submitting = true;
+                    axios.post('/admin/service/services', payload)
                         .then(response => {
                             if (response.data.code === 200) {
                                 this.$message.success('服务添加成功');
@@ -599,6 +659,9 @@ Vue.component('services', {
                         .catch(error => {
                             console.error('添加服务失败:', error);
                             this.$message.error('服务添加失败');
+                        })
+                        .finally(() => {
+                            this.submitting = false;
                         });
                 }
             });
@@ -613,8 +676,8 @@ Vue.component('services', {
                 price: row.price,
                 duration: row.duration,
                 description: row.description,
-                content: row.content,
-                provider: row.provider
+                image_urls_text: stringifyImageUrls(row.image_urls),
+                status: Number(row.status) || 0
             };
             this.editDialogVisible = true;
         },
@@ -623,7 +686,18 @@ Vue.component('services', {
         updateService() {
             this.$refs.editForm.validate((valid) => {
                 if (valid) {
-                    axios.put(`/admin/service/services/${this.editForm.id}`, this.editForm)
+                    const payload = {
+                        title: this.editForm.title,
+                        category_id: this.editForm.category_id,
+                        price: this.editForm.price,
+                        duration: this.editForm.duration,
+                        description: this.editForm.description,
+                        status: this.editForm.status,
+                        image_urls: parseImageUrlText(this.editForm.image_urls_text)
+                    };
+
+                    this.submitting = true;
+                    axios.put(`/admin/service/services/${this.editForm.id}`, payload)
                         .then(response => {
                             if (response.data.code === 200) {
                                 this.$message.success('服务更新成功');
@@ -636,6 +710,9 @@ Vue.component('services', {
                         .catch(error => {
                             console.error('更新服务失败:', error);
                             this.$message.error('服务更新失败');
+                        })
+                        .finally(() => {
+                            this.submitting = false;
                         });
                 }
             });
@@ -669,6 +746,7 @@ Vue.component('services', {
         // 处理分页大小变化
         handleSizeChange(size) {
             this.pageSize = size;
+            this.currentPage = 1;
             this.getServices();
         },
         
@@ -690,6 +768,8 @@ Vue.component('appointments', {
             status: '',
             appointmentStartDate: '',
             appointmentEndDate: '',
+            loading: false,
+            submitting: false,
             detailDialogVisible: false,
             statusDialogVisible: false,
             currentAppointment: null,
@@ -710,12 +790,30 @@ Vue.component('appointments', {
             }
         };
     },
+    computed: {
+        availableStatusOptions() {
+            const optionMap = {
+                pending: [
+                    { label: '已接单', value: 'accepted' },
+                    { label: '已取消', value: 'cancelled' },
+                    { label: '已拒绝', value: 'rejected' }
+                ],
+                accepted: [
+                    { label: '已完成', value: 'completed' },
+                    { label: '已取消', value: 'cancelled' }
+                ]
+            };
+
+            return optionMap[this.currentStatus] || [];
+        }
+    },
     mounted() {
         this.getAppointments();
     },
     methods: {
         // 获取预约列表
         getAppointments() {
+            this.loading = true;
             axios.get('/admin/appointment/appointments', {
                 params: {
                     page: this.currentPage,
@@ -740,11 +838,28 @@ Vue.component('appointments', {
                 .catch(error => {
                     console.error('获取预约列表失败:', error);
                     this.$message.error('获取预约列表失败');
+                })
+                .finally(() => {
+                    this.loading = false;
                 });
         },
         
         // 搜索预约
         searchAppointments() {
+            if (this.appointmentStartDate && this.appointmentEndDate && this.appointmentStartDate > this.appointmentEndDate) {
+                this.$message.warning('开始日期不能晚于结束日期');
+                return;
+            }
+
+            this.currentPage = 1;
+            this.getAppointments();
+        },
+
+        resetFilters() {
+            this.searchText = '';
+            this.status = '';
+            this.appointmentStartDate = '';
+            this.appointmentEndDate = '';
             this.currentPage = 1;
             this.getAppointments();
         },
@@ -767,28 +882,9 @@ Vue.component('appointments', {
         // 显示更新状态弹窗
         updateAppointmentStatus(id, status) {
             this.currentAppointmentId = id;
-            
             this.currentStatus = status;
-            
-            // 重置表单状态
             this.statusForm.status = '';
-            
-            // 确保statusDialogVisible先设为false再设为true，强制重新渲染
-            this.statusDialogVisible = false;
-            
-            // 使用setTimeout和$nextTick确保Vue正确更新DOM
-            setTimeout(() => {
-                this.$nextTick(() => {
-                    this.statusDialogVisible = true;
-                    
-                    // 直接操作DOM以确保弹窗显示
-                    if (this.$el && !document.querySelector('.el-dialog__wrapper')) {
-                        console.warn('弹窗DOM元素未找到，尝试强制刷新视图');
-                        // 强制触发视图更新
-                        this.$forceUpdate();
-                    }
-                });
-            }, 100);
+            this.statusDialogVisible = true;
         },
         
         // 确认更新状态
@@ -798,7 +894,7 @@ Vue.component('appointments', {
                 return;
             }
             
-            // 根据router.php配置，更新预约状态可以直接使用资源ID路由
+            this.submitting = true;
             axios.put(`/admin/appointment/appointments/${this.currentAppointmentId}`, {
                 status: this.statusForm.status
             })
@@ -814,6 +910,9 @@ Vue.component('appointments', {
                 .catch(error => {
                     console.error('更新预约状态失败:', error);
                     this.$message.error('状态更新失败');
+                })
+                .finally(() => {
+                    this.submitting = false;
                 });
         },
         
@@ -821,10 +920,23 @@ Vue.component('appointments', {
         formatStatus(row) {
             return this.statusMap[row.status] || row.status;
         },
+
+        getStatusTagType(status) {
+            const typeMap = {
+                pending: 'warning',
+                accepted: 'success',
+                completed: 'primary',
+                cancelled: 'info',
+                rejected: 'danger'
+            };
+
+            return typeMap[status] || 'info';
+        },
         
         // 处理分页大小变化
         handleSizeChange(size) {
             this.pageSize = size;
+            this.currentPage = 1;
             this.getAppointments();
         },
         
@@ -843,16 +955,22 @@ Vue.component('admins', {
         return {
             adminsData: [],
             currentAdminId: '',
+            loading: false,
+            submitting: false,
             addDialogVisible: false,
             editDialogVisible: false,
             adminForm: {
                 username: '',
-                password: ''
+                password: '',
+                role: 1,
+                status: 1
             },
             editForm: {
                 id: '',
                 username: '',
-                password: ''
+                password: '',
+                role: 1,
+                status: 1
             },
             adminRules: {
                 username: [
@@ -877,6 +995,7 @@ Vue.component('admins', {
     methods: {
         // 获取管理员列表
         getAdmins() {
+            this.loading = true;
             axios.get('/admin/admin/admins')
                 .then(response => {
                     if (response.data.code === 200) {
@@ -892,13 +1011,15 @@ Vue.component('admins', {
                     this.$message.error('获取管理员列表失败');
                     // 出错时确保adminsData是一个数组
                     this.adminsData = [];
+                })
+                .finally(() => {
+                    this.loading = false;
                 });
         },
         
         // 获取当前管理员信息
         getCurrentAdmin() {
-            // 根据router.php配置，使用/user/profile路由获取当前登录用户信息（基于token）
-            axios.get('/user/profile')
+            axios.get('/admin/admin/profile')
                 .then(response => {
                     if (response.data.code === 200) {
                         this.currentAdminId = response.data.data.id;
@@ -918,7 +1039,9 @@ Vue.component('admins', {
         showAddDialog() {
             this.adminForm = {
                 username: '',
-                password: ''
+                password: '',
+                role: 1,
+                status: 1
             };
             this.addDialogVisible = true;
         },
@@ -927,6 +1050,7 @@ Vue.component('admins', {
         addAdmin() {
             this.$refs.adminForm.validate((valid) => {
                 if (valid) {
+                    this.submitting = true;
                     axios.post('/admin/admin/admins', this.adminForm)
                         .then(response => {
                             if (response.data.code === 200) {
@@ -940,6 +1064,9 @@ Vue.component('admins', {
                         .catch(error => {
                             console.error('添加管理员失败:', error);
                             this.$message.error('管理员添加失败');
+                        })
+                        .finally(() => {
+                            this.submitting = false;
                         });
                 }
             });
@@ -950,7 +1077,9 @@ Vue.component('admins', {
             this.editForm = {
                 id: row.id,
                 username: row.username,
-                password: ''
+                password: '',
+                role: Number(row.role) || 1,
+                status: Number(row.status) || 0
             };
             this.editDialogVisible = true;
         },
@@ -964,7 +1093,8 @@ Vue.component('admins', {
                     if (!updateData.password) {
                         delete updateData.password;
                     }
-                    
+
+                    this.submitting = true;
                     axios.put(`/admin/admin/admins/${this.editForm.id}`, updateData)
                         .then(response => {
                             if (response.data.code === 200) {
@@ -978,6 +1108,9 @@ Vue.component('admins', {
                         .catch(error => {
                             console.error('更新管理员失败:', error);
                             this.$message.error('管理员更新失败');
+                        })
+                        .finally(() => {
+                            this.submitting = false;
                         });
                 }
             });
@@ -985,6 +1118,11 @@ Vue.component('admins', {
         
         // 删除管理员
         deleteAdmin(id) {
+            if (String(id) === String(this.currentAdminId)) {
+                this.$message.warning('不能删除当前登录的管理员账号');
+                return;
+            }
+
             this.$confirm('确定要删除该管理员吗？', '提示', {
                 confirmButtonText: '确定',
                 cancelButtonText: '取消',

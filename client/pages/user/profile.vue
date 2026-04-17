@@ -76,6 +76,11 @@ export default {
             return;
         }
 
+        const cachedUser = uni.getStorageSync('userInfo');
+        if (cachedUser) {
+            this.userInfo = cachedUser;
+        }
+
         this.getUserInfo();
     },
     methods: {
@@ -88,6 +93,9 @@ export default {
                 })
                 .then((res) => {
                     this.userInfo = res.data || null;
+                    if (this.userInfo) {
+                        uni.setStorageSync('userInfo', this.userInfo);
+                    }
                 })
                 .catch(() => {
                     uni.removeStorageSync('token');

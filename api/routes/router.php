@@ -67,6 +67,11 @@ $restfulRoutes['admin/admin/admins/{id}'] = [
     'DELETE' => ['AdminController', 'deleteAdmin']
 ];
 
+$restfulRoutes['admin/admin/profile'] = [
+    'GET' => ['AdminController', 'getAdminInfo'],
+    'PUT' => ['AdminController', 'updateAdminInfo']
+];
+
 $restfulRoutes['admin/admin/login'] = [
     'POST' => ['AdminController', 'login']
 ];

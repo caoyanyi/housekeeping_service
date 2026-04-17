@@ -36,7 +36,7 @@ class Debug {
         $logMessage .= "\n";
         
         // 显示错误信息到浏览器
-        if (defined('DEBUG_DISPLAY_ERRORS') && DEBUG_DISPLAY_ERRORS && $type === 'error') {
+        if (defined('DEBUG_DISPLAY_ERRORS') && DEBUG_DISPLAY_ERRORS && $type === 'error' && self::shouldRenderHtmlError()) {
             echo '<pre style="background: #f0f0f0; padding: 10px; border: 1px solid #ddd;">';
             echo htmlspecialchars($logMessage);
             echo '</pre>';
@@ -146,6 +146,7 @@ class Debug {
             $errorMessage = "Exception: " . $exception->getMessage() . " in " . $exception->getFile() . " on line " . $exception->getLine() . "\nStack trace: " . $exception->getTraceAsString();
             
             self::log($errorMessage, 'PHP Exception', 'error');
+            self::outputJsonErrorResponse();
         });
         
         // 注册脚本终止处理函数
@@ -156,6 +157,7 @@ class Debug {
                 $errorMessage = "$errorType: " . $error['message'] . " in " . $error['file'] . " on line " . $error['line'];
                 
                 self::log($errorMessage, 'PHP Shutdown Error', 'error');
+                self::outputJsonErrorResponse();
             }
         });
     }
@@ -185,5 +187,49 @@ class Debug {
         ];
         
         return isset($errorTypes[$errno]) ? $errorTypes[$errno] : 'UNKNOWN';
+    }
+
+    /**
+     * API请求默认不把调试错误直接渲染成HTML，避免污染JSON响应
+     * @return bool
+     */
+    private static function shouldRenderHtmlError() {
+        $requestUri = $_SERVER['REQUEST_URI'] ?? '';
+        $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
+        $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+        $isJsonRequest =
+            stripos($accept, 'application/json') !== false ||
+            stripos($contentType, 'application/json') !== false;
+
+        if ($isJsonRequest) {
+            return false;
+        }
+
+        if ($requestUri !== '' && $requestUri !== '/') {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * 在API运行时异常场景下输出标准JSON，避免出现200+空响应或HTML污染
+     */
+    private static function outputJsonErrorResponse() {
+        if (PHP_SAPI === 'cli') {
+            return;
+        }
+
+        if (headers_sent()) {
+            return;
+        }
+
+        http_response_code(500);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'code' => 500,
+            'message' => '系统异常，请稍后重试',
+            'data' => []
+        ], JSON_UNESCAPED_UNICODE);
     }
 }

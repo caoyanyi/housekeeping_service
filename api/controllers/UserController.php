@@ -73,7 +73,7 @@ class UserController {
     
     // 获取用户信息
     public function getUserInfo() {
-        $userId = Response::verifyToken();
+        $userId = Response::verifyUserToken();
         
         $userInfo = $this->userModel->getUserInfo($userId);
         
@@ -86,7 +86,7 @@ class UserController {
     
     // 更新用户信息
     public function updateUserInfo() {
-        $userId = Response::verifyToken();
+        $userId = Response::verifyUserToken();
         $params = Response::getRequestParams();
         
         // 验证参数
@@ -108,7 +108,7 @@ class UserController {
     
     // 修改密码
     public function changePassword() {
-        $userId = Response::verifyToken();
+        $userId = Response::verifyUserToken();
         $params = Response::getRequestParams();
         
         // 验证参数
@@ -125,13 +125,13 @@ class UserController {
     
     // 管理端：获取所有用户列表
     public function getUserList() {
-        $userId = Response::verifyToken(); // 验证管理员身份
+        Response::verifyAdminToken();
         $params = Response::getRequestParams();
         
         $search = isset($params['search']) ? $params['search'] : '';
         $status = isset($params['status']) ? $params['status'] : null;
         $page = isset($params['page']) ? intval($params['page']) : 1;
-        $pageSize = isset($params['pageSize']) ? intval($params['pageSize']) : 10;
+        $pageSize = isset($params['pageSize']) ? intval($params['pageSize']) : (isset($params['page_size']) ? intval($params['page_size']) : 10);
         
         $users = $this->userModel->getAllUsers($search, $status, $page, $pageSize);
         $total = $this->userModel->getTotalUsers($search, $status);
@@ -148,7 +148,7 @@ class UserController {
     
     // 管理端：切换用户状态
     public function toggleUserStatus($id = null) {
-        $userId = Response::verifyToken(); // 验证管理员身份
+        Response::verifyAdminToken();
         
         if (empty($id)) {
             // 兼容旧的调用方式

@@ -87,7 +87,26 @@ export default {
         this.appointmentId = options?.appointmentId || options?.id || '';
         this.token = uni.getStorageSync('token');
 
-        if (!this.appointmentId || !this.token) {
+        if (!this.token) {
+            const redirect = ROUTER_CONFIG.navigate.buildUrl(
+                ROUTER_CONFIG.pages.appointment.detail,
+                { appointmentId: this.appointmentId }
+            );
+            uni.showModal({
+                title: '请先登录',
+                content: '登录后才能查看预约详情，是否现在去登录？',
+                success: ({ confirm }) => {
+                    if (confirm) {
+                        ROUTER_CONFIG.navigate.replace(ROUTER_CONFIG.pages.login, { redirect });
+                    } else {
+                        ROUTER_CONFIG.navigate.back();
+                    }
+                }
+            });
+            return;
+        }
+
+        if (!this.appointmentId) {
             uni.showToast({
                 title: '预约信息不存在',
                 icon: 'none'
@@ -152,6 +171,7 @@ export default {
                         ...this.appointmentInfo,
                         status: 'cancelled'
                     };
+                    uni.setStorageSync('appointmentListNeedRefresh', true);
 
                     uni.showToast({
                         title: '预约已取消',
