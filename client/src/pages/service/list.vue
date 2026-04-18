@@ -96,6 +96,16 @@
       </view>
     </view>
 
+    <view class="decision-card">
+      <text class="decision-label">筛选建议</text>
+      <text class="decision-title">{{ selectionGuide.title }}</text>
+      <text class="decision-text">{{ selectionGuide.desc }}</text>
+      <view class="decision-actions">
+        <text class="decision-action primary" @click="handleGuidePrimary">{{ selectionGuide.primaryText }}</text>
+        <text class="decision-action" @click="handleGuideSecondary">{{ selectionGuide.secondaryText }}</text>
+      </view>
+    </view>
+
     <view v-if="services.length" class="service-list">
       <view
         v-for="service in services"
@@ -111,6 +121,10 @@
           </view>
           <text class="service-desc">{{ service.plain_description || '暂无服务介绍' }}</text>
           <text class="service-recommend">{{ getServiceRecommendation(service) }}</text>
+          <view class="service-fit-row">
+            <text class="service-fit-label">{{ getServiceFitLabel(service) }}</text>
+            <text class="service-fit-text">{{ getServiceDecisionCue(service) }}</text>
+          </view>
           <view class="service-tags">
             <text v-for="tag in service.tags.slice(0, 3)" :key="tag" class="service-tag">{{ tag }}</text>
           </view>
@@ -229,6 +243,49 @@ export default {
             return this.searchText
                 ? '可以换一个关键词，或者清空筛选后再试试。'
                 : '建议切换分类，看看其他可预约服务。';
+        },
+        selectionGuide() {
+            if (!this.total) {
+                return {
+                    title: '先缩短关键词或切回分类筛选',
+                    desc: '搜索不到结果时，通常更适合先从大类进入，再到详情页做最终判断。',
+                    primaryText: '重置筛选',
+                    secondaryText: '看我的预约',
+                    primaryAction: 'reset',
+                    secondaryAction: 'appointments'
+                };
+            }
+
+            if (this.searchText) {
+                return {
+                    title: `现在更适合围绕“${this.searchText}”先做同类比较`,
+                    desc: '先看服务说明、时长和保障，而不是只盯价格，通常更容易找到真正匹配的项目。',
+                    primaryText: '先看第一项',
+                    secondaryText: '清空关键词',
+                    primaryAction: 'first',
+                    secondaryAction: 'clear'
+                };
+            }
+
+            if (this.selectedCategory) {
+                return {
+                    title: `先在${this.currentCategoryName}里快速排一遍优先级`,
+                    desc: '可以先看首个结果，再根据详情页里的流程、保障和备注承接范围继续比较。',
+                    primaryText: '看第一项',
+                    secondaryText: '查看预约',
+                    primaryAction: 'first',
+                    secondaryAction: 'appointments'
+                };
+            }
+
+            return {
+                title: '如果还不确定选哪项，先按高频场景筛一轮',
+                desc: '从常见需求标签进入，再看每项服务适合什么场景，会比一开始逐条阅读更省时间。',
+                primaryText: '试试保洁',
+                secondaryText: '查看预约',
+                primaryAction: 'keyword',
+                secondaryAction: 'appointments'
+            };
         }
     },
     onLoad(options) {
@@ -402,6 +459,73 @@ export default {
             const matched = keywordMap.find((item) => service.title.includes(item.keyword));
 
             return matched?.text || '建议结合服务说明、时长和备注要求再做最终选择。';
+        },
+        getServiceFitLabel(service) {
+            const title = String(service.title || '');
+
+            if (title.includes('保洁') || title.includes('清洁')) {
+                return '高频家务';
+            }
+
+            if (title.includes('母婴')) {
+                return '照护需求';
+            }
+
+            if (title.includes('清洗')) {
+                return '专项处理';
+            }
+
+            if (title.includes('搬')) {
+                return '一次性任务';
+            }
+
+            return '建议比较';
+        },
+        getServiceDecisionCue(service) {
+            const title = String(service.title || '');
+
+            if (title.includes('保洁') || title.includes('清洁')) {
+                return '先看时长和备注承接范围，通常能最快判断是否适合当前家庭场景。';
+            }
+
+            if (title.includes('母婴')) {
+                return '更建议优先看服务说明和保障信息，而不是只比较单次价格。';
+            }
+
+            if (title.includes('清洗')) {
+                return '如果目标明确，可以直接进详情页确认设备范围和准备事项。';
+            }
+
+            if (title.includes('搬')) {
+                return '建议重点确认时间、地址和现场条件，避免后续执行阶段再补信息。';
+            }
+
+            return '先看详情页里的流程和保障，再决定是否进入预约。';
+        },
+        handleGuidePrimary() {
+            if (this.selectionGuide.primaryAction === 'reset') {
+                this.resetFilters();
+                return;
+            }
+
+            if (this.selectionGuide.primaryAction === 'first' && this.firstService) {
+                this.goServiceDetail(this.firstService.id);
+                return;
+            }
+
+            if (this.selectionGuide.primaryAction === 'keyword') {
+                this.applyQuickDemand('保洁');
+            }
+        },
+        handleGuideSecondary() {
+            if (this.selectionGuide.secondaryAction === 'appointments') {
+                this.goAppointmentList();
+                return;
+            }
+
+            if (this.selectionGuide.secondaryAction === 'clear') {
+                this.clearSearch();
+            }
         },
         goServiceDetail(serviceId) {
             ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.service.detail, { serviceId });
@@ -669,6 +793,54 @@ export default {
   color: #98a2b3;
 }
 
+.decision-card {
+  margin: 0 2px 12px;
+  padding: 16px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbf8 100%);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+}
+
+.decision-label {
+  font-size: 11px;
+  color: #1aad19;
+}
+
+.decision-title {
+  display: block;
+  margin-top: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.decision-text {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #667085;
+}
+
+.decision-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.decision-action {
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #eef8f1;
+  font-size: 12px;
+  color: #1f8f44;
+}
+
+.decision-action.primary {
+  background: #1aad19;
+  color: #ffffff;
+}
+
 .service-list {
   display: flex;
   flex-direction: column;
@@ -728,6 +900,30 @@ export default {
   font-size: 12px;
   line-height: 1.6;
   color: #267a4c;
+}
+
+.service-fit-row {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 18px;
+  background: #f7faf8;
+}
+
+.service-fit-label {
+  display: inline-flex;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(26, 173, 25, 0.12);
+  font-size: 11px;
+  color: #1aad19;
+}
+
+.service-fit-text {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #667085;
 }
 
 .service-tags {

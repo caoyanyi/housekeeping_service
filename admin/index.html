@@ -444,6 +444,23 @@
                 <div class="search-bar compact">
                     <span class="toolbar-note">当前共 {{ categoriesData.length }} 个分类</span>
                 </div>
+                <div class="category-ops-grid">
+                    <button
+                        v-for="item in categoryOverviewCards"
+                        :key="item.title"
+                        class="category-ops-card"
+                    >
+                        <span class="category-ops-title">{{ item.title }}</span>
+                        <span class="category-ops-value">{{ item.value }}</span>
+                        <span class="category-ops-desc">{{ item.desc }}</span>
+                    </button>
+                </div>
+                <div class="category-focus-card">
+                    <div>
+                        <h3>{{ categoryFocusTitle }}</h3>
+                        <p>{{ categoryFocusText }}</p>
+                    </div>
+                </div>
                 <el-table :data="categoriesData" stripe v-loading="loading" empty-text="暂无分类数据" style="width: 100%">
                     <el-table-column prop="id" label="ID" width="80"></el-table-column>
                     <el-table-column prop="name" label="分类名称"></el-table-column>
@@ -454,6 +471,11 @@
                             <el-tag :type="Number(scope.row.status) === 1 ? 'success' : 'info'" size="mini">
                                 {{ Number(scope.row.status) === 1 ? '启用' : '禁用' }}
                             </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="经营提示" min-width="180">
+                        <template slot-scope="scope">
+                            <span class="table-hint">{{ getCategoryOpsHint(scope.row) }}</span>
                         </template>
                     </el-table-column>
                     <el-table-column prop="created_at" label="创建时间" width="180"></el-table-column>
@@ -546,6 +568,18 @@
                     </div>
                     <el-button type="primary" size="mini" @click="applyQuickStatusFilter(serviceFocusFilter)">立即查看</el-button>
                 </div>
+                <div class="service-pipeline-grid">
+                    <div
+                        v-for="item in servicePipelineCards"
+                        :key="item.title"
+                        class="service-pipeline-card"
+                        :class="`service-pipeline-card-${item.type}`"
+                    >
+                        <span class="service-pipeline-title">{{ item.title }}</span>
+                        <span class="service-pipeline-value">{{ item.value }}</span>
+                        <span class="service-pipeline-desc">{{ item.desc }}</span>
+                    </div>
+                </div>
                 <el-table :data="visibleServicesData" stripe v-loading="loading" empty-text="暂无服务数据" style="width: 100%">
                     <el-table-column prop="id" label="ID" width="80"></el-table-column>
                     <el-table-column prop="title" label="服务标题"></el-table-column>
@@ -566,6 +600,11 @@
                     <el-table-column label="内容状态" width="150">
                         <template slot-scope="scope">
                             <el-tag :type="getServiceHealthType(scope.row)" size="mini">{{ getServiceHealth(scope.row) }}</el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="运营提示" min-width="180">
+                        <template slot-scope="scope">
+                            <span class="table-hint">{{ getServiceOpsHint(scope.row) }}</span>
                         </template>
                     </el-table-column>
                     <el-table-column prop="created_at" label="创建时间" width="180"></el-table-column>

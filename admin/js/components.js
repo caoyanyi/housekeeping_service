@@ -838,6 +838,61 @@ Vue.component('categories', {
     mounted() {
         this.getCategories();
     },
+    computed: {
+        categoryOverviewCards() {
+            const counts = this.categoriesData.reduce((result, item) => {
+                const statusKey = Number(item.status) === 1 ? 'enabled' : 'disabled';
+                result[statusKey] += 1;
+                if (!String(item.icon || '').trim()) {
+                    result.missingIcon += 1;
+                }
+                return result;
+            }, {
+                enabled: 0,
+                disabled: 0,
+                missingIcon: 0
+            });
+
+            return [
+                {
+                    title: '分类总数',
+                    value: this.categoriesData.length,
+                    desc: '当前分类池规模'
+                },
+                {
+                    title: '已启用',
+                    value: counts.enabled,
+                    desc: '会直接影响前台导航与筛选'
+                },
+                {
+                    title: '已禁用',
+                    value: counts.disabled,
+                    desc: '建议确认是否仍需保留入口'
+                },
+                {
+                    title: '图标待补',
+                    value: counts.missingIcon,
+                    desc: '缺图标会影响前台识别效率'
+                }
+            ];
+        },
+        categoryFocusTitle() {
+            const disabledCount = this.categoriesData.filter(item => Number(item.status) !== 1).length;
+            if (disabledCount > 0) {
+                return `当前有 ${disabledCount} 个分类处于禁用状态`;
+            }
+
+            return '当前分类状态整体较稳定';
+        },
+        categoryFocusText() {
+            const missingIconCount = this.categoriesData.filter(item => !String(item.icon || '').trim()).length;
+            if (missingIconCount > 0) {
+                return '建议优先补图标和确认启用状态，让前台分类导航更容易被用户理解。';
+            }
+
+            return '可以继续观察分类数量、启用状态和排序是否足够支撑当前服务浏览体验。';
+        }
+    },
     methods: {
         // 获取分类列表
         getCategories() {
@@ -955,6 +1010,18 @@ Vue.component('categories', {
             }).catch(() => {
                 // 用户取消
             });
+        },
+
+        getCategoryOpsHint(row) {
+            if (Number(row.status) !== 1) {
+                return '禁用分类会直接影响前台入口，建议确认是否仍需保留。';
+            }
+
+            if (!String(row.icon || '').trim()) {
+                return '建议补图标，能帮助用户在前台更快识别服务场景。';
+            }
+
+            return '分类可直接承接前台浏览和筛选，适合持续观察排序表现。';
         }
     }
 });
@@ -1099,6 +1166,41 @@ Vue.component('services', {
         },
         serviceFocusFilter() {
             return this.quickStatusFilter === 0 ? '' : 0;
+        },
+        servicePipelineCards() {
+            const counts = this.servicesData.reduce((result, item) => {
+                const statusKey = Number(item.status) === 1 ? 'online' : 'offline';
+                result[statusKey] += 1;
+                if (this.getServiceHealth(item) !== '可直接投放') {
+                    result.incomplete += 1;
+                }
+                return result;
+            }, {
+                online: 0,
+                offline: 0,
+                incomplete: 0
+            });
+
+            return [
+                {
+                    title: '可直接承接流量',
+                    value: counts.online,
+                    desc: counts.online ? '已上架服务会直接影响前台筛选和预约转化。' : '当前页没有上架服务，前台承接可能偏弱。',
+                    type: counts.online ? 'success' : 'danger'
+                },
+                {
+                    title: '内容待补',
+                    value: counts.incomplete,
+                    desc: counts.incomplete ? '建议先补图片和简介，再判断是否适合继续投放。' : '当前页内容完整度整体较好。',
+                    type: counts.incomplete ? 'warning' : 'success'
+                },
+                {
+                    title: '待恢复上架',
+                    value: counts.offline,
+                    desc: counts.offline ? '下架服务过多时，建议确认是否影响前台可选范围。' : '当前页下架服务较少，可继续优化内容质量。',
+                    type: counts.offline ? 'info' : 'plain'
+                }
+            ];
         }
     },
     methods: {
@@ -1255,6 +1357,18 @@ Vue.component('services', {
             };
 
             return typeMap[healthText] || 'info';
+        },
+
+        getServiceOpsHint(row) {
+            if (Number(row.status) !== 1) {
+                return '建议先确认图片、简介和价格是否齐全，再判断是否恢复上架。';
+            }
+
+            if (this.getServiceHealth(row) !== '可直接投放') {
+                return '内容缺口会直接影响前台转化，建议优先补图文信息。';
+            }
+
+            return '服务内容和状态都较稳定，可作为当前前台转化承接项继续观察。';
         },
 
         toggleServiceStatus(row, nextStatus) {

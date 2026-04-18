@@ -948,6 +948,69 @@ body {
     color: #7b8794;
 }
 
+.category-ops-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.category-ops-card {
+    padding: 16px;
+    text-align: left;
+    border: 1px solid #e5edf7;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.category-ops-title,
+.category-ops-value,
+.category-ops-desc {
+    display: block;
+}
+
+.category-ops-title {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.category-ops-value {
+    margin-top: 10px;
+    font-size: 26px;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.category-ops-desc {
+    margin-top: 8px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #7b8794;
+}
+
+.category-focus-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 18px;
+    padding: 16px 18px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #5a3f1f 0%, #9a6b2f 100%);
+    color: #ffffff;
+}
+
+.category-focus-card h3 {
+    font-size: 16px;
+}
+
+.category-focus-card p {
+    margin-top: 6px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.82);
+}
+
 .job-pipeline-desc {
     margin-top: 8px;
     font-size: 12px;
@@ -1031,6 +1094,65 @@ body {
     font-size: 13px;
     line-height: 1.7;
     color: rgba(255, 255, 255, 0.82);
+}
+
+.service-pipeline-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.service-pipeline-card {
+    padding: 16px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    border: 1px solid #e5edf7;
+}
+
+.service-pipeline-card-warning {
+    background: linear-gradient(180deg, #fffaf2 0%, #fff1db 100%);
+}
+
+.service-pipeline-card-info {
+    background: linear-gradient(180deg, #f7fbff 0%, #eef5ff 100%);
+}
+
+.service-pipeline-card-danger {
+    background: linear-gradient(180deg, #fff7f5 0%, #fde9e4 100%);
+}
+
+.service-pipeline-card-success {
+    background: linear-gradient(180deg, #f6fcf7 0%, #eaf8ee 100%);
+}
+
+.service-pipeline-card-plain {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.service-pipeline-title,
+.service-pipeline-value,
+.service-pipeline-desc {
+    display: block;
+}
+
+.service-pipeline-title {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.service-pipeline-value {
+    margin-top: 10px;
+    font-size: 24px;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.service-pipeline-desc {
+    margin-top: 8px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #7b8794;
 }
 
 .appointment-ops-grid {
@@ -1258,6 +1380,7 @@ body {
 
     .user-ops-grid,
     .job-ops-grid,
+    .category-ops-grid,
     .service-ops-grid,
     .appointment-ops-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1268,6 +1391,10 @@ body {
     }
 
     .job-pipeline-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .service-pipeline-grid {
         grid-template-columns: 1fr;
     }
 
@@ -1317,6 +1444,7 @@ body {
 
     .user-ops-grid,
     .job-ops-grid,
+    .category-ops-grid,
     .service-ops-grid,
     .appointment-ops-grid {
         grid-template-columns: 1fr;
@@ -1324,6 +1452,7 @@ body {
 
     .user-focus-card,
     .job-focus-card,
+    .category-focus-card,
     .service-focus-card,
     .appointment-focus-card {
         flex-direction: column;
