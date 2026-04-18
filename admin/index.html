@@ -479,8 +479,13 @@
                         </template>
                     </el-table-column>
                     <el-table-column prop="created_at" label="创建时间" width="180"></el-table-column>
-                    <el-table-column label="操作" width="150" fixed="right">
+                    <el-table-column label="操作" width="220" fixed="right">
                         <template slot-scope="scope">
+                            <el-button
+                                type="text"
+                                size="small"
+                                @click="toggleCategoryStatus(scope.row, Number(scope.row.status) === 1 ? 0 : 1)"
+                            >{{ Number(scope.row.status) === 1 ? '禁用' : '启用' }}</el-button>
                             <el-button type="text" size="small" @click="showEditDialog(scope.row)">编辑</el-button>
                             <el-button type="text" size="small" @click="deleteCategory(scope.row.id)" style="color: #f56c6c">删除</el-button>
                         </template>
@@ -489,40 +494,100 @@
             </div>
             
             <!-- 添加分类弹窗 -->
-            <el-dialog title="添加分类" :visible.sync="addDialogVisible" width="500px">
-                <el-form :model="categoryForm" :rules="categoryRules" ref="categoryForm">
-                    <el-form-item prop="name">
-                        <el-input v-model="categoryForm.name" placeholder="请输入分类名称"></el-input>
-                    </el-form-item>
-                    <el-form-item prop="icon">
-                        <el-input v-model="categoryForm.icon" placeholder="请输入图标"></el-input>
-                    </el-form-item>
-                    <el-form-item prop="sort_order">
-                        <el-input v-model.number="categoryForm.sort_order" placeholder="请输入排序号"></el-input>
-                    </el-form-item>
-                </el-form>
+            <el-dialog title="添加分类" :visible.sync="addDialogVisible" width="760px">
+                <div class="config-dialog-layout">
+                    <el-form :model="categoryForm" :rules="categoryRules" ref="categoryForm" label-width="90px" class="config-dialog-form">
+                        <el-form-item prop="name" label="分类名称">
+                            <el-input v-model="categoryForm.name" placeholder="请输入分类名称"></el-input>
+                        </el-form-item>
+                        <el-form-item prop="icon" label="图标">
+                            <el-input v-model="categoryForm.icon" placeholder="请输入图标"></el-input>
+                        </el-form-item>
+                        <el-form-item prop="sort_order" label="排序">
+                            <el-input v-model.number="categoryForm.sort_order" placeholder="请输入排序号"></el-input>
+                        </el-form-item>
+                        <el-form-item prop="status" label="状态">
+                            <el-radio-group v-model="categoryForm.status">
+                                <el-radio :label="1">启用</el-radio>
+                                <el-radio :label="0">禁用</el-radio>
+                            </el-radio-group>
+                        </el-form-item>
+                    </el-form>
+                    <aside class="config-dialog-side">
+                        <div class="form-guide-card">
+                            <span class="form-guide-label">前台影响</span>
+                            <h3>{{ categoryCreateGuide.title }}</h3>
+                            <p>{{ categoryCreateGuide.text }}</p>
+                        </div>
+                        <div class="form-guide-card muted">
+                            <span class="form-guide-label">配置完成度</span>
+                            <div class="guide-score-row">
+                                <strong>{{ categoryCreateGuide.score }}%</strong>
+                                <span>{{ categoryCreateGuide.scoreText }}</span>
+                            </div>
+                            <div class="guide-chip-list">
+                                <span
+                                    v-for="item in categoryCreateGuide.tips"
+                                    :key="item.label"
+                                    class="guide-chip"
+                                    :class="`guide-chip-${item.type}`"
+                                >{{ item.label }} · {{ item.value }}</span>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
                 <div slot="footer" class="dialog-footer">
                     <el-button @click="addDialogVisible = false">取消</el-button>
-                    <el-button type="primary" @click="addCategory">确定</el-button>
+                    <el-button type="primary" :loading="submitting" @click="addCategory">确定</el-button>
                 </div>
             </el-dialog>
             
             <!-- 编辑分类弹窗 -->
-            <el-dialog title="编辑分类" :visible.sync="editDialogVisible" width="500px">
-                <el-form :model="editForm" :rules="categoryRules" ref="editForm">
-                    <el-form-item prop="name">
-                        <el-input v-model="editForm.name" placeholder="请输入分类名称"></el-input>
-                    </el-form-item>
-                    <el-form-item prop="icon">
-                        <el-input v-model="editForm.icon" placeholder="请输入图标"></el-input>
-                    </el-form-item>
-                    <el-form-item prop="sort_order">
-                        <el-input v-model.number="editForm.sort_order" placeholder="请输入排序号"></el-input>
-                    </el-form-item>
-                </el-form>
+            <el-dialog title="编辑分类" :visible.sync="editDialogVisible" width="760px">
+                <div class="config-dialog-layout">
+                    <el-form :model="editForm" :rules="categoryRules" ref="editForm" label-width="90px" class="config-dialog-form">
+                        <el-form-item prop="name" label="分类名称">
+                            <el-input v-model="editForm.name" placeholder="请输入分类名称"></el-input>
+                        </el-form-item>
+                        <el-form-item prop="icon" label="图标">
+                            <el-input v-model="editForm.icon" placeholder="请输入图标"></el-input>
+                        </el-form-item>
+                        <el-form-item prop="sort_order" label="排序">
+                            <el-input v-model.number="editForm.sort_order" placeholder="请输入排序号"></el-input>
+                        </el-form-item>
+                        <el-form-item prop="status" label="状态">
+                            <el-radio-group v-model="editForm.status">
+                                <el-radio :label="1">启用</el-radio>
+                                <el-radio :label="0">禁用</el-radio>
+                            </el-radio-group>
+                        </el-form-item>
+                    </el-form>
+                    <aside class="config-dialog-side">
+                        <div class="form-guide-card">
+                            <span class="form-guide-label">前台影响</span>
+                            <h3>{{ categoryEditGuide.title }}</h3>
+                            <p>{{ categoryEditGuide.text }}</p>
+                        </div>
+                        <div class="form-guide-card muted">
+                            <span class="form-guide-label">配置完成度</span>
+                            <div class="guide-score-row">
+                                <strong>{{ categoryEditGuide.score }}%</strong>
+                                <span>{{ categoryEditGuide.scoreText }}</span>
+                            </div>
+                            <div class="guide-chip-list">
+                                <span
+                                    v-for="item in categoryEditGuide.tips"
+                                    :key="item.label"
+                                    class="guide-chip"
+                                    :class="`guide-chip-${item.type}`"
+                                >{{ item.label }} · {{ item.value }}</span>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
                 <div slot="footer" class="dialog-footer">
                     <el-button @click="editDialogVisible = false">取消</el-button>
-                    <el-button type="primary" @click="updateCategory">确定</el-button>
+                    <el-button type="primary" :loading="submitting" @click="updateCategory">确定</el-button>
                 </div>
             </el-dialog>
         </div>
@@ -635,34 +700,58 @@
             
             <!-- 添加服务弹窗 -->
             <el-dialog title="添加服务" :visible.sync="addDialogVisible" width="800px">
-                <el-form :model="serviceForm" :rules="serviceRules" ref="serviceForm" label-width="90px">
-                    <el-form-item prop="title" label="服务标题">
-                        <el-input v-model="serviceForm.title" placeholder="请输入服务标题"></el-input>
-                    </el-form-item>
-                    <el-form-item prop="category_id" label="分类">
-                        <el-select v-model="serviceForm.category_id" placeholder="选择分类">
-                            <el-option v-for="category in categories" :key="category.id" :label="category.name" :value="category.id"></el-option>
-                        </el-select>
-                    </el-form-item>
-                    <el-form-item prop="price" label="价格">
-                        <el-input type="number" v-model.number="serviceForm.price" placeholder="请输入服务价格"></el-input>
-                    </el-form-item>
-                    <el-form-item prop="duration" label="时长">
-                        <el-input type="number" v-model.number="serviceForm.duration" placeholder="请输入服务时长（分钟）"></el-input>
-                    </el-form-item>
-                    <el-form-item prop="description" label="服务简介">
-                        <el-input type="textarea" v-model="serviceForm.description" placeholder="请输入服务简介"></el-input>
-                    </el-form-item>
-                    <el-form-item prop="image_urls_text" label="图片地址">
-                        <el-input type="textarea" :rows="3" v-model="serviceForm.image_urls_text" placeholder="请输入图片 URL，支持换行或英文逗号分隔"></el-input>
-                    </el-form-item>
-                    <el-form-item prop="status" label="状态">
-                        <el-radio-group v-model="serviceForm.status">
-                            <el-radio :label="1">上架</el-radio>
-                            <el-radio :label="0">下架</el-radio>
-                        </el-radio-group>
-                    </el-form-item>
-                </el-form>
+                <div class="config-dialog-layout">
+                    <el-form :model="serviceForm" :rules="serviceRules" ref="serviceForm" label-width="90px" class="config-dialog-form">
+                        <el-form-item prop="title" label="服务标题">
+                            <el-input v-model="serviceForm.title" placeholder="请输入服务标题"></el-input>
+                        </el-form-item>
+                        <el-form-item prop="category_id" label="分类">
+                            <el-select v-model="serviceForm.category_id" placeholder="选择分类">
+                                <el-option v-for="category in categories" :key="category.id" :label="category.name" :value="category.id"></el-option>
+                            </el-select>
+                        </el-form-item>
+                        <el-form-item prop="price" label="价格">
+                            <el-input type="number" v-model.number="serviceForm.price" placeholder="请输入服务价格"></el-input>
+                        </el-form-item>
+                        <el-form-item prop="duration" label="时长">
+                            <el-input type="number" v-model.number="serviceForm.duration" placeholder="请输入服务时长（分钟）"></el-input>
+                        </el-form-item>
+                        <el-form-item prop="description" label="服务简介">
+                            <el-input type="textarea" v-model="serviceForm.description" placeholder="请输入服务简介"></el-input>
+                        </el-form-item>
+                        <el-form-item prop="image_urls_text" label="图片地址">
+                            <el-input type="textarea" :rows="3" v-model="serviceForm.image_urls_text" placeholder="请输入图片 URL，支持换行或英文逗号分隔"></el-input>
+                        </el-form-item>
+                        <el-form-item prop="status" label="状态">
+                            <el-radio-group v-model="serviceForm.status">
+                                <el-radio :label="1">上架</el-radio>
+                                <el-radio :label="0">下架</el-radio>
+                            </el-radio-group>
+                        </el-form-item>
+                    </el-form>
+                    <aside class="config-dialog-side">
+                        <div class="form-guide-card">
+                            <span class="form-guide-label">投放判断</span>
+                            <h3>{{ serviceCreateGuide.title }}</h3>
+                            <p>{{ serviceCreateGuide.text }}</p>
+                        </div>
+                        <div class="form-guide-card muted">
+                            <span class="form-guide-label">配置检查</span>
+                            <div class="guide-score-row">
+                                <strong>{{ serviceCreateGuide.score }}%</strong>
+                                <span>{{ serviceCreateGuide.scoreText }}</span>
+                            </div>
+                            <div class="guide-chip-list">
+                                <span
+                                    v-for="item in serviceCreateGuide.tips"
+                                    :key="item.label"
+                                    class="guide-chip"
+                                    :class="`guide-chip-${item.type}`"
+                                >{{ item.label }} · {{ item.value }}</span>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
                 <div slot="footer" class="dialog-footer">
                     <el-button @click="addDialogVisible = false">取消</el-button>
                     <el-button type="primary" :loading="submitting" @click="addService">确定</el-button>
@@ -671,34 +760,58 @@
             
             <!-- 编辑服务弹窗 -->
             <el-dialog title="编辑服务" :visible.sync="editDialogVisible" width="800px">
-                <el-form :model="editForm" :rules="serviceRules" ref="editForm" label-width="90px">
-                    <el-form-item prop="title" label="服务标题">
-                        <el-input v-model="editForm.title" placeholder="请输入服务标题"></el-input>
-                    </el-form-item>
-                    <el-form-item prop="category_id" label="分类">
-                        <el-select v-model="editForm.category_id" placeholder="选择分类">
-                            <el-option v-for="category in categories" :key="category.id" :label="category.name" :value="category.id"></el-option>
-                        </el-select>
-                    </el-form-item>
-                    <el-form-item prop="price" label="价格">
-                        <el-input type="number" v-model.number="editForm.price" placeholder="请输入服务价格"></el-input>
-                    </el-form-item>
-                    <el-form-item prop="duration" label="时长">
-                        <el-input type="number" v-model.number="editForm.duration" placeholder="请输入服务时长（分钟）"></el-input>
-                    </el-form-item>
-                    <el-form-item prop="description" label="服务简介">
-                        <el-input type="textarea" v-model="editForm.description" placeholder="请输入服务简介"></el-input>
-                    </el-form-item>
-                    <el-form-item prop="image_urls_text" label="图片地址">
-                        <el-input type="textarea" :rows="3" v-model="editForm.image_urls_text" placeholder="请输入图片 URL，支持换行或英文逗号分隔"></el-input>
-                    </el-form-item>
-                    <el-form-item prop="status" label="状态">
-                        <el-radio-group v-model="editForm.status">
-                            <el-radio :label="1">上架</el-radio>
-                            <el-radio :label="0">下架</el-radio>
-                        </el-radio-group>
-                    </el-form-item>
-                </el-form>
+                <div class="config-dialog-layout">
+                    <el-form :model="editForm" :rules="serviceRules" ref="editForm" label-width="90px" class="config-dialog-form">
+                        <el-form-item prop="title" label="服务标题">
+                            <el-input v-model="editForm.title" placeholder="请输入服务标题"></el-input>
+                        </el-form-item>
+                        <el-form-item prop="category_id" label="分类">
+                            <el-select v-model="editForm.category_id" placeholder="选择分类">
+                                <el-option v-for="category in categories" :key="category.id" :label="category.name" :value="category.id"></el-option>
+                            </el-select>
+                        </el-form-item>
+                        <el-form-item prop="price" label="价格">
+                            <el-input type="number" v-model.number="editForm.price" placeholder="请输入服务价格"></el-input>
+                        </el-form-item>
+                        <el-form-item prop="duration" label="时长">
+                            <el-input type="number" v-model.number="editForm.duration" placeholder="请输入服务时长（分钟）"></el-input>
+                        </el-form-item>
+                        <el-form-item prop="description" label="服务简介">
+                            <el-input type="textarea" v-model="editForm.description" placeholder="请输入服务简介"></el-input>
+                        </el-form-item>
+                        <el-form-item prop="image_urls_text" label="图片地址">
+                            <el-input type="textarea" :rows="3" v-model="editForm.image_urls_text" placeholder="请输入图片 URL，支持换行或英文逗号分隔"></el-input>
+                        </el-form-item>
+                        <el-form-item prop="status" label="状态">
+                            <el-radio-group v-model="editForm.status">
+                                <el-radio :label="1">上架</el-radio>
+                                <el-radio :label="0">下架</el-radio>
+                            </el-radio-group>
+                        </el-form-item>
+                    </el-form>
+                    <aside class="config-dialog-side">
+                        <div class="form-guide-card">
+                            <span class="form-guide-label">投放判断</span>
+                            <h3>{{ serviceEditGuide.title }}</h3>
+                            <p>{{ serviceEditGuide.text }}</p>
+                        </div>
+                        <div class="form-guide-card muted">
+                            <span class="form-guide-label">配置检查</span>
+                            <div class="guide-score-row">
+                                <strong>{{ serviceEditGuide.score }}%</strong>
+                                <span>{{ serviceEditGuide.scoreText }}</span>
+                            </div>
+                            <div class="guide-chip-list">
+                                <span
+                                    v-for="item in serviceEditGuide.tips"
+                                    :key="item.label"
+                                    class="guide-chip"
+                                    :class="`guide-chip-${item.type}`"
+                                >{{ item.label }} · {{ item.value }}</span>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
                 <div slot="footer" class="dialog-footer">
                     <el-button @click="editDialogVisible = false">取消</el-button>
                     <el-button type="primary" :loading="submitting" @click="updateService">确定</el-button>
@@ -912,6 +1025,23 @@
                 <div class="search-bar compact">
                     <span class="toolbar-note">当前共 {{ adminsData.length }} 位管理员</span>
                 </div>
+                <div class="admin-ops-grid">
+                    <button
+                        v-for="item in adminOverviewCards"
+                        :key="item.title"
+                        class="admin-ops-card"
+                    >
+                        <span class="admin-ops-title">{{ item.title }}</span>
+                        <span class="admin-ops-value">{{ item.value }}</span>
+                        <span class="admin-ops-desc">{{ item.desc }}</span>
+                    </button>
+                </div>
+                <div class="admin-focus-card">
+                    <div>
+                        <h3>{{ adminFocusTitle }}</h3>
+                        <p>{{ adminFocusText }}</p>
+                    </div>
+                </div>
                 <el-table :data="adminsData" stripe v-loading="loading" empty-text="暂无管理员数据" style="width: 100%">
                     <el-table-column prop="id" label="ID" width="80"></el-table-column>
                     <el-table-column prop="username" label="用户名"></el-table-column>
@@ -929,9 +1059,19 @@
                             </el-tag>
                         </template>
                     </el-table-column>
-                    <el-table-column prop="created_at" label="创建时间" width="180"></el-table-column>
-                    <el-table-column label="操作" width="150" fixed="right">
+                    <el-table-column label="运营提示" min-width="180">
                         <template slot-scope="scope">
+                            <span class="table-hint">{{ getAdminOpsHint(scope.row) }}</span>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="created_at" label="创建时间" width="180"></el-table-column>
+                    <el-table-column label="操作" width="230" fixed="right">
+                        <template slot-scope="scope">
+                            <el-button
+                                type="text"
+                                size="small"
+                                @click="toggleAdminStatus(scope.row, Number(scope.row.status) === 1 ? 0 : 1)"
+                            >{{ Number(scope.row.status) === 1 ? '禁用' : '启用' }}</el-button>
                             <el-button type="text" size="small" @click="showEditDialog(scope.row)">编辑</el-button>
                             <el-button type="text" size="small" @click="deleteAdmin(scope.row.id)" style="color: #f56c6c" v-if="scope.row.id !== currentAdminId">删除</el-button>
                         </template>
@@ -940,27 +1080,51 @@
             </div>
             
             <!-- 添加管理员弹窗 -->
-            <el-dialog title="添加管理员" :visible.sync="addDialogVisible" width="500px">
-                <el-form :model="adminForm" :rules="adminRules" ref="adminForm" label-width="90px">
-                    <el-form-item prop="username" label="用户名">
-                        <el-input v-model="adminForm.username" placeholder="请输入用户名"></el-input>
-                    </el-form-item>
-                    <el-form-item prop="password" label="密码">
-                        <el-input type="password" v-model="adminForm.password" placeholder="请输入密码"></el-input>
-                    </el-form-item>
-                    <el-form-item prop="role" label="角色">
-                        <el-radio-group v-model="adminForm.role">
-                            <el-radio :label="1">普通管理员</el-radio>
-                            <el-radio :label="2">超级管理员</el-radio>
-                        </el-radio-group>
-                    </el-form-item>
-                    <el-form-item prop="status" label="状态">
-                        <el-radio-group v-model="adminForm.status">
-                            <el-radio :label="1">正常</el-radio>
-                            <el-radio :label="0">禁用</el-radio>
-                        </el-radio-group>
-                    </el-form-item>
-                </el-form>
+            <el-dialog title="添加管理员" :visible.sync="addDialogVisible" width="760px">
+                <div class="config-dialog-layout">
+                    <el-form :model="adminForm" :rules="adminRules" ref="adminForm" label-width="90px" class="config-dialog-form">
+                        <el-form-item prop="username" label="用户名">
+                            <el-input v-model="adminForm.username" placeholder="请输入用户名"></el-input>
+                        </el-form-item>
+                        <el-form-item prop="password" label="密码">
+                            <el-input type="password" v-model="adminForm.password" placeholder="请输入密码"></el-input>
+                        </el-form-item>
+                        <el-form-item prop="role" label="角色">
+                            <el-radio-group v-model="adminForm.role">
+                                <el-radio :label="1">普通管理员</el-radio>
+                                <el-radio :label="2">超级管理员</el-radio>
+                            </el-radio-group>
+                        </el-form-item>
+                        <el-form-item prop="status" label="状态">
+                            <el-radio-group v-model="adminForm.status">
+                                <el-radio :label="1">正常</el-radio>
+                                <el-radio :label="0">禁用</el-radio>
+                            </el-radio-group>
+                        </el-form-item>
+                    </el-form>
+                    <aside class="config-dialog-side">
+                        <div class="form-guide-card">
+                            <span class="form-guide-label">权限风险</span>
+                            <h3>{{ adminCreateGuide.title }}</h3>
+                            <p>{{ adminCreateGuide.text }}</p>
+                        </div>
+                        <div class="form-guide-card muted">
+                            <span class="form-guide-label">账号检查</span>
+                            <div class="guide-score-row">
+                                <strong>{{ adminCreateGuide.score }}%</strong>
+                                <span>{{ adminCreateGuide.scoreText }}</span>
+                            </div>
+                            <div class="guide-chip-list">
+                                <span
+                                    v-for="item in adminCreateGuide.tips"
+                                    :key="item.label"
+                                    class="guide-chip"
+                                    :class="`guide-chip-${item.type}`"
+                                >{{ item.label }} · {{ item.value }}</span>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
                 <div slot="footer" class="dialog-footer">
                     <el-button @click="addDialogVisible = false">取消</el-button>
                     <el-button type="primary" :loading="submitting" @click="addAdmin">确定</el-button>
@@ -968,27 +1132,51 @@
             </el-dialog>
             
             <!-- 编辑管理员弹窗 -->
-            <el-dialog title="编辑管理员" :visible.sync="editDialogVisible" width="500px">
-                <el-form :model="editForm" :rules="editRules" ref="editForm" label-width="90px">
-                    <el-form-item prop="username" label="用户名">
-                        <el-input v-model="editForm.username" disabled placeholder="用户名不可修改"></el-input>
-                    </el-form-item>
-                    <el-form-item prop="password" label="密码">
-                        <el-input type="password" v-model="editForm.password" placeholder="请输入新密码（不修改请留空）"></el-input>
-                    </el-form-item>
-                    <el-form-item prop="role" label="角色">
-                        <el-radio-group v-model="editForm.role">
-                            <el-radio :label="1">普通管理员</el-radio>
-                            <el-radio :label="2">超级管理员</el-radio>
-                        </el-radio-group>
-                    </el-form-item>
-                    <el-form-item prop="status" label="状态">
-                        <el-radio-group v-model="editForm.status">
-                            <el-radio :label="1">正常</el-radio>
-                            <el-radio :label="0">禁用</el-radio>
-                        </el-radio-group>
-                    </el-form-item>
-                </el-form>
+            <el-dialog title="编辑管理员" :visible.sync="editDialogVisible" width="760px">
+                <div class="config-dialog-layout">
+                    <el-form :model="editForm" :rules="editRules" ref="editForm" label-width="90px" class="config-dialog-form">
+                        <el-form-item prop="username" label="用户名">
+                            <el-input v-model="editForm.username" disabled placeholder="用户名不可修改"></el-input>
+                        </el-form-item>
+                        <el-form-item prop="password" label="密码">
+                            <el-input type="password" v-model="editForm.password" placeholder="请输入新密码（不修改请留空）"></el-input>
+                        </el-form-item>
+                        <el-form-item prop="role" label="角色">
+                            <el-radio-group v-model="editForm.role">
+                                <el-radio :label="1">普通管理员</el-radio>
+                                <el-radio :label="2">超级管理员</el-radio>
+                            </el-radio-group>
+                        </el-form-item>
+                        <el-form-item prop="status" label="状态">
+                            <el-radio-group v-model="editForm.status">
+                                <el-radio :label="1">正常</el-radio>
+                                <el-radio :label="0">禁用</el-radio>
+                            </el-radio-group>
+                        </el-form-item>
+                    </el-form>
+                    <aside class="config-dialog-side">
+                        <div class="form-guide-card">
+                            <span class="form-guide-label">权限风险</span>
+                            <h3>{{ adminEditGuide.title }}</h3>
+                            <p>{{ adminEditGuide.text }}</p>
+                        </div>
+                        <div class="form-guide-card muted">
+                            <span class="form-guide-label">账号检查</span>
+                            <div class="guide-score-row">
+                                <strong>{{ adminEditGuide.score }}%</strong>
+                                <span>{{ adminEditGuide.scoreText }}</span>
+                            </div>
+                            <div class="guide-chip-list">
+                                <span
+                                    v-for="item in adminEditGuide.tips"
+                                    :key="item.label"
+                                    class="guide-chip"
+                                    :class="`guide-chip-${item.type}`"
+                                >{{ item.label }} · {{ item.value }}</span>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
                 <div slot="footer" class="dialog-footer">
                     <el-button @click="editDialogVisible = false">取消</el-button>
                     <el-button type="primary" :loading="submitting" @click="updateAdmin">确定</el-button>

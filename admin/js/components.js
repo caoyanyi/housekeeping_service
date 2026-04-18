@@ -815,18 +815,21 @@ Vue.component('categories', {
                 return {
                     categoriesData: [],
                     loading: false,
+                    submitting: false,
                     addDialogVisible: false,
                     editDialogVisible: false,
                     categoryForm: {
                         name: '',
                         icon: '',
-                        sort_order: 0
+                        sort_order: 0,
+                        status: 1
                     },
                     editForm: {
                         id: '',
                         name: '',
                         icon: '',
-                        sort_order: 0
+                        sort_order: 0,
+                        status: 1
                     },
                     categoryRules: {
                         name: [
@@ -891,6 +894,12 @@ Vue.component('categories', {
             }
 
             return '可以继续观察分类数量、启用状态和排序是否足够支撑当前服务浏览体验。';
+        },
+        categoryCreateGuide() {
+            return this.buildCategoryGuide(this.categoryForm, false);
+        },
+        categoryEditGuide() {
+            return this.buildCategoryGuide(this.editForm, true);
         }
     },
     methods: {
@@ -921,7 +930,8 @@ Vue.component('categories', {
             this.categoryForm = {
                 name: '',
                 icon: '',
-                sort_order: 0
+                sort_order: 0,
+                status: 1
             };
             this.addDialogVisible = true;
         },
@@ -934,9 +944,11 @@ Vue.component('categories', {
                     const categoryData = {
                         name: this.categoryForm.name,
                         icon: this.categoryForm.icon || '',
-                        sort_order: this.categoryForm.sort_order || 0
+                        sort_order: this.categoryForm.sort_order || 0,
+                        status: Number(this.categoryForm.status) === 0 ? 0 : 1
                     };
-                    
+
+                    this.submitting = true;
                     axios.post('/admin/category/categories', categoryData)
                             .then(response => {
                                 if (response.data.code === 200) {
@@ -949,6 +961,9 @@ Vue.component('categories', {
                             })
                         .catch(error => {
                             showActionError(this, error, '分类添加失败，请稍后重试');
+                        })
+                        .finally(() => {
+                            this.submitting = false;
                         });
                 }
             });
@@ -960,7 +975,8 @@ Vue.component('categories', {
                 id: row.id,
                 name: row.name,
                 icon: row.icon || '',
-                sort_order: row.sort_order || 0
+                sort_order: row.sort_order || 0,
+                status: Number(row.status) || 0
             };
             this.editDialogVisible = true;
         },
@@ -970,6 +986,7 @@ Vue.component('categories', {
             this.$refs.editForm.validate((valid) => {
                 if (valid) {
                     // 根据router.php配置，使用RESTful风格的PUT请求
+                    this.submitting = true;
                     axios.put(`/admin/category/categories/${this.editForm.id}`, this.editForm)
                         .then(response => {
                             if (response.data.code === 200) {
@@ -982,6 +999,9 @@ Vue.component('categories', {
                         })
                         .catch(error => {
                             showActionError(this, error, '分类更新失败，请稍后重试');
+                        })
+                        .finally(() => {
+                            this.submitting = false;
                         });
                 }
             });
@@ -1022,6 +1042,79 @@ Vue.component('categories', {
             }
 
             return '分类可直接承接前台浏览和筛选，适合持续观察排序表现。';
+        },
+
+        toggleCategoryStatus(row, nextStatus) {
+            this.submitting = true;
+            axios.put(`/admin/category/categories/${row.id}`, {
+                name: row.name,
+                icon: row.icon || '',
+                sort_order: row.sort_order || 0,
+                status: nextStatus
+            })
+                .then(response => {
+                    if (response.data.code === 200) {
+                        row.status = nextStatus;
+                        showActionSuccess(this, `分类已${nextStatus === 1 ? '启用' : '禁用'}`);
+                    } else {
+                        this.$message.error(response.data.message || '分类状态更新失败');
+                    }
+                })
+                .catch(error => {
+                    showActionError(this, error, '分类状态更新失败，请稍后重试');
+                })
+                .finally(() => {
+                    this.submitting = false;
+                });
+        },
+
+        buildCategoryGuide(form, isEdit = false) {
+            const hasName = Boolean(String(form.name || '').trim());
+            const hasIcon = Boolean(String(form.icon || '').trim());
+            const sortOrder = Number(form.sort_order || 0);
+            const isEnabled = Number(form.status) === 1;
+            const score = Math.round(((hasName ? 1 : 0) + (hasIcon ? 1 : 0) + (isEnabled ? 1 : 0)) / 3 * 100);
+
+            let title = isEdit ? '继续维护可见分类' : '先补出可识别的分类入口';
+            let text = '分类会直接影响前台导航理解和服务浏览效率。';
+
+            if (!hasName) {
+                title = '分类名称还不够完整';
+                text = '用户首先看到的是分类名称，建议先把场景表达清楚。';
+            } else if (!hasIcon) {
+                title = '建议补上分类图标';
+                text = '图标能帮助用户在首页和列表页快速识别服务类型。';
+            } else if (!isEnabled) {
+                title = '当前分类不会在前台生效';
+                text = '禁用状态适合草稿或临时下线，启用后才会真正影响前台入口。';
+            } else if (sortOrder <= 0) {
+                title = '当前分类适合放在默认靠前位置';
+                text = '排序越靠前，越容易在前台导航和筛选中被优先看到。';
+            }
+
+            return {
+                title,
+                text,
+                score,
+                scoreText: score >= 100 ? '已具备前台投放条件' : '建议补齐后再观察前台表现',
+                tips: [
+                    {
+                        label: '状态',
+                        value: isEnabled ? '启用中' : '暂不生效',
+                        type: isEnabled ? 'success' : 'warning'
+                    },
+                    {
+                        label: '图标',
+                        value: hasIcon ? '已填写' : '待补',
+                        type: hasIcon ? 'info' : 'warning'
+                    },
+                    {
+                        label: '排序',
+                        value: sortOrder > 0 ? `第 ${sortOrder} 位附近` : '默认靠前',
+                        type: 'plain'
+                    }
+                ]
+            };
         }
     }
 });
@@ -1201,6 +1294,12 @@ Vue.component('services', {
                     type: counts.offline ? 'info' : 'plain'
                 }
             ];
+        },
+        serviceCreateGuide() {
+            return this.buildServiceGuide(this.serviceForm, false);
+        },
+        serviceEditGuide() {
+            return this.buildServiceGuide(this.editForm, true);
         }
     },
     methods: {
@@ -1369,6 +1468,76 @@ Vue.component('services', {
             }
 
             return '服务内容和状态都较稳定，可作为当前前台转化承接项继续观察。';
+        },
+
+        getCategoryNameById(categoryId) {
+            const matched = this.categories.find(item => String(item.id) === String(categoryId));
+            return matched ? matched.name : '未选择分类';
+        },
+
+        getCategoryStatusById(categoryId) {
+            const matched = this.categories.find(item => String(item.id) === String(categoryId));
+            return matched ? Number(matched.status) : 1;
+        },
+
+        getImageCountFromText(value) {
+            return parseImageUrlText(value).length;
+        },
+
+        buildServiceGuide(form, isEdit = false) {
+            const hasTitle = Boolean(String(form.title || '').trim());
+            const hasCategory = Boolean(form.category_id);
+            const hasPrice = Number(form.price) > 0;
+            const hasDescription = Boolean(String(form.description || '').trim());
+            const imageCount = this.getImageCountFromText(form.image_urls_text || '');
+            const isOnline = Number(form.status) === 1;
+            const categoryName = this.getCategoryNameById(form.category_id);
+            const categoryEnabled = this.getCategoryStatusById(form.category_id) === 1;
+            const score = Math.round(((hasTitle ? 1 : 0) + (hasCategory ? 1 : 0) + (hasPrice ? 1 : 0) + (hasDescription ? 1 : 0) + (imageCount > 0 ? 1 : 0)) / 5 * 100);
+
+            let title = isEdit ? '继续优化服务转化信息' : '先补齐能承接预约的基础信息';
+            let text = '标题、价格、简介和图片会共同决定前台的点击与下单意愿。';
+
+            if (!hasTitle || !hasCategory || !hasPrice) {
+                title = '还有基础配置尚未补齐';
+                text = '标题、分类和价格是服务能被识别与比较的最小配置。';
+            } else if (!hasDescription) {
+                title = '建议补充服务简介';
+                text = '简介不足时，用户很难判断服务范围、适用场景和差异点。';
+            } else if (imageCount === 0) {
+                title = '建议补充展示图片';
+                text = '前台首屏主要依赖图片建立信任感，缺图会明显影响点击率。';
+            } else if (hasCategory && !categoryEnabled) {
+                title = '所选分类当前处于禁用状态';
+                text = '即使服务已配置完整，分类入口未启用也会削弱前台承接效果。';
+            } else if (!isOnline) {
+                title = '服务当前不会在前台展示';
+                text = '下架适合草稿或临时停投，恢复上架前建议再检查图文信息。';
+            }
+
+            return {
+                title,
+                text,
+                score,
+                scoreText: score >= 100 && isOnline ? '已具备前台投放基础' : '建议补齐图文和状态后再观察转化',
+                tips: [
+                    {
+                        label: '分类',
+                        value: categoryName,
+                        type: hasCategory && categoryEnabled ? 'success' : hasCategory ? 'warning' : 'plain'
+                    },
+                    {
+                        label: '图文',
+                        value: `${hasDescription ? '有简介' : '缺简介'} / ${imageCount} 张图`,
+                        type: hasDescription && imageCount > 0 ? 'success' : 'warning'
+                    },
+                    {
+                        label: '状态',
+                        value: isOnline ? '上架中' : '下架中',
+                        type: isOnline ? 'info' : 'warning'
+                    }
+                ]
+            };
         },
 
         toggleServiceStatus(row, nextStatus) {
@@ -1913,6 +2082,88 @@ Vue.component('admins', {
             }
         };
     },
+    computed: {
+        adminOverviewCards() {
+            const counts = this.adminsData.reduce((result, item) => {
+                if (Number(item.role) === 2) {
+                    result.superAdmin += 1;
+                } else {
+                    result.normalAdmin += 1;
+                }
+
+                if (Number(item.status) !== 1) {
+                    result.disabled += 1;
+                }
+
+                if (String(item.id) === String(this.currentAdminId)) {
+                    result.self += 1;
+                }
+
+                return result;
+            }, {
+                superAdmin: 0,
+                normalAdmin: 0,
+                disabled: 0,
+                self: 0
+            });
+
+            return [
+                {
+                    title: '超级管理员',
+                    value: counts.superAdmin,
+                    desc: '建议控制在必要范围内'
+                },
+                {
+                    title: '普通管理员',
+                    value: counts.normalAdmin,
+                    desc: '承接日常运营执行'
+                },
+                {
+                    title: '已禁用',
+                    value: counts.disabled,
+                    desc: '可定期清理闲置账号'
+                },
+                {
+                    title: '当前登录账号',
+                    value: counts.self,
+                    desc: '避免误操作影响自己登录'
+                }
+            ];
+        },
+        activeSuperAdminCount() {
+            return this.adminsData.filter(item => Number(item.role) === 2 && Number(item.status) === 1).length;
+        },
+        adminFocusTitle() {
+            if (this.activeSuperAdminCount <= 1) {
+                return '当前仅剩 1 个启用中的超级管理员';
+            }
+
+            const disabledCount = this.adminsData.filter(item => Number(item.status) !== 1).length;
+            if (disabledCount > 0) {
+                return `当前有 ${disabledCount} 个账号已禁用`;
+            }
+
+            return '当前管理员分工相对稳定';
+        },
+        adminFocusText() {
+            if (this.activeSuperAdminCount <= 1) {
+                return '继续禁用、删除或降级超级管理员前，建议先确认是否有替补账号，避免后台失去高权限兜底。';
+            }
+
+            const disabledCount = this.adminsData.filter(item => Number(item.status) !== 1).length;
+            if (disabledCount > 0) {
+                return '禁用账号过多时，建议顺手清理长期不用的账号，避免列表里残留无效人员信息。';
+            }
+
+            return '可以继续围绕权限分工和账号安全巡检，保证运营交接时不出现权限空挡。';
+        },
+        adminCreateGuide() {
+            return this.buildAdminGuide(this.adminForm, false);
+        },
+        adminEditGuide() {
+            return this.buildAdminGuide(this.editForm, true);
+        }
+    },
     mounted() {
         this.getAdmins();
         this.getCurrentAdmin();
@@ -1921,7 +2172,12 @@ Vue.component('admins', {
         // 获取管理员列表
         getAdmins() {
             this.loading = true;
-            axios.get('/admin/admin/admins')
+            axios.get('/admin/admin/admins', {
+                params: {
+                    page: 1,
+                    pageSize: 1000
+                }
+            })
                 .then(response => {
                     if (response.data.code === 200) {
                         // 确保adminsData始终是一个数组
@@ -1974,6 +2230,10 @@ Vue.component('admins', {
         addAdmin() {
             this.$refs.adminForm.validate((valid) => {
                 if (valid) {
+                    if (!this.ensureAdminChangeAllowed(null, this.adminForm.role, this.adminForm.status)) {
+                        return;
+                    }
+
                     this.submitting = true;
                     axios.post('/admin/admin/admins', this.adminForm)
                         .then(response => {
@@ -2011,6 +2271,11 @@ Vue.component('admins', {
         updateAdmin() {
             this.$refs.editForm.validate((valid) => {
                 if (valid) {
+                    const currentRow = this.adminsData.find(item => String(item.id) === String(this.editForm.id)) || null;
+                    if (!this.ensureAdminChangeAllowed(currentRow, this.editForm.role, this.editForm.status)) {
+                        return;
+                    }
+
                     // 如果密码为空，不发送密码字段
                     const updateData = { ...this.editForm };
                     if (!updateData.password) {
@@ -2045,6 +2310,12 @@ Vue.component('admins', {
                 return;
             }
 
+            const targetAdmin = this.adminsData.find(item => String(item.id) === String(id));
+            if (targetAdmin && Number(targetAdmin.role) === 2 && Number(targetAdmin.status) === 1 && this.activeSuperAdminCount <= 1) {
+                this.$message.warning('当前仅剩最后一个启用中的超级管理员，不能直接删除');
+                return;
+            }
+
             this.$confirm('确定要删除该管理员吗？', '提示', {
                 confirmButtonText: '确定',
                 cancelButtonText: '取消',
@@ -2065,6 +2336,123 @@ Vue.component('admins', {
             }).catch(() => {
                 // 用户取消
             });
+        },
+
+        toggleAdminStatus(row, nextStatus) {
+            if (!this.ensureAdminChangeAllowed(row, row.role, nextStatus)) {
+                return;
+            }
+
+            this.submitting = true;
+            axios.put(`/admin/admin/admins/${row.id}`, {
+                username: row.username,
+                role: Number(row.role) || 1,
+                status: nextStatus
+            })
+                .then(response => {
+                    if (response.data.code === 200) {
+                        row.status = nextStatus;
+                        showActionSuccess(this, `管理员已${nextStatus === 1 ? '启用' : '禁用'}`);
+                    } else {
+                        this.$message.error(response.data.message || '管理员状态更新失败');
+                    }
+                })
+                .catch(error => {
+                    showActionError(this, error, '管理员状态更新失败，请稍后重试');
+                })
+                .finally(() => {
+                    this.submitting = false;
+                });
+        },
+
+        ensureAdminChangeAllowed(targetAdmin, nextRole, nextStatus) {
+            const targetId = targetAdmin ? String(targetAdmin.id) : '';
+            const normalizedRole = Number(nextRole) || 1;
+            const normalizedStatus = Number(nextStatus) === 0 ? 0 : 1;
+            const isSelf = targetId && targetId === String(this.currentAdminId);
+            const wasActiveSuperAdmin = Boolean(targetAdmin && Number(targetAdmin.role) === 2 && Number(targetAdmin.status) === 1);
+            const willRemainActiveSuperAdmin = normalizedRole === 2 && normalizedStatus === 1;
+
+            if (isSelf && normalizedStatus !== 1) {
+                this.$message.warning('不能禁用当前登录账号，避免影响当前操作会话');
+                return false;
+            }
+
+            if (wasActiveSuperAdmin && !willRemainActiveSuperAdmin && this.activeSuperAdminCount <= 1) {
+                this.$message.warning('当前仅剩最后一个启用中的超级管理员，不能降级或禁用');
+                return false;
+            }
+
+            return true;
+        },
+
+        getAdminOpsHint(row) {
+            if (String(row.id) === String(this.currentAdminId)) {
+                return '当前登录账号建议只调整密码，不要随意禁用或降级。';
+            }
+
+            if (Number(row.role) === 2 && Number(row.status) === 1 && this.activeSuperAdminCount <= 1) {
+                return '这是最后一个启用中的超级管理员，建议保留作为后台权限兜底。';
+            }
+
+            if (Number(row.status) !== 1) {
+                return '已禁用账号适合确认是否还需要保留，避免长期占用管理员名单。';
+            }
+
+            if (Number(row.role) === 2) {
+                return '高权限账号建议控制数量，避免多人同时拥有全局操作权限。';
+            }
+
+            return '普通管理员适合承接日常运营操作，建议按职责范围配置权限。';
+        },
+
+        buildAdminGuide(form, isEdit = false) {
+            const hasUsername = Boolean(String(form.username || '').trim());
+            const hasPassword = Boolean(String(form.password || '').trim());
+            const isSuperAdmin = Number(form.role) === 2;
+            const isEnabled = Number(form.status) === 1;
+            const score = Math.round(((hasUsername ? 1 : 0) + ((isEdit || hasPassword) ? 1 : 0) + (isEnabled ? 1 : 0)) / 3 * 100);
+
+            let title = isEdit ? '继续维护现有管理员职责' : '先配置能安全落地的后台账号';
+            let text = '管理员账号会直接影响后台权限分工，建议优先保证最小必要权限。';
+
+            if (!hasUsername) {
+                title = '请先补充管理员用户名';
+                text = '清晰的账号命名更方便后续区分职责和交接。';
+            } else if (!isEdit && !hasPassword) {
+                title = '新账号还缺少登录密码';
+                text = '建议使用较强密码，避免新账号创建后存在安全短板。';
+            } else if (isSuperAdmin) {
+                title = '当前配置为超级管理员';
+                text = '超级管理员拥有更高操作权限，建议只给少量核心负责人保留。';
+            } else if (!isEnabled) {
+                title = '当前账号创建后不会立即生效';
+                text = '禁用适合预创建或待交接账号，启用后才能实际登录后台。';
+            }
+
+            return {
+                title,
+                text,
+                score,
+                scoreText: score >= 100 ? '账号基础配置已完整' : '建议补齐账号信息后再提交',
+                tips: [
+                    {
+                        label: '角色',
+                        value: isSuperAdmin ? '超级管理员' : '普通管理员',
+                        type: isSuperAdmin ? 'warning' : 'info'
+                    },
+                    {
+                        label: '状态',
+                        value: isEnabled ? '可登录' : '禁用中',
+                        type: isEnabled ? 'success' : 'warning'
+                    },
+                    {
+                        label: '密码',
+                        value: isEdit ? (hasPassword ? '本次将更新' : '保持原密码') : (hasPassword ? '已填写' : '待填写'),
+                        type: hasPassword ? 'success' : 'plain'
+                    }
+                ]
+            };
         }
     }
 });
