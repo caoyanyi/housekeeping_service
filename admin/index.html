@@ -343,6 +343,18 @@
                     </div>
                     <el-button type="primary" size="mini" @click="applyQuickStatusFilter(userFocusFilter)">立即筛选</el-button>
                 </div>
+                <div class="user-pipeline-grid">
+                    <div
+                        v-for="item in userPipelineCards"
+                        :key="item.title"
+                        class="user-pipeline-card"
+                        :class="`user-pipeline-card-${item.type}`"
+                    >
+                        <span class="user-pipeline-title">{{ item.title }}</span>
+                        <span class="user-pipeline-value">{{ item.value }}</span>
+                        <span class="user-pipeline-desc">{{ item.desc }}</span>
+                    </div>
+                </div>
                 <el-table :data="visibleUsersData" stripe v-loading="loading" empty-text="暂无用户数据" style="width: 100%">
                     <el-table-column prop="id" label="ID" width="80"></el-table-column>
                     <el-table-column prop="nickname" label="用户名"></el-table-column>
@@ -355,6 +367,11 @@
                     <el-table-column prop="status" label="状态" width="200">
                         <template slot-scope="scope">
                             <el-switch v-model="scope.row.status" :active-value="1" :inactive-value="0" active-text="启用" inactive-text="禁用" @change="toggleUserStatus(scope.row)"></el-switch>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="运营提示" min-width="180">
+                        <template slot-scope="scope">
+                            <span class="table-hint">{{ getUserOpsHint(scope.row) }}</span>
                         </template>
                     </el-table-column>
                     <el-table-column prop="created_at" label="注册时间" width="180"></el-table-column>
@@ -376,6 +393,41 @@
                     </el-pagination>
                 </div>
             </div>
+            <el-dialog title="用户详情" :visible.sync="userDetailVisible" width="560px">
+                <div v-if="currentUser">
+                    <div class="detail-highlight">
+                        <span class="detail-highlight-title">{{ getUserProfileHealth(currentUser) }}</span>
+                        <span class="detail-highlight-desc">{{ currentUserGuide }}</span>
+                    </div>
+                    <div class="detail-highlight detail-highlight-secondary">
+                        <span class="detail-highlight-title">{{ currentUserActionTitle }}</span>
+                        <span class="detail-highlight-desc">{{ currentUserActionDesc }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">用户ID：</span>
+                        <span class="detail-value">{{ currentUser.id }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">用户名：</span>
+                        <span class="detail-value">{{ currentUser.nickname || '-' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">手机号：</span>
+                        <span class="detail-value">{{ currentUser.phone || '-' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">状态：</span>
+                        <span class="detail-value">{{ Number(currentUser.status) === 1 ? '正常使用' : '禁用' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">注册时间：</span>
+                        <span class="detail-value">{{ currentUser.created_at }}</span>
+                    </div>
+                </div>
+                <div slot="footer" class="dialog-footer">
+                    <el-button @click="userDetailVisible = false">关闭</el-button>
+                </div>
+            </el-dialog>
         </div>
     </script>
     
@@ -949,6 +1001,18 @@
                     </div>
                     <el-button type="primary" size="mini" @click="applyQuickStatusFilter(jobFocusFilter)">立即筛选</el-button>
                 </div>
+                <div class="job-pipeline-grid">
+                    <div
+                        v-for="item in jobPipelineCards"
+                        :key="item.title"
+                        class="job-pipeline-card"
+                        :class="`job-pipeline-card-${item.type}`"
+                    >
+                        <span class="job-pipeline-title">{{ item.title }}</span>
+                        <span class="job-pipeline-value">{{ item.value }}</span>
+                        <span class="job-pipeline-desc">{{ item.desc }}</span>
+                    </div>
+                </div>
                 <el-table :data="visibleJobApplicationsData" stripe v-loading="loading" empty-text="暂无求职申请数据" style="width: 100%">
                     <el-table-column prop="id" label="ID" width="80"></el-table-column>
                     <el-table-column prop="name" label="姓名" width="120"></el-table-column>
@@ -964,6 +1028,11 @@
                     <el-table-column prop="status" label="状态" width="100">
                         <template slot-scope="scope">
                             <el-tag :type="getStatusType(scope.row.status)">{{ getStatusText(scope.row.status) }}</el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="跟进提示" min-width="180">
+                        <template slot-scope="scope">
+                            <span class="table-hint">{{ getJobOpsHint(scope.row) }}</span>
                         </template>
                     </el-table-column>
                     <el-table-column prop="created_at" label="提交时间" width="180"></el-table-column>
@@ -1006,6 +1075,10 @@
                     <div class="detail-highlight">
                         <span class="detail-highlight-title">{{ getStatusText(viewForm.status) }}</span>
                         <span class="detail-highlight-desc">{{ currentJobGuide }}</span>
+                    </div>
+                    <div class="detail-highlight detail-highlight-secondary">
+                        <span class="detail-highlight-title">{{ currentJobActionTitle }}</span>
+                        <span class="detail-highlight-desc">{{ currentJobActionDesc }}</span>
                     </div>
                     <div class="detail-item">
                         <span class="detail-label">姓名：</span>

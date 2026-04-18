@@ -21,6 +21,16 @@
         </view>
       </view>
 
+      <view class="action-card">
+        <text class="action-label">当前建议</text>
+        <text class="action-title">{{ profileActionGuide.title }}</text>
+        <text class="action-desc">{{ profileActionGuide.desc }}</text>
+        <view class="action-buttons">
+          <text class="action-chip primary" @click="handlePrimaryGuideAction">{{ profileActionGuide.primaryText }}</text>
+          <text class="action-chip" @click="handleSecondaryGuideAction">{{ profileActionGuide.secondaryText }}</text>
+        </view>
+      </view>
+
       <view class="readiness-card">
         <view class="card-header">
           <text class="card-title">下单准备度</text>
@@ -36,6 +46,19 @@
               <text class="readiness-label">{{ item.label }}</text>
               <text class="readiness-text">{{ item.text }}</text>
             </view>
+          </view>
+        </view>
+      </view>
+
+      <view class="benefit-card">
+        <view class="card-header">
+          <text class="card-title">资料完善后能直接带来的好处</text>
+          <text class="card-subtitle">把补资料和后续预约体验直接关联起来</text>
+        </view>
+        <view class="benefit-list">
+          <view v-for="item in profileBenefits" :key="item.title" class="benefit-item">
+            <text class="benefit-title">{{ item.title }}</text>
+            <text class="benefit-text">{{ item.text }}</text>
           </view>
         </view>
       </view>
@@ -143,6 +166,45 @@ export default {
         readinessHint() {
             const nextItem = this.profileChecklist.find((item) => !item.done);
             return nextItem ? `还可补充：${nextItem.label}` : '资料已经齐全，预约时会更省心';
+        },
+        profileActionGuide() {
+            const missingItem = this.profileChecklist.find((item) => !item.done);
+
+            if (missingItem) {
+                return {
+                    title: `优先补上${missingItem.label}，比继续浏览更划算`,
+                    desc: '资料补齐后，预约页会自动带出关键信息，能明显减少首次下单时的输入和沟通成本。',
+                    primaryText: '去完善资料',
+                    secondaryText: '查看我的预约',
+                    primaryAction: 'settings',
+                    secondaryAction: 'appointments'
+                };
+            }
+
+            return {
+                title: '资料已经齐全，可以把精力放在选服务和跟进预约上',
+                desc: '现在更适合继续浏览服务，或者进入预约中心查看当前订单进度和下一步安排。',
+                primaryText: '去看服务',
+                secondaryText: '查看我的预约',
+                primaryAction: 'services',
+                secondaryAction: 'appointments'
+            };
+        },
+        profileBenefits() {
+            return [
+                {
+                    title: '预约页自动带出常用资料',
+                    text: '联系人昵称、手机号和地址准备好后，首次和再次预约都会更顺手。'
+                },
+                {
+                    title: '平台确认会更快',
+                    text: '地址和联系人越明确，平台越容易判断服务安排，减少来回核对。'
+                },
+                {
+                    title: '后续复购更省步骤',
+                    text: '当你再次预约同类服务时，不需要每次都从头补完整信息。'
+                }
+            ];
         }
     },
     onShow() {
@@ -185,6 +247,24 @@ export default {
         },
         goSettings() {
             ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.user.settings);
+        },
+        goServiceList() {
+            ROUTER_CONFIG.navigate.switchTab(ROUTER_CONFIG.pages.service.list);
+        },
+        handlePrimaryGuideAction() {
+            if (this.profileActionGuide.primaryAction === 'settings') {
+                this.goSettings();
+                return;
+            }
+
+            if (this.profileActionGuide.primaryAction === 'services') {
+                this.goServiceList();
+            }
+        },
+        handleSecondaryGuideAction() {
+            if (this.profileActionGuide.secondaryAction === 'appointments') {
+                this.goAppointmentList();
+            }
         },
         showAbout() {
             uni.showModal({
@@ -232,7 +312,9 @@ export default {
 }
 
 .hero-card,
+.action-card,
 .readiness-card,
+.benefit-card,
 .info-card,
 .menu-card,
 .notice-card {
@@ -314,11 +396,53 @@ export default {
   color: #667085;
 }
 
+.action-card,
 .readiness-card,
+.benefit-card,
 .info-card,
 .menu-card {
   margin-top: 14px;
   padding: 16px;
+}
+
+.action-label {
+  font-size: 11px;
+  color: #1d79c2;
+}
+
+.action-title {
+  display: block;
+  margin-top: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.action-desc {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #667085;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.action-chip {
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #eef4ff;
+  font-size: 12px;
+  color: #1d79c2;
+}
+
+.action-chip.primary {
+  background: #1d79c2;
+  color: #ffffff;
 }
 
 .readiness-progress {
@@ -402,6 +526,33 @@ export default {
   font-size: 12px;
   line-height: 1.6;
   color: #98a2b3;
+}
+
+.benefit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.benefit-item {
+  padding: 14px;
+  border-radius: 18px;
+  background: #f8fafc;
+}
+
+.benefit-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.benefit-text {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #667085;
 }
 
 .info-item,

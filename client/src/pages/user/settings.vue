@@ -15,12 +15,32 @@
       </view>
     </view>
 
+    <view class="guide-card">
+      <text class="guide-label">当前建议</text>
+      <text class="guide-title">{{ settingsGuide.title }}</text>
+      <text class="guide-text">{{ settingsGuide.desc }}</text>
+      <view class="guide-actions">
+        <text class="guide-action primary" @click="handleGuidePrimary">{{ settingsGuide.primaryText }}</text>
+        <text class="guide-action" @click="handleGuideSecondary">{{ settingsGuide.secondaryText }}</text>
+      </view>
+    </view>
+
     <view class="tips-card">
       <view class="tips-item" v-for="item in profileChecklist" :key="item.label">
         <text class="tips-badge" :class="{ done: item.done }">{{ item.done ? '已完成' : '待完善' }}</text>
         <view class="tips-copy">
           <text class="tips-title">{{ item.label }}</text>
           <text class="tips-text">{{ item.text }}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="result-card">
+      <text class="section-title">保存后会直接影响这些环节</text>
+      <view class="result-list">
+        <view v-for="item in profileResults" :key="item.title" class="result-item">
+          <text class="result-title">{{ item.title }}</text>
+          <text class="result-text">{{ item.text }}</text>
         </view>
       </view>
     </view>
@@ -100,6 +120,16 @@
         更新密码
       </button>
     </view>
+
+    <view class="security-card">
+      <text class="section-title">账号安全提醒</text>
+      <view class="security-list">
+        <view v-for="item in securityTips" :key="item.title" class="security-item">
+          <text class="security-title">{{ item.title }}</text>
+          <text class="security-text">{{ item.text }}</text>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -155,6 +185,61 @@ export default {
             return nextItem
                 ? `当前完成 ${this.profileCompletion}% ，还可补充：${nextItem.label}`
                 : '资料已完善，预约页会自动带出联系人和地址';
+        },
+        settingsGuide() {
+            const nextItem = this.profileChecklist.find((item) => !item.done);
+
+            if (nextItem) {
+                return {
+                    title: `建议优先补上${nextItem.label}`,
+                    desc: '资料越完整，后续预约页越像“确认信息”而不是“重新填表”，尤其对首次下单更友好。',
+                    primaryText: '先完善资料',
+                    secondaryText: '查看预约中心',
+                    primaryAction: 'profile',
+                    secondaryAction: 'appointments'
+                };
+            }
+
+            return {
+                title: '资料已经比较齐全，现在更值得检查账号安全',
+                desc: '如果是常用账号，建议顺手确认密码强度，避免后续更换设备时影响登录和查看预约。',
+                primaryText: '检查密码',
+                secondaryText: '查看预约中心',
+                primaryAction: 'password',
+                secondaryAction: 'appointments'
+            };
+        },
+        profileResults() {
+            return [
+                {
+                    title: '预约创建页会自动带出资料',
+                    text: '联系人昵称、手机号和常用地址保存后，后续预约只需要再确认而不是重新输入。'
+                },
+                {
+                    title: '平台确认效率会更高',
+                    text: '地址和联系人信息更完整时，平台更容易快速核对需求并推进安排。'
+                },
+                {
+                    title: '异常订单也更容易恢复',
+                    text: '当订单取消、拒绝或未履约后，完整资料能帮助你更快重新发起预约。'
+                }
+            ];
+        },
+        securityTips() {
+            return [
+                {
+                    title: '密码更新后需要重新登录',
+                    text: '这能确保旧登录态失效，避免账号在其他设备上继续使用。'
+                },
+                {
+                    title: '常用手机号不要轻易变更',
+                    text: '它会影响平台联系、预约确认以及你后续找回账号的便利性。'
+                },
+                {
+                    title: '资料保存和密码更新建议分开操作',
+                    text: '先把常用资料补齐，再处理密码，会更不容易打断当前业务流程。'
+                }
+            ];
         }
     },
     onShow() {
@@ -178,6 +263,30 @@ export default {
         this.getUserInfo();
     },
     methods: {
+        goAppointmentList() {
+            ROUTER_CONFIG.navigate.switchTab(ROUTER_CONFIG.pages.appointment.list);
+        },
+        handleGuidePrimary() {
+            if (this.settingsGuide.primaryAction === 'profile') {
+                uni.pageScrollTo({
+                    scrollTop: 260,
+                    duration: 250
+                });
+                return;
+            }
+
+            if (this.settingsGuide.primaryAction === 'password') {
+                uni.pageScrollTo({
+                    scrollTop: 980,
+                    duration: 250
+                });
+            }
+        },
+        handleGuideSecondary() {
+            if (this.settingsGuide.secondaryAction === 'appointments') {
+                this.goAppointmentList();
+            }
+        },
         getUserInfo() {
             this.profileLoading = true;
 
@@ -318,8 +427,11 @@ export default {
 
 .hero-card,
 .summary-card,
+.guide-card,
 .tips-card,
-.section-card {
+.result-card,
+.section-card,
+.security-card {
   border-radius: 22px;
   background: #ffffff;
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
@@ -345,8 +457,11 @@ export default {
 }
 
 .summary-card,
+.guide-card,
 .tips-card,
-.section-card {
+.result-card,
+.section-card,
+.security-card {
   margin-top: 14px;
 }
 
@@ -380,6 +495,52 @@ export default {
   height: 100%;
   border-radius: inherit;
   background: linear-gradient(135deg, #1aad19 0%, #36c567 100%);
+}
+
+.guide-card,
+.result-card,
+.security-card {
+  padding: 16px;
+}
+
+.guide-label {
+  font-size: 11px;
+  color: #1aad19;
+}
+
+.guide-title {
+  display: block;
+  margin-top: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.guide-text {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #667085;
+}
+
+.guide-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.guide-action {
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #eef8f1;
+  font-size: 12px;
+  color: #1f8f44;
+}
+
+.guide-action.primary {
+  background: #1aad19;
+  color: #ffffff;
 }
 
 .tips-card {
@@ -430,6 +591,37 @@ export default {
 }
 
 .tips-text {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #667085;
+}
+
+.result-list,
+.security-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.result-item,
+.security-item {
+  padding: 14px;
+  border-radius: 18px;
+  background: #f8fafc;
+}
+
+.result-title,
+.security-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.result-text,
+.security-text {
   display: block;
   margin-top: 6px;
   font-size: 13px;

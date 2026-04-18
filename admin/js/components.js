@@ -185,6 +185,43 @@ Vue.component('job-applications', {
         jobFocusFilter() {
             return this.quickStatusFilter === 'pending' ? '' : 'pending';
         },
+        jobPipelineCards() {
+            const counts = this.jobApplicationsData.reduce((result, item) => {
+                const key = item.status || 'pending';
+                result[key] = (result[key] || 0) + 1;
+                if (this.getJobProfileHealth(item) !== '资料完整') {
+                    result.incomplete += 1;
+                }
+                return result;
+            }, {
+                pending: 0,
+                reviewed: 0,
+                contacted: 0,
+                rejected: 0,
+                incomplete: 0
+            });
+
+            return [
+                {
+                    title: '待首轮筛选',
+                    value: counts.pending,
+                    desc: counts.pending ? '建议先判断资料完整度，再推进查看或联系。' : '当前页没有待首轮处理积压。',
+                    type: counts.pending ? 'warning' : 'success'
+                },
+                {
+                    title: '已进入联系',
+                    value: counts.contacted,
+                    desc: counts.contacted ? '说明已有候选人进入转化阶段，适合继续跟进。' : '当前页还没有进入联系阶段的报名。',
+                    type: counts.contacted ? 'info' : 'plain'
+                },
+                {
+                    title: '资料缺口',
+                    value: counts.incomplete,
+                    desc: counts.incomplete ? '资料不完整会拉低筛选效率，值得优先关注。' : '当前页资料完整度整体较好。',
+                    type: counts.incomplete ? 'danger' : 'success'
+                }
+            ];
+        },
         jobDetailActionOptions() {
             const optionMap = {
                 pending: [
@@ -211,6 +248,26 @@ Vue.component('job-applications', {
             };
 
             return guideMap[this.viewForm.status] || '在这里可以查看候选人信息并推进供给跟进。';
+        },
+        currentJobActionTitle() {
+            const titleMap = {
+                pending: '当前最重要的是判断是否值得进入首轮联系',
+                reviewed: '当前最重要的是尽快推进到有效沟通',
+                contacted: '当前最重要的是持续跟进转化结果',
+                rejected: '当前最重要的是复盘筛选口径是否合理'
+            };
+
+            return titleMap[this.viewForm.status] || '当前最重要的是先判断候选人所处阶段';
+        },
+        currentJobActionDesc() {
+            const descMap = {
+                pending: '如果资料完整、区域清晰、年限匹配，越早推进越有利于补充服务供给。',
+                reviewed: '只停留在已查看阶段容易拖慢转化，建议尽快判断是否进入联系。',
+                contacted: '这类候选人最接近形成供给结果，适合重点盯进度和到岗意向。',
+                rejected: '如果拒绝过多，通常值得回看当前岗位要求和前台求职引导是否匹配。'
+            };
+
+            return descMap[this.viewForm.status] || '结合资料完整度和状态，判断下一步供给跟进动作。';
         }
     },
     methods: {
@@ -409,6 +466,16 @@ Vue.component('job-applications', {
             };
             return typeMap[status] || 'default';
         },
+        getJobOpsHint(row) {
+            const map = {
+                pending: '先看资料完整度，再决定是否进入查看或联系。',
+                reviewed: '建议尽快推进联系，避免停留在只看不跟进。',
+                contacted: '这类候选人最接近转化结果，适合重点盯进度。',
+                rejected: '回看拒绝原因，判断筛选标准是否需要调整。'
+            };
+
+            return map[row.status] || '查看详情并判断下一步供给跟进动作。';
+        },
         
         // 获取证书文本
         getCertificatesText(certificates) {
@@ -458,7 +525,9 @@ Vue.component('users', {
             currentPage: 1,
             pageSize: 10,
             total: 0,
-            loading: false
+            loading: false,
+            userDetailVisible: false,
+            currentUser: null
         };
     },
     mounted() {
@@ -534,6 +603,86 @@ Vue.component('users', {
         },
         userFocusFilter() {
             return this.quickStatusFilter === 0 ? '' : 0;
+        },
+        userPipelineCards() {
+            const counts = this.usersData.reduce((result, item) => {
+                const statusKey = Number(item.status) === 1 ? 'enabled' : 'disabled';
+                result[statusKey] += 1;
+                if (this.getUserProfileHealth(item) !== '资料完整') {
+                    result.incomplete += 1;
+                }
+                return result;
+            }, {
+                enabled: 0,
+                disabled: 0,
+                incomplete: 0
+            });
+
+            return [
+                {
+                    title: '可直接承接预约',
+                    value: counts.enabled,
+                    desc: counts.enabled ? '说明这批用户状态正常，适合作为当前转化基础。' : '当前页没有正常启用用户，需要关注账号状态。',
+                    type: counts.enabled ? 'success' : 'danger'
+                },
+                {
+                    title: '资料待完善',
+                    value: counts.incomplete,
+                    desc: counts.incomplete ? '资料不完整会影响预约确认效率，值得优先关注。' : '当前页资料完整度整体较好。',
+                    type: counts.incomplete ? 'warning' : 'success'
+                },
+                {
+                    title: '账号受限',
+                    value: counts.disabled,
+                    desc: counts.disabled ? '建议回看禁用原因，判断是否影响当前业务承接。' : '当前页没有禁用用户，账号状态相对稳定。',
+                    type: counts.disabled ? 'danger' : 'info'
+                }
+            ];
+        },
+        currentUserGuide() {
+            if (!this.currentUser) {
+                return '在这里可以查看用户资料状态和下一步运营判断。';
+            }
+
+            if (Number(this.currentUser.status) !== 1) {
+                return '该用户当前处于禁用状态，建议先判断是否需要恢复使用资格。';
+            }
+
+            if (this.getUserProfileHealth(this.currentUser) !== '资料完整') {
+                return '该用户资料仍不完整，容易影响预约确认和后续沟通效率。';
+            }
+
+            return '该用户资料和状态整体稳定，适合作为正常服务承接用户观察。';
+        },
+        currentUserActionTitle() {
+            if (!this.currentUser) {
+                return '当前最重要的是先判断资料与状态';
+            }
+
+            if (Number(this.currentUser.status) !== 1) {
+                return '当前最重要的是判断禁用是否还必要';
+            }
+
+            if (this.getUserProfileHealth(this.currentUser) !== '资料完整') {
+                return '当前最重要的是关注资料缺口是否影响下单';
+            }
+
+            return '当前最重要的是把他视为正常承接用户';
+        },
+        currentUserActionDesc() {
+            if (!this.currentUser) {
+                return '结合资料完整度和账号状态，判断是否影响预约体验。';
+            }
+
+            if (Number(this.currentUser.status) !== 1) {
+                return '如果禁用用户增多，通常值得回看封禁策略是否误伤真实服务需求。';
+            }
+
+            if (this.getUserProfileHealth(this.currentUser) !== '资料完整') {
+                return '资料缺口越多，平台确认订单时越容易产生重复沟通和转化流失。';
+            }
+
+            return '这类资料完整、状态正常的用户更适合作为观察转化和复购体验的样本。';
         }
     },
     methods: {
@@ -603,9 +752,8 @@ Vue.component('users', {
         
         // 查看用户详情
         viewUser(row) {
-            this.$alert(`用户ID: ${row.id}\n用户名: ${row.nickname || '-'}\n手机号: ${row.phone || '-'}\n资料状态: ${this.getUserProfileHealth(row)}\n注册时间: ${row.created_at}`, '用户详情', {
-                confirmButtonText: '确定'
-            });
+            this.currentUser = { ...row };
+            this.userDetailVisible = true;
         },
 
         getUserProfileHealth(row) {
@@ -632,6 +780,17 @@ Vue.component('users', {
             };
 
             return typeMap[healthText] || 'info';
+        },
+        getUserOpsHint(row) {
+            if (Number(row.status) !== 1) {
+                return '建议先确认禁用原因，避免误伤真实预约需求。';
+            }
+
+            if (this.getUserProfileHealth(row) !== '资料完整') {
+                return '资料不完整时，预约确认通常更容易产生重复沟通。';
+            }
+
+            return '资料和状态稳定，可作为正常承接用户持续观察。';
         },
         
         // 处理分页大小变化
