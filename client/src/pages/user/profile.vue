@@ -21,6 +21,27 @@
         </view>
       </view>
 
+      <view class="order-overview-card">
+        <view class="card-header">
+          <text class="card-title">预约进展概览</text>
+          <text class="card-subtitle">{{ appointmentOverviewHint }}</text>
+        </view>
+        <view class="order-overview-grid">
+          <view v-for="item in appointmentOverviewCards" :key="item.title" class="order-overview-item">
+            <text class="order-overview-value">{{ item.value }}</text>
+            <text class="order-overview-title">{{ item.title }}</text>
+            <text class="order-overview-desc">{{ item.desc }}</text>
+          </view>
+        </view>
+        <view class="order-focus-card">
+          <view class="order-focus-copy">
+            <text class="order-focus-title">{{ orderFocusGuide.title }}</text>
+            <text class="order-focus-desc">{{ orderFocusGuide.desc }}</text>
+          </view>
+          <text class="order-focus-action" @click="handleOrderFocusAction">{{ orderFocusGuide.actionText }}</text>
+        </view>
+      </view>
+
       <view class="action-card">
         <text class="action-label">当前建议</text>
         <text class="action-title">{{ profileActionGuide.title }}</text>
@@ -127,12 +148,14 @@
 <script>
 import API_CONFIG from '../../config/api.config';
 import ROUTER_CONFIG from '../../config/router.config';
+import { normalizeAppointment } from '../../utils/view-models';
 
 export default {
     data() {
         return {
             userInfo: null,
-            token: ''
+            token: '',
+            recentAppointments: []
         };
     },
     computed: {
@@ -190,6 +213,71 @@ export default {
                 secondaryAction: 'appointments'
             };
         },
+        ongoingAppointmentCount() {
+            return this.recentAppointments.filter((item) => ['pending', 'accepted'].includes(item.status)).length;
+        },
+        completedAppointmentCount() {
+            return this.recentAppointments.filter((item) => item.status === 'completed').length;
+        },
+        latestAppointment() {
+            return this.recentAppointments[0] || null;
+        },
+        appointmentOverviewHint() {
+            if (!this.recentAppointments.length) {
+                return '还没有预约记录，首次下单后这里会开始沉淀你的预约节奏。';
+            }
+
+            if (this.ongoingAppointmentCount > 0) {
+                return `当前有 ${this.ongoingAppointmentCount} 笔预约正在处理中，适合优先跟进。`;
+            }
+
+            return '近期预约已经比较平稳，可以继续浏览服务或准备下一次下单。';
+        },
+        appointmentOverviewCards() {
+            return [
+                {
+                    title: '处理中',
+                    value: this.ongoingAppointmentCount,
+                    desc: '待接单和已接单'
+                },
+                {
+                    title: '已完成',
+                    value: this.completedAppointmentCount,
+                    desc: '可作为复购参考'
+                },
+                {
+                    title: '最近一笔',
+                    value: this.latestAppointment ? this.latestAppointment.status_text : '暂无',
+                    desc: this.latestAppointment ? this.latestAppointment.service_title : '预约后会显示'
+                }
+            ];
+        },
+        orderFocusGuide() {
+            if (!this.latestAppointment) {
+                return {
+                    title: '还没有预约记录，先从热门服务开始更轻松',
+                    desc: '首次预约后，这里会帮你沉淀进度、复购线索和资料使用习惯。',
+                    actionText: '去看服务',
+                    action: 'services'
+                };
+            }
+
+            if (['pending', 'accepted'].includes(this.latestAppointment.status)) {
+                return {
+                    title: `最近一笔“${this.latestAppointment.service_title}”还在处理中`,
+                    desc: '如果预约时间临近，建议先点进去确认时间、地址和备注信息是否完整。',
+                    actionText: '查看这笔预约',
+                    action: 'latest-appointment'
+                };
+            }
+
+            return {
+                title: `最近一笔“${this.latestAppointment.service_title}”已经结束`,
+                desc: '如果这次体验合适，可以把它当作下一次预约的参考，省去重新比较的时间。',
+                actionText: '回看订单详情',
+                action: 'latest-appointment'
+            };
+        },
         profileBenefits() {
             return [
                 {
@@ -207,10 +295,11 @@ export default {
             ];
         }
     },
-    onShow() {
+        onShow() {
         this.token = uni.getStorageSync('token');
         if (!this.token) {
             this.userInfo = null;
+            this.recentAppointments = [];
             return;
         }
 
@@ -220,6 +309,7 @@ export default {
         }
 
         this.getUserInfo();
+        this.getRecentAppointments();
     },
     methods: {
         getUserInfo() {
@@ -242,6 +332,28 @@ export default {
                     this.token = '';
                 });
         },
+        getRecentAppointments() {
+            this.$request
+                .get(
+                    API_CONFIG.endpoints.appointment.getAppointment,
+                    {
+                        page: 1,
+                        page_size: 10
+                    },
+                    {
+                        headers: {
+                            Authorization: `Bearer ${this.token}`
+                        }
+                    }
+                )
+                .then((res) => {
+                    const list = Array.isArray(res.data?.list) ? res.data.list : [];
+                    this.recentAppointments = list.map((item) => normalizeAppointment(item));
+                })
+                .catch(() => {
+                    this.recentAppointments = [];
+                });
+        },
         goAppointmentList() {
             ROUTER_CONFIG.navigate.switchTab(ROUTER_CONFIG.pages.appointment.list);
         },
@@ -250,6 +362,15 @@ export default {
         },
         goServiceList() {
             ROUTER_CONFIG.navigate.switchTab(ROUTER_CONFIG.pages.service.list);
+        },
+        goLatestAppointmentDetail() {
+            if (!this.latestAppointment?.id) {
+                return;
+            }
+
+            ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.appointment.detail, {
+                appointmentId: this.latestAppointment.id
+            });
         },
         handlePrimaryGuideAction() {
             if (this.profileActionGuide.primaryAction === 'settings') {
@@ -264,6 +385,16 @@ export default {
         handleSecondaryGuideAction() {
             if (this.profileActionGuide.secondaryAction === 'appointments') {
                 this.goAppointmentList();
+            }
+        },
+        handleOrderFocusAction() {
+            if (this.orderFocusGuide.action === 'services') {
+                this.goServiceList();
+                return;
+            }
+
+            if (this.orderFocusGuide.action === 'latest-appointment') {
+                this.goLatestAppointmentDetail();
             }
         },
         showAbout() {
@@ -313,6 +444,7 @@ export default {
 
 .hero-card,
 .action-card,
+.order-overview-card,
 .readiness-card,
 .benefit-card,
 .info-card,
@@ -394,6 +526,78 @@ export default {
   font-size: 12px;
   line-height: 1.6;
   color: #667085;
+}
+
+.order-overview-card {
+  margin-top: 14px;
+  padding: 16px;
+}
+
+.order-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.order-overview-item {
+  padding: 14px 12px;
+  border-radius: 18px;
+  background: #f8fafc;
+}
+
+.order-overview-value {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.order-overview-title {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #475467;
+}
+
+.order-overview-desc {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: #98a2b3;
+}
+
+.order-focus-card {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #f8fbff 0%, #eef5ff 100%);
+}
+
+.order-focus-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.order-focus-desc {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #667085;
+}
+
+.order-focus-action {
+  display: inline-flex;
+  margin-top: 12px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #1d79c2;
+  font-size: 12px;
+  color: #ffffff;
 }
 
 .action-card,

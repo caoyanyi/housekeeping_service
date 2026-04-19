@@ -61,6 +61,28 @@
       <button class="action-card-button" @click="handleGuideAction">{{ currentGuide.actionText }}</button>
     </view>
 
+    <view v-if="token" class="spotlight-card">
+      <view class="spotlight-copy">
+        <text class="spotlight-label">当前最值得先看</text>
+        <text class="spotlight-title">{{ spotlightGuide.title }}</text>
+        <text class="spotlight-desc">{{ spotlightGuide.desc }}</text>
+      </view>
+      <button class="spotlight-button" @click="handleSpotlightAction">{{ spotlightGuide.actionText }}</button>
+    </view>
+
+    <view v-if="token" class="next-step-card">
+      <view class="next-step-head">
+        <text class="next-step-title">这个状态下建议先做什么</text>
+        <text class="next-step-subtitle">把查看状态转换成下一步动作，减少等待时的不确定感</text>
+      </view>
+      <view class="next-step-list">
+        <view v-for="item in nextStepTips" :key="item.title" class="next-step-item">
+          <text class="next-step-item-title">{{ item.title }}</text>
+          <text class="next-step-item-desc">{{ item.desc }}</text>
+        </view>
+      </view>
+    </view>
+
     <view v-if="!token" class="state-block">
       <image src="/static/images/avatar.svg" mode="aspectFit" class="state-image"></image>
       <text class="state-title">登录后查看预约记录</text>
@@ -303,6 +325,154 @@ export default {
                 actionText: '切到待接单',
                 action: 'pending'
             };
+        },
+        spotlightAppointment() {
+            if (!this.appointmentList.length) {
+                return null;
+            }
+
+            return (
+                this.appointmentList.find((item) => ['pending', 'accepted'].includes(item.status)) ||
+                this.appointmentList[0]
+            );
+        },
+        spotlightGuide() {
+            const appointment = this.spotlightAppointment;
+
+            if (!appointment) {
+                return {
+                    title: '还没有订单需要优先查看',
+                    desc: '可以回到服务列表继续预约，新的订单会自动同步到这里。',
+                    actionText: '去看服务',
+                    action: 'service'
+                };
+            }
+
+            if (appointment.status === 'pending') {
+                return {
+                    title: `${appointment.service_title} 正在等待平台确认`,
+                    desc: `预约时间是 ${appointment.appointment_datetime}，建议先确认电话畅通，并留意平台联系。`,
+                    actionText: '查看这笔订单',
+                    action: 'detail'
+                };
+            }
+
+            if (appointment.status === 'accepted') {
+                return {
+                    title: `${appointment.service_title} 已进入准备阶段`,
+                    desc: '这类订单最适合优先检查地址、门牌号和备注，减少服务前再来回沟通。',
+                    actionText: '查看这笔订单',
+                    action: 'detail'
+                };
+            }
+
+            return {
+                title: `${appointment.service_title} 可以作为下一次决策参考`,
+                desc: '进入详情页可以回看本次时间、地址和服务信息，再决定是否复购同类服务。',
+                actionText: '查看这笔订单',
+                action: 'detail'
+            };
+        },
+        nextStepTips() {
+            if (!this.total) {
+                return [
+                    {
+                        title: '先去挑服务',
+                        desc: '从服务列表或首页主推服务开始，更容易快速进入合适项目。'
+                    },
+                    {
+                        title: '先补齐资料',
+                        desc: '如果是首次预约，建议先去个人中心完善地址和联系人信息。'
+                    },
+                    {
+                        title: '预约后再回来跟进',
+                        desc: '新订单提交后会自动同步到这里，不需要重复找入口。'
+                    }
+                ];
+            }
+
+            if (this.activeStatus === 'pending') {
+                return [
+                    {
+                        title: '保持电话畅通',
+                        desc: '待接单阶段平台通常会先核对时间、地址和需求范围。'
+                    },
+                    {
+                        title: '回看地址和备注',
+                        desc: '如果地址不够完整，尽早去个人中心补齐会更稳妥。'
+                    },
+                    {
+                        title: '预约时间临近时优先看详情',
+                        desc: '越接近上门时间，越适合先看订单详情确认是否有遗漏信息。'
+                    }
+                ];
+            }
+
+            if (this.activeStatus === 'accepted') {
+                return [
+                    {
+                        title: '再次确认现场信息',
+                        desc: '门牌、楼层和现场限制越明确，服务执行越顺。'
+                    },
+                    {
+                        title: '保留联系电话可接通',
+                        desc: '服务前如果平台需要补充信息，通常会优先联系订单里的电话。'
+                    },
+                    {
+                        title: '需要复购时先收藏这次经验',
+                        desc: '本次时间和备注如果合适，下次预约可以直接沿用。'
+                    }
+                ];
+            }
+
+            if (this.activeStatus === 'completed') {
+                return [
+                    {
+                        title: '把这次订单当作复购模板',
+                        desc: '这类已完成订单最适合帮助你快速再约同类服务。'
+                    },
+                    {
+                        title: '保留这次合适的时间段',
+                        desc: '如果本次预约时间体验不错，下次可以继续沿用。'
+                    },
+                    {
+                        title: '从同类服务继续比较',
+                        desc: '如果这次不是完全匹配，也可以回到同类服务里继续挑。'
+                    }
+                ];
+            }
+
+            if (['cancelled', 'rejected', 'no_show'].includes(this.activeStatus)) {
+                return [
+                    {
+                        title: '先判断需求是否还在',
+                        desc: '如果仍然需要服务，通常越早重新预约越容易排上合适时间。'
+                    },
+                    {
+                        title: '重新提交时把备注写得更完整',
+                        desc: '时间限制、现场条件和重点区域越清楚，越有助于再次确认。'
+                    },
+                    {
+                        title: '必要时换一个更合适的同类服务',
+                        desc: '有时不是下单时机问题，而是服务项目本身还不够匹配。'
+                    }
+                ];
+            }
+
+            return [
+                {
+                    title: '优先看待接单和已接单',
+                    desc: '这两类订单最影响当前预约体验和履约节奏。'
+                },
+                {
+                    title: '已完成订单适合做复购参考',
+                    desc: '它们能帮你更快回忆上次的时间、地址和服务内容。'
+                },
+                {
+                    title: '异常订单值得尽快复盘',
+                    desc: '取消、拒绝和未履约通常最能暴露信息不足或需求不匹配。'
+                }
+            ];
         }
     },
     onShow() {
@@ -454,6 +624,16 @@ export default {
 
             if (this.currentGuide.action === 'detail' && this.appointmentList.length) {
                 this.goToDetail(this.appointmentList[0].id);
+            }
+        },
+        handleSpotlightAction() {
+            if (this.spotlightGuide.action === 'service') {
+                this.goToServiceList();
+                return;
+            }
+
+            if (this.spotlightGuide.action === 'detail' && this.spotlightAppointment) {
+                this.goToDetail(this.spotlightAppointment.id);
             }
         },
         goToDetail(appointmentId) {
@@ -677,6 +857,93 @@ export default {
   background: linear-gradient(135deg, #1d79c2 0%, #48a7df 100%);
   color: #ffffff;
   font-size: 14px;
+}
+
+.spotlight-card,
+.next-step-card {
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+}
+
+.spotlight-label {
+  display: block;
+  font-size: 11px;
+  color: #1d79c2;
+}
+
+.spotlight-title {
+  display: block;
+  margin-top: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.spotlight-desc {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #667085;
+}
+
+.spotlight-button {
+  margin-top: 14px;
+  height: 42px;
+  line-height: 42px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1d79c2 0%, #48a7df 100%);
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.next-step-head {
+  margin-bottom: 14px;
+}
+
+.next-step-title {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.next-step-subtitle {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #98a2b3;
+}
+
+.next-step-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.next-step-item {
+  padding: 14px;
+  border-radius: 18px;
+  background: #f8fafc;
+}
+
+.next-step-item-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.next-step-item-desc {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #667085;
 }
 
 .appointment-list {
