@@ -57,6 +57,34 @@
     <view class="section-card">
       <view class="section-header">
         <view>
+          <text class="section-title">今天就想预约，可以这样走</text>
+          <text class="section-subtitle">把“先看什么、先准备什么、下一步点哪里”直接放在首页</text>
+        </view>
+      </view>
+      <view class="booking-decision-panel">
+        <view class="decision-highlight">
+          <view class="decision-highlight-copy">
+            <text class="decision-highlight-tag">推荐起点</text>
+            <text class="decision-highlight-title">{{ homeBookingGuide.title }}</text>
+            <text class="decision-highlight-desc">{{ homeBookingGuide.desc }}</text>
+          </view>
+          <view class="decision-highlight-actions">
+            <button class="decision-highlight-button" @click="goBookingGuidePrimary">{{ homeBookingGuide.primaryText }}</button>
+            <button class="decision-highlight-button ghost" @click="goBookingGuideSecondary">{{ homeBookingGuide.secondaryText }}</button>
+          </view>
+        </view>
+        <view class="decision-check-list">
+          <view v-for="item in bookingPrepHighlights" :key="item.title" class="decision-check-item">
+            <text class="decision-check-title">{{ item.title }}</text>
+            <text class="decision-check-desc">{{ item.desc }}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="section-card">
+      <view class="section-header">
+        <view>
           <text class="section-title">快捷入口</text>
           <text class="section-subtitle">常用操作放在首屏，减少重复跳转</text>
         </view>
@@ -406,6 +434,39 @@ export default {
                     type: 'appointment-list'
                 }
             ];
+        },
+        homeBookingGuide() {
+            if (this.featuredService) {
+                return {
+                    title: `如果今天就想下单，建议先看“${this.featuredService.title}”`,
+                    desc: '先确认服务说明、时长和备注承接范围，再提交时间与地址，通常会比盲目比价更快做决定。',
+                    primaryText: '看主推服务',
+                    secondaryText: '直接看全部服务'
+                };
+            }
+
+            return {
+                title: '如果今天就想下单，建议先从全部服务里缩小范围',
+                desc: '先按场景或分类筛到 1 到 2 个候选项目，再去详情页确认是否适合当前需求。',
+                primaryText: '浏览全部服务',
+                secondaryText: '看预约流程'
+            };
+        },
+        bookingPrepHighlights() {
+            return [
+                {
+                    title: '先想好可接受时间段',
+                    desc: '至少准备 1 到 2 个时间选项，平台确认时会更快定下来。'
+                },
+                {
+                    title: '地址尽量一次写完整',
+                    desc: '小区、楼栋、门牌和进出限制越清楚，越能减少反复确认。'
+                },
+                {
+                    title: '特殊需求先写进备注',
+                    desc: '重点区域、设备情况或作息要求提前说明，会比电话口述更不容易遗漏。'
+                }
+            ];
         }
     },
     onLoad() {
@@ -481,6 +542,22 @@ export default {
         },
         goServiceDetail(serviceId) {
             ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.service.detail, { serviceId });
+        },
+        goBookingGuidePrimary() {
+            if (this.featuredService) {
+                this.goServiceDetail(this.featuredService.id);
+                return;
+            }
+
+            this.goServiceList(0);
+        },
+        goBookingGuideSecondary() {
+            if (this.featuredService) {
+                this.goServiceList(0);
+                return;
+            }
+
+            this.goAppointmentList();
         },
         goAppointmentList() {
             ROUTER_CONFIG.navigate.switchTab(ROUTER_CONFIG.pages.appointment.list);
@@ -705,6 +782,102 @@ export default {
 .section-link {
   margin-top: 0;
   color: #1d8e47;
+}
+
+.booking-decision-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.decision-highlight {
+  padding: 18px 16px;
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at top right, rgba(26, 173, 25, 0.14), transparent 30%),
+    linear-gradient(180deg, #ffffff 0%, #f4faf5 100%);
+  border: 1px solid rgba(31, 143, 68, 0.08);
+}
+
+.decision-highlight-copy {
+  display: flex;
+  flex-direction: column;
+}
+
+.decision-highlight-tag {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(31, 143, 68, 0.12);
+  font-size: 11px;
+  color: #1d8e47;
+}
+
+.decision-highlight-title {
+  display: block;
+  margin-top: 10px;
+  font-size: 17px;
+  line-height: 1.5;
+  font-weight: 700;
+  color: #173126;
+}
+
+.decision-highlight-desc {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #5f6b76;
+}
+
+.decision-highlight-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.decision-highlight-button {
+  flex: 1;
+  height: 40px;
+  line-height: 40px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1f8f44 0%, #36b26c 100%);
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.decision-highlight-button.ghost {
+  background: #ffffff;
+  color: #1d8e47;
+  border: 1px solid rgba(31, 143, 68, 0.16);
+}
+
+.decision-check-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.decision-check-item {
+  padding: 14px;
+  border-radius: 18px;
+  background: #f8faf8;
+}
+
+.decision-check-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #17212f;
+}
+
+.decision-check-desc {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #5f6b76;
 }
 
 .quick-grid {

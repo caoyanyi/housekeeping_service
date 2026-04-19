@@ -36,6 +36,23 @@
       </view>
     </view>
 
+    <view class="progress-card">
+      <view class="progress-top">
+        <view>
+          <text class="progress-title">填写完成度</text>
+          <text class="progress-desc">{{ progressGuide.desc }}</text>
+        </view>
+        <text class="progress-score">{{ completionRate }}%</text>
+      </view>
+      <view class="progress-track">
+        <view class="progress-bar" :style="{ width: `${completionRate}%` }"></view>
+      </view>
+      <view class="progress-actions">
+        <button class="progress-action" @click="fillFromProfile">{{ progressGuide.primaryText }}</button>
+        <button class="progress-action ghost" @click="viewServiceDetail">回看服务详情</button>
+      </view>
+    </view>
+
     <view class="summary-card">
       <view class="summary-item">
         <text class="summary-label">预约日期</text>
@@ -146,6 +163,14 @@
           maxlength="120"
           placeholder="可填写门牌号、期望说明等"
         ></textarea>
+        <view class="remark-suggestion-list">
+          <text
+            v-for="item in remarkSuggestionOptions"
+            :key="item"
+            class="remark-suggestion"
+            @click="applyRemarkSuggestion(item)"
+          >{{ item }}</text>
+        </view>
       </view>
     </view>
 
@@ -221,6 +246,37 @@ export default {
                     this.address &&
                     !this.loading
             );
+        },
+        completionRate() {
+            const completedCount = [
+                Boolean(this.selectedDate),
+                Boolean(this.selectedTime),
+                Boolean(this.contactName),
+                Boolean(isValidPhone(this.phone)),
+                Boolean(this.address)
+            ].filter(Boolean).length;
+
+            return Math.round((completedCount / 5) * 100);
+        },
+        progressGuide() {
+            if (!this.selectedDate || !this.selectedTime) {
+                return {
+                    desc: '先把预约日期和时间定下来，平台确认会更直接。',
+                    primaryText: '带入我的资料'
+                };
+            }
+
+            if (!this.contactName || !isValidPhone(this.phone) || !this.address) {
+                return {
+                    desc: '联系人、电话和地址还没完全补齐，这三项最影响平台首次联系成功率。',
+                    primaryText: '带入我的资料'
+                };
+            }
+
+            return {
+                desc: '基础信息已经齐全，提交后平台会尽快联系您确认服务安排。',
+                primaryText: '刷新账号资料'
+            };
         },
         readinessItems() {
             return [
@@ -330,6 +386,23 @@ export default {
                 { label: '16:00', value: '16:00' },
                 { label: '19:00', value: '19:00' }
             ];
+        },
+        remarkSuggestionOptions() {
+            const keywordText = `${this.service.title} ${this.service.category_name}`.toLowerCase();
+
+            if (keywordText.includes('母婴')) {
+                return ['希望提前确认作息安排', '家中有婴幼儿需要安静环境', '请联系后再确认服务重点'];
+            }
+
+            if (keywordText.includes('清洗')) {
+                return ['请提前确认设备数量', '现场可能需要拆洗说明', '希望优先处理重点设备'];
+            }
+
+            if (keywordText.includes('搬')) {
+                return ['请提前确认楼层和电梯情况', '现场可能有大件物品', '希望先电话确认车辆安排'];
+            }
+
+            return ['请提前电话联系确认', '有重点区域需要优先处理', '上门前请再次确认时间'];
         }
     },
     onLoad(options) {
@@ -408,6 +481,18 @@ export default {
         selectQuickTime(time) {
             this.selectedTime = time;
         },
+        fillFromProfile() {
+            this.getUserInfo();
+            uni.showToast({
+                title: '已尝试带入账号资料',
+                icon: 'none'
+            });
+        },
+        viewServiceDetail() {
+            ROUTER_CONFIG.navigate.to(ROUTER_CONFIG.pages.service.detail, {
+                serviceId: this.serviceId
+            });
+        },
         formatDisplayDate(dateString) {
             const date = new Date(dateString);
             const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
@@ -415,6 +500,23 @@ export default {
             const day = String(date.getDate()).padStart(2, '0');
 
             return `${month}-${day} ${weekDays[date.getDay()]}`;
+        },
+        applyRemarkSuggestion(text) {
+            if (!text) {
+                return;
+            }
+
+            const currentText = String(this.remark || '').trim();
+            if (!currentText) {
+                this.remark = text;
+                return;
+            }
+
+            if (currentText.includes(text)) {
+                return;
+            }
+
+            this.remark = `${currentText}；${text}`;
         },
         submitAppointment() {
             if (!this.canSubmit) {
@@ -493,6 +595,7 @@ export default {
 
 .hero-card,
 .service-card,
+.progress-card,
 .summary-card,
 .profile-card,
 .readiness-card,
@@ -565,6 +668,79 @@ export default {
 .service-card {
   display: flex;
   margin-top: 14px;
+}
+
+.progress-card {
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbf8 100%);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
+}
+
+.progress-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.progress-title {
+  display: block;
+  font-size: 17px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.progress-desc {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #667085;
+}
+
+.progress-score {
+  flex-shrink: 0;
+  font-size: 26px;
+  font-weight: 700;
+  color: #1aad19;
+}
+
+.progress-track {
+  height: 8px;
+  margin-top: 14px;
+  border-radius: 999px;
+  background: #e8f0ea;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(135deg, #1aad19 0%, #36c567 100%);
+}
+
+.progress-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.progress-action {
+  flex: 1;
+  height: 40px;
+  line-height: 40px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1aad19 0%, #36c567 100%);
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.progress-action.ghost {
+  background: #ffffff;
+  color: #1aad19;
+  border: 1px solid rgba(26, 173, 25, 0.18);
 }
 
 .service-image {
@@ -776,6 +952,21 @@ export default {
 
 .field-textarea {
   min-height: 88px;
+}
+
+.remark-suggestion-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.remark-suggestion {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #eef3f0;
+  font-size: 12px;
+  color: #344054;
 }
 
 .tips-list {
