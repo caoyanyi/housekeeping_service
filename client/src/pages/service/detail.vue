@@ -64,6 +64,33 @@
           <text class="decision-brief-title">{{ decisionBrief.title }}</text>
           <text class="decision-brief-desc">{{ decisionBrief.desc }}</text>
         </view>
+        <view class="decision-actions">
+          <button class="decision-action ghost" @click="viewSimilarServices">继续比较同类服务</button>
+          <button class="decision-action" @click="makeAppointment">先提交需求</button>
+        </view>
+      </view>
+
+      <view class="section-card">
+        <text class="section-title">预约前准备一下会更顺畅</text>
+        <view class="readiness-list">
+          <view v-for="item in readinessChecklist" :key="item.title" class="readiness-item">
+            <view class="readiness-top">
+              <text class="readiness-title">{{ item.title }}</text>
+              <text class="readiness-badge">{{ item.badge }}</text>
+            </view>
+            <text class="readiness-desc">{{ item.desc }}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="section-card">
+        <text class="section-title">为什么现在就可以先提交需求</text>
+        <view class="booking-reason-list">
+          <view v-for="item in bookingReasons" :key="item.title" class="booking-reason-item">
+            <text class="booking-reason-title">{{ item.title }}</text>
+            <text class="booking-reason-desc">{{ item.desc }}</text>
+          </view>
+        </view>
       </view>
 
       <view class="section-card">
@@ -289,6 +316,65 @@ export default {
                 title: `如果你想先解决“${title}”这类问题，这项服务已经具备直接进入预约的基础信息。`,
                 desc: '页面更适合帮助你先做判断和比较，真正的时间、地址和执行细节会在平台确认环节继续复核。'
             };
+        },
+        readinessChecklist() {
+            const keywordText = `${this.service.title} ${this.service.category_name}`.toLowerCase();
+            const checklist = [
+                {
+                    title: '先想好可接受时间段',
+                    badge: '减少来回确认',
+                    desc: '建议至少准备 1 到 2 个可接受的上门时间，平台联系时更容易快速定下来。'
+                },
+                {
+                    title: '把地址和现场限制写清楚',
+                    badge: '提高承接效率',
+                    desc: '楼层、电梯、门禁、停车或小区限制越明确，越能减少临近上门时的沟通成本。'
+                }
+            ];
+
+            if (keywordText.includes('母婴')) {
+                checklist.push({
+                    title: '补充照护重点和家庭作息',
+                    badge: '更容易匹配需求',
+                    desc: '例如宝宝月龄、是否夜间协助、家中成员作息等，越清楚越方便平台初次判断。'
+                });
+            } else if (keywordText.includes('清洗')) {
+                checklist.push({
+                    title: '提前备注设备数量和品牌',
+                    badge: '避免信息缺口',
+                    desc: '像空调台数、油烟机类型或是否需要拆洗，先写清楚会更利于平台确认服务范围。'
+                });
+            } else if (keywordText.includes('搬')) {
+                checklist.push({
+                    title: '把楼层、物品量和车辆需求说清',
+                    badge: '减少执行偏差',
+                    desc: '楼梯、电梯、是否需要搬运大件或车辆协助，都会直接影响服务安排和确认效率。'
+                });
+            } else {
+                checklist.push({
+                    title: '把重点区域和特殊要求先记下来',
+                    badge: '更容易一次说清',
+                    desc: '比如厨房、母婴区、玻璃、收纳或消毒需求，提前写进备注会比确认时临时回忆更高效。'
+                });
+            }
+
+            return checklist;
+        },
+        bookingReasons() {
+            return [
+                {
+                    title: '先锁定确认节奏，而不是等完全想清再行动',
+                    desc: '平台会在提交后继续帮你核对细节，所以不需要一次把所有信息都判断到位。'
+                },
+                {
+                    title: '个性化需求可以通过备注补充',
+                    desc: '如果你有特殊时间、重点区域或执行要求，备注区会比单纯电话口述更容易留存。'
+                },
+                {
+                    title: '后续状态能在预约页持续追踪',
+                    desc: '从待接单到已完成，关键进度都能回看，减少“下单后不知道发生了什么”的不确定感。'
+                }
+            ];
         },
         fitScenarios() {
             const keywordText = `${this.service.title} ${this.service.category_name}`.toLowerCase();
@@ -658,6 +744,28 @@ export default {
   color: #5f6b76;
 }
 
+.decision-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.decision-action {
+  flex: 1;
+  height: 42px;
+  line-height: 42px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #1aad19 0%, #36c567 100%);
+  color: #ffffff;
+  font-size: 14px;
+}
+
+.decision-action.ghost {
+  background: #ffffff;
+  color: #1aad19;
+  border: 1px solid rgba(26, 173, 25, 0.22);
+}
+
 .section-title {
   display: block;
   margin-bottom: 12px;
@@ -679,6 +787,8 @@ export default {
 .assurance-list,
 .faq-list,
 .decision-help-list,
+.readiness-list,
+.booking-reason-list,
 .confidence-list,
 .fit-list {
   display: flex;
@@ -689,12 +799,60 @@ export default {
 .journey-item,
 .assurance-item,
 .faq-item,
-.decision-help-item {
+.decision-help-item,
+.readiness-item,
+.booking-reason-item {
   display: flex;
   align-items: flex-start;
   padding: 14px;
   border-radius: 18px;
   background: #f8faf8;
+}
+
+.readiness-item,
+.booking-reason-item {
+  display: block;
+}
+
+.readiness-item {
+  background: linear-gradient(180deg, #f8fbff 0%, #eef6ff 100%);
+}
+
+.booking-reason-item {
+  background: linear-gradient(180deg, #f6fcf7 0%, #eef8f1 100%);
+}
+
+.readiness-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.readiness-title,
+.booking-reason-title {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #17212f;
+}
+
+.readiness-badge {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(47, 124, 194, 0.12);
+  font-size: 11px;
+  color: #2f7cc2;
+}
+
+.readiness-desc,
+.booking-reason-desc {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #5f6b76;
 }
 
 .fit-section {

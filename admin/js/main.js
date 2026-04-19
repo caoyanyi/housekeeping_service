@@ -154,6 +154,18 @@ const app = new Vue({
             return this.recentAppointments.filter(item => item.status === 'completed').length;
         },
 
+        exceptionAppointmentsCount() {
+            return this.recentAppointments.filter(item => ['cancelled', 'rejected', 'no_show'].includes(item.status)).length;
+        },
+
+        serviceCoverageDensity() {
+            if (!this.statistics.categories) {
+                return '0.0';
+            }
+
+            return (this.statistics.services / this.statistics.categories).toFixed(1);
+        },
+
         dashboardHeadline() {
             if (this.pendingAppointmentsCount > 0) {
                 return `当前有 ${this.pendingAppointmentsCount} 笔预约待跟进`;
@@ -208,9 +220,7 @@ const app = new Vue({
         dashboardMomentumCards() {
             const pendingCount = this.pendingAppointmentsCount;
             const acceptedCount = this.acceptedAppointmentsCount;
-            const servicesPerCategory = this.statistics.categories
-                ? (this.statistics.services / this.statistics.categories).toFixed(1)
-                : '0.0';
+            const servicesPerCategory = this.serviceCoverageDensity;
             const todayFlowValue = this.statistics.todayAppointments || this.recentAppointments.length;
 
             return [
@@ -236,6 +246,47 @@ const app = new Vue({
                     desc: todayFlowValue
                         ? `最近流入中已有 ${acceptedCount} 笔进入服务准备阶段，可继续跟踪履约。`
                         : '建议检查首页推荐、服务上架状态与用户端预约入口是否顺畅。',
+                    type: todayFlowValue ? 'info' : 'danger'
+                }
+            ];
+        },
+
+        dashboardRadarCards() {
+            const recentActionableCount = this.pendingAppointmentsCount + this.acceptedAppointmentsCount;
+            const todayFlowValue = this.statistics.todayAppointments || this.recentAppointments.length;
+            const density = Number(this.serviceCoverageDensity);
+
+            return [
+                {
+                    title: '待立即响应',
+                    value: recentActionableCount ? `${recentActionableCount} 笔` : '当前平稳',
+                    desc: recentActionableCount
+                        ? '待接单和已接单订单会直接影响用户等待感与履约体验。'
+                        : '当前没有明显的预约处理积压，可以转向优化供给和展示。',
+                    type: recentActionableCount ? 'warning' : 'success'
+                },
+                {
+                    title: '异常订单雷达',
+                    value: this.exceptionAppointmentsCount ? `${this.exceptionAppointmentsCount} 笔` : '风险较低',
+                    desc: this.exceptionAppointmentsCount
+                        ? '取消、拒绝或未履约订单值得回看原因，避免重复损耗转化。'
+                        : '近期异常订单不多，说明确认与履约链路相对稳定。',
+                    type: this.exceptionAppointmentsCount ? 'danger' : 'success'
+                },
+                {
+                    title: '分类供给覆盖',
+                    value: `${this.serviceCoverageDensity} 项/分类`,
+                    desc: density >= 2
+                        ? '服务池对分类承接相对充分，更适合继续优化排序和转化表达。'
+                        : '部分分类可能还偏薄，容易影响用户比较和预约选择。',
+                    type: density >= 2 ? 'info' : 'warning'
+                },
+                {
+                    title: '最近流入热度',
+                    value: todayFlowValue ? `${todayFlowValue} 笔` : '需要排查',
+                    desc: todayFlowValue
+                        ? '今天已有订单流入，适合继续盯紧接单响应和服务承接页面。'
+                        : '当日流入偏弱时，建议优先检查首页推荐和服务上架可见性。',
                     type: todayFlowValue ? 'info' : 'danger'
                 }
             ];
@@ -359,6 +410,66 @@ const app = new Vue({
                     note: '查看最新申请'
                 }
             ];
+        },
+
+        dashboardDecisionBoard() {
+            const decisions = [];
+
+            decisions.push(
+                this.pendingAppointmentsCount
+                    ? {
+                        type: 'warning',
+                        title: '先保预约响应速度',
+                        desc: `当前还有 ${this.pendingAppointmentsCount} 笔待接单，越晚响应越容易影响用户信任和转化。`,
+                        menu: 'appointments',
+                        actionText: '去清理'
+                    }
+                    : {
+                        type: 'success',
+                        title: '预约承接节奏暂时稳定',
+                        desc: '可以把时间转去优化服务页表达、分类可见性和供给密度。',
+                        menu: 'services',
+                        actionText: '看服务'
+                    }
+            );
+
+            decisions.push(
+                this.exceptionAppointmentsCount
+                    ? {
+                        type: 'danger',
+                        title: '要回看异常订单原因',
+                        desc: '取消、拒绝和未履约订单最能暴露说明不清、确认慢或履约匹配不足的问题。',
+                        menu: 'appointments',
+                        actionText: '去复盘'
+                    }
+                    : {
+                        type: 'info',
+                        title: '可以把重点放回前台转化',
+                        desc: '异常订单不多时，更值得继续优化首页推荐、服务详情和筛选路径。',
+                        menu: 'services',
+                        actionText: '去优化'
+                    }
+            );
+
+            decisions.push(
+                Number(this.serviceCoverageDensity) < 2
+                    ? {
+                        type: 'warning',
+                        title: '服务覆盖仍有补位空间',
+                        desc: '分类下可选服务偏少时，用户更难形成比较和下单决策，适合继续补充项目。',
+                        menu: 'services',
+                        actionText: '去补充'
+                    }
+                    : {
+                        type: 'info',
+                        title: '供给侧可以继续跟进入驻转化',
+                        desc: '服务池已经有基础规模，下一步更适合盯紧求职跟进和履约弹性。',
+                        menu: 'job_applications',
+                        actionText: '看报名'
+                    }
+            );
+
+            return decisions;
         },
 
         dashboardAlerts() {
@@ -552,7 +663,8 @@ const app = new Vue({
                 'accepted': '已接单',
                 'completed': '已完成',
                 'cancelled': '已取消',
-                'rejected': '已拒绝'
+                'rejected': '已拒绝',
+                'no_show': '未履约'
             };
             return statusMap[row.status] || row.status;
         },
@@ -563,7 +675,8 @@ const app = new Vue({
                 accepted: 'success',
                 completed: 'primary',
                 cancelled: 'info',
-                rejected: 'danger'
+                rejected: 'danger',
+                no_show: 'warning'
             };
 
             return typeMap[status] || 'info';

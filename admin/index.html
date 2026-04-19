@@ -159,6 +159,19 @@
                                 </section>
                             </div>
 
+                            <div class="dashboard-radar-grid">
+                                <div
+                                    v-for="item in dashboardRadarCards"
+                                    :key="item.title"
+                                    class="radar-card"
+                                    :class="`radar-card-${item.type}`"
+                                >
+                                    <span class="radar-title">{{ item.title }}</span>
+                                    <span class="radar-value">{{ item.value }}</span>
+                                    <span class="radar-desc">{{ item.desc }}</span>
+                                </div>
+                            </div>
+
                             <div class="dashboard-grid">
                                 <section class="dashboard-panel">
                                     <div class="panel-header">
@@ -199,6 +212,24 @@
                                             <span class="quick-link-desc">{{ item.desc }}</span>
                                             <span class="quick-link-note">{{ item.note }}</span>
                                         </button>
+                                    </div>
+                                    <div class="decision-board">
+                                        <div class="decision-board-header">
+                                            <h4>经营判断</h4>
+                                            <span>把看板数字翻成下一步动作</span>
+                                        </div>
+                                        <div
+                                            v-for="item in dashboardDecisionBoard"
+                                            :key="item.title"
+                                            class="decision-board-item"
+                                            :class="`decision-board-item-${item.type}`"
+                                        >
+                                            <div class="decision-board-copy">
+                                                <span class="decision-board-title">{{ item.title }}</span>
+                                                <span class="decision-board-desc">{{ item.desc }}</span>
+                                            </div>
+                                            <el-button type="text" @click="jumpToMenu(item.menu)">{{ item.actionText }}</el-button>
+                                        </div>
                                     </div>
                                     <div class="alert-list">
                                         <div class="alert-list-header">
